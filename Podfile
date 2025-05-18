@@ -1,5 +1,5 @@
 # Uncomment the next line to define a global platform for your project
-# platform :ios, '9.0'
+platform :ios, '11.0'
 
 target 'DotenkoV2' do
   # Comment the next line if you don't want to use dynamic frameworks
@@ -12,6 +12,15 @@ target 'DotenkoV2' do
 
   # Realmの追加
   pod 'RealmSwift'
+
+  # Firebase
+  pod 'FirebaseAnalytics'
+  pod 'FirebaseAuth'
+  pod 'FirebaseFirestore'
+  pod 'FirebaseStorage'
+  pod 'FirebaseMessaging'
+  pod 'FirebaseDatabase'  # Realtime Database
+  pod 'FirebaseFunctions'
 
   target 'DotenkoV2Tests' do
     inherit! :search_paths
