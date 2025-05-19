@@ -38,11 +38,11 @@ class SplashViewModel: ObservableObject {
     
     /// 認証処理とユーザーデータの更新を実行
     /// アプリステータスの確認、匿名認証、ユーザーデータの更新を順次実行
-    func authenticateAndUpdateUser() async {
+    func authenticateAndUpdateUser() async throws {
+        // プログレスビューを表示
+        progressManager.show()
+        
         do {
-            // プログレスビューを表示
-            progressManager.show()
-            
             // アプリステータスの取得と確認
             try await fetchAppStatus()
             
@@ -63,11 +63,12 @@ class SplashViewModel: ObservableObject {
             // エラー発生時の処理
             await MainActor.run {
                 print("Authentication error: \(error.localizedDescription)")
-                self.errorMessage = "認証に失敗しました。\nアプリを再起動してください。"
+                self.errorMessage = error.localizedDescription
                 self.isAuthenticating = false
                 self.progressManager.hide()
                 self.shouldNavigate = false
             }
+            throw error
         }
     }
     
@@ -93,7 +94,11 @@ class SplashViewModel: ObservableObject {
             .getDocument()
         
         guard let data = document.data() else {
-            throw NSError(domain: "AppStatusError", code: -1, userInfo: [NSLocalizedDescriptionKey: "アプリステータスが見つかりません"])
+            let errorMessage = "アプリステータスが見つかりません"
+            await MainActor.run {
+                self.errorMessage = errorMessage
+            }
+            throw NSError(domain: "AppStatusError", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
         // データのデコード
@@ -105,13 +110,21 @@ class SplashViewModel: ObservableObject {
         
         // メンテナンスモードの確認
         if appStatus.maintenanceFlag == Constant.FLAG_ON {
-            throw NSError(domain: "AppStatusError", code: -2, userInfo: [NSLocalizedDescriptionKey: "現在メンテナンス中です"])
+            let errorMessage = "現在メンテナンス中です"
+            await MainActor.run {
+                self.errorMessage = errorMessage
+            }
+            throw NSError(domain: "AppStatusError", code: -2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
         
         // アプリバージョンの確認
         if let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             if currentVersion.compare(appStatus.minIosVersion, options: .numeric) == .orderedAscending {
-                throw NSError(domain: "AppStatusError", code: -3, userInfo: [NSLocalizedDescriptionKey: "アプリの更新が必要です"])
+                let errorMessage = "アプリの更新が必要です"
+                await MainActor.run {
+                    self.errorMessage = errorMessage
+                }
+                throw NSError(domain: "AppStatusError", code: -3, userInfo: [NSLocalizedDescriptionKey: errorMessage])
             }
         }
     }

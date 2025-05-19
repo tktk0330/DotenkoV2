@@ -43,17 +43,6 @@ struct SplashView: View {
                 Text("Dotenko")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-                
-                // エラーメッセージ
-                if let errorMessage = viewModel.errorMessage {
-                    VStack(spacing: 8) {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
-                }
             }
             
             // プログレスビュー（最前面に表示）
@@ -63,21 +52,27 @@ struct SplashView: View {
         }
         .opacity(opacity)
         .task {
-            // 認証処理の実行
-            await viewModel.authenticateAndUpdateUser()
-            
-            // 認証成功時のみ画面遷移
-            if viewModel.shouldNavigate {
-                // フェードアウトアニメーション
-                withAnimation(.easeOut(duration: 0.5)) {
-                    opacity = 0
-                }
+            do {
+                // 認証処理の実行
+                try await viewModel.authenticateAndUpdateUser()
                 
-                // TopViewへの遷移
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    navigator.push(AnyView(TopView(navigator: navigator)))
+                // 認証成功時のみ画面遷移
+                if viewModel.shouldNavigate {
+                    // フェードアウトアニメーション
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        opacity = 0
+                    }
+                    
+                    // TopViewへの遷移
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        navigator.push(AnyView(TopView(navigator: navigator)))
+                    }
                 }
+            } catch {
+                // エラーが発生した場合は、エラーメッセージを表示
+                ErrorManager.shared.showError(error.localizedDescription)
             }
         }
+        .withErrorHandling()
     }
 }

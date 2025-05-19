@@ -16,6 +16,8 @@ struct RootView: View {
         .ignoresSafeArea(.all, edges: .bottom)
         .environmentObject(navigator)
         .environmentObject(allViewNavigator)
+        .withNetworkMonitoring() // ネットワーク監視を追加
+        .withErrorHandling() // エラーハンドリングを追加
     }
     
     // MARK: - Main Content

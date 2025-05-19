@@ -18,10 +18,7 @@ struct ModalView<Content: View>: View {
                         .opacity(0.4)
                         .ignoresSafeArea(.all, edges: [.top, .horizontal])
                 }
-                .onTapGesture {
-                    manager.dismiss()
-                }
-                .allowsHitTesting(true)
+                .allowsHitTesting(false) // 背景タップを無効化
                 
                 // モーダルコンテンツ
                 VStack {
