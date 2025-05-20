@@ -8,9 +8,7 @@ struct HelpMainView: View {
         ZStack {
             BaseLayout {
                 VStack(spacing: 20) {
-                    Text("Help")
-                        .font(.title)
-                        .padding(.top, 20)
+                    Spacer().frame(height: 24)
                     
                     // ヘルプセクション
                     ForEach(HelpSection.allCases, id: \.self) { section in
@@ -32,7 +30,7 @@ struct HelpMainView: View {
                                         Spacer()
                                         
                                         Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(.white)
                                             .font(.system(size: 14))
                                     }
                                     .padding(.vertical, 8)

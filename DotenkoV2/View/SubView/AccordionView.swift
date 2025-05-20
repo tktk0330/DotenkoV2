@@ -25,7 +25,7 @@ struct AccordionView<Content: View>: View {
                     Spacer()
                     
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .font(.system(size: 14))
                 }
             }
@@ -36,7 +36,7 @@ struct AccordionView<Content: View>: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
+        .background(Color.gray.opacity(1.0))
         .cornerRadius(10)
     }
 } 
