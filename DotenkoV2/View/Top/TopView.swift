@@ -7,15 +7,24 @@ struct TopView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
-                Text("Welcome to DTNK")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                // ロゴとアイコンの重ね合わせ
+                ZStack {
+                    // アイコン（少し上に配置）
+//                    Image(uiImage: UIImage(named: Appearance.Image.Top.topIcon) ?? UIImage())
+//                        .resizable()
+//                        .scaledToFit()
+//                        .frame(width: 300, height: 300)
+                    
+                    // メインロゴ
+                    Image(uiImage: UIImage(named: Appearance.Image.Top.topLogo) ?? UIImage())
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 300, height: 300)
+                        .offset(y: -250) // 上に移動
+                }
+                .frame(height: 350) // 重なりを考慮した高さ
                 
-                Text("アプリの説明や初期設定などをここに表示します")
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                
-                Button("メイン画面へ") {
+                CasinoButton(title: "Start") {
                     navigator.push(
                         AnyView(ContentView(bannerHeight: CGFloat(Constant.BANNER_HEIGHT))))
                 }

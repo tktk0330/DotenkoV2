@@ -6,10 +6,6 @@ struct HomeMainView: View {
     
     var body: some View {
         ZStack {
-            // 背景色
-            Color(uiColor: Appearance.Color.forestGreen)
-                .ignoresSafeArea()
-            
             // メインコンテンツ
             VStack(spacing: 16) {
                 // ロゴ

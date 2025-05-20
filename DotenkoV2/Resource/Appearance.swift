@@ -15,6 +15,36 @@ enum Appearance {
         static let mossGreen = UIColor(red: 0.0, green: 0.2, blue: 0.12, alpha: 1.0)
         /// 明るい黄金色 (R: 1.0, G: 0.85, B: 0.4) - 選択状態やハイライトとして使用
         static let goldenYellow = UIColor(red: 1.0, green: 0.85, blue: 0.4, alpha: 1.0)
+        
+        // カジノ風グラデーション
+        static let casinoGradient = CasinoGradient()
+        
+        struct CasinoGradient {
+            let background = [
+                UIColor(red: 0/255, green: 29/255, blue: 11/255, alpha: 1),    // 深緑
+                UIColor(red: 0/255, green: 45/255, blue: 20/255, alpha: 1),    // 中間の緑
+                UIColor(red: 0/255, green: 35/255, blue: 15/255, alpha: 1)     // やや明るい緑
+            ]
+            
+            let button = ButtonGradient()
+            
+            struct ButtonGradient {
+                let main = [
+                    UIColor(red: 0/255, green: 100/255, blue: 0/255, alpha: 1),
+                    UIColor(red: 0/255, green: 70/255, blue: 0/255, alpha: 1)
+                ]
+                
+                let accent = [
+                    UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 0.3),
+                    UIColor(red: 218/255, green: 165/255, blue: 32/255, alpha: 0.1)
+                ]
+                
+                let border = [
+                    UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 1),
+                    UIColor(red: 218/255, green: 165/255, blue: 32/255, alpha: 1)
+                ]
+            }
+        }
     }
     
     struct Font {
@@ -44,6 +74,16 @@ enum Appearance {
     }
     
     struct Image {
+        
+        struct Splash {
+            static let splashLogo = "image_card_back_red"
+        }
+        
+        struct Top {
+            static let topLogo = "image_logo"
+            static let topIcon = "image_icon"
+        }
+        
         /// アプリ共通のアイコンやロゴ
         struct Common {
             /// アプリのメインロゴ

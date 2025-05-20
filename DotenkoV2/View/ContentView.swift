@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  dtnk
-//
-//  Created by Takuma Shinoda on 2025/05/14.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -14,10 +7,6 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // 背景色
-            Color(uiColor: Appearance.Color.forestGreen)
-                .ignoresSafeArea()
-            
             VStack(spacing: 0) {
                 // メインコンテンツ
                 if let currentView = navigator.currentView {

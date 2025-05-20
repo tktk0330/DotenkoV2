@@ -1,10 +1,3 @@
-//
-//  ErrorView.swift
-//  DotenkoV2
-//
-//  Created by Takuma Shinoda on 2025/05/20.
-//
-
 import SwiftUI
 
 struct ErrorView: View {

@@ -26,23 +26,13 @@ struct SplashView: View {
     
     var body: some View {
         ZStack {
-            // 背景
-            Color.white
-                .ignoresSafeArea()
-            
             // メインコンテンツ
             VStack(spacing: 16) {
                 // アプリロゴ
-                Image(systemName: "leaf.fill")
+                Image(uiImage: UIImage(named: Appearance.Image.Splash.splashLogo) ?? UIImage())
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .foregroundColor(.green)
-                
-                // アプリ名
-                Text("Dotenko")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .frame(width: 300, height: 300)
             }
             
             // プログレスビュー（最前面に表示）
