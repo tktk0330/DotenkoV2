@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ModalView<Content: View>: View {
-    @StateObject private var manager = ModalManager.shared
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {

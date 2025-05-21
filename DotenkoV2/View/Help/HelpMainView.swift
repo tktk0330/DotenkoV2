@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HelpMainView: View {
     @EnvironmentObject private var navigator: NavigationStateManager
-    @StateObject private var modalManager = ModalManager.shared
     
     var body: some View {
         ZStack {
@@ -55,7 +54,7 @@ struct HelpMainView: View {
                     
                     // MENU2のモーダル表示ボタン
                     Button(action: {
-                        modalManager.show {
+                        ModalManager.shared.show {
                             Menu2View()
                         }
                     }) {
@@ -71,69 +70,66 @@ struct HelpMainView: View {
                 .padding(.horizontal)
             }
         }
-        .modalOverlay()
     }
 }
 
 // ヘルプセクション
 enum HelpSection: CaseIterable {
-    case howTo
-    case faq
+    case basicRule
+    case customRule
     case contact
-    case terms
+    case review
     case privacy
     
     var title: String {
         switch self {
-        case .howTo: return "使い方ガイド"
-        case .faq: return "よくある質問"
+        case .basicRule: return "基本ルール"
+        case .customRule: return "カスタムルール"
         case .contact: return "お問い合わせ"
-        case .terms: return "利用規約"
-        case .privacy: return "プライバシーポリシー"
+        case .review: return "アプリレビュー"
+        case .privacy: return "プライバシーポリシー・利用規約"
         }
     }
     
     var description: String {
         switch self {
-        case .howTo: return "アプリの基本的な使い方や機能の説明を確認できます。"
-        case .faq: return "ユーザーからよく寄せられる質問とその回答を確認できます。"
+        case .basicRule: return "アプリの基本的な使い方や機能の説明を確認できます。"
+        case .customRule: return "ユーザーからよく寄せられる質問とその回答を確認できます。"
         case .contact: return "サポートチームへの問い合わせ方法を確認できます。"
-        case .terms: return "本アプリの利用規約を確認できます。"
-        case .privacy: return "個人情報の取り扱いについて確認できます。"
+        case .review: return "よろしければ評価・ご意見・感想等をお願いいたします。"
+        case .privacy: return "本アプリのプライバシーポリシー・利用規約を確認できます。"
         }
     }
     
     var items: [HelpItem] {
         switch self {
-        case .howTo:
+        case .basicRule:
             return [
-                HelpItem(title: "基本操作について", icon: "hand.tap"),
-                HelpItem(title: "機能の使い方", icon: "gear"),
-                HelpItem(title: "便利な使い方", icon: "star")
+                HelpItem(title: "概要", icon: "hand.tap"),
+                HelpItem(title: "ゲームイベント", icon: "gear"),
+                HelpItem(title: "カードの効果", icon: "star")
             ]
-        case .faq:
+        case .customRule:
             return [
-                HelpItem(title: "アカウントについて", icon: "person"),
-                HelpItem(title: "支払いについて", icon: "creditcard"),
-                HelpItem(title: "技術的な問題", icon: "wrench")
+                HelpItem(title: "ゲーム数 / Game", icon: "person"),
+                HelpItem(title: "ジョーカー枚数 / Joker", icon: "creditcard"),
+                HelpItem(title: "レート / Rate", icon: "person"),
+                HelpItem(title: "重ねレートアップ / UpRate", icon: "person"),
+                HelpItem(title: "スコア上限 / Max", icon: "creditcard"),
+                HelpItem(title: "デッキサイクル / Deck", icon: "wrench")
             ]
         case .contact:
             return [
-                HelpItem(title: "メールでのお問い合わせ", icon: "envelope"),
-                HelpItem(title: "チャットサポート", icon: "message"),
-                HelpItem(title: "電話でのお問い合わせ", icon: "phone")
+                HelpItem(title: "お問い合わせ", icon: "phone")
             ]
-        case .terms:
+        case .review:
             return [
-                HelpItem(title: "利用規約", icon: "doc.text"),
-                HelpItem(title: "特定商取引法", icon: "cart"),
-                HelpItem(title: "その他の規約", icon: "doc")
+                HelpItem(title: "レビュー", icon: "doc")
             ]
         case .privacy:
             return [
                 HelpItem(title: "プライバシーポリシー", icon: "lock.shield"),
-                HelpItem(title: "個人情報の取り扱い", icon: "person.badge.shield.checkmark"),
-                HelpItem(title: "Cookie設定", icon: "gearshape")
+                HelpItem(title: "利用規約", icon: "person.badge.shield.checkmark"),
             ]
         }
     }

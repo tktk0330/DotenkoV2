@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ErrorView: View {
     let errorMessage: String
-    @StateObject private var manager = ModalManager.shared
     
     var body: some View {
         VStack(spacing: 16) {
@@ -25,7 +24,7 @@ struct ErrorView: View {
             
             // 閉じるボタン
             Button(action: {
-                manager.dismiss()
+                ModalManager.shared.dismiss()
             }) {
                 Text("閉じる")
                     .fontWeight(.bold)

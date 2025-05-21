@@ -1,3 +1,7 @@
+/**
+ カードの設定
+ */
+
 import UIKit
 
 enum PlayCard: String, CaseIterable {
