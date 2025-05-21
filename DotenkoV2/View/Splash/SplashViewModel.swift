@@ -39,28 +39,24 @@ class SplashViewModel: ObservableObject {
     /// 認証処理とユーザーデータの更新を実行
     /// アプリステータスの確認、匿名認証、ユーザーデータの更新を順次実行
     func authenticateAndUpdateUser() async throws {
-        // プログレスビューを表示
         progressManager.show()
-        
         do {
-            // アプリステータスの取得と確認
-            try await fetchAppStatus()
-            
-            // Firebase匿名認証を実行
+            // 1. 先にFirebase匿名認証を実行
             let authResult = try await FireBaseManager.shared.signInAnonymously()
             let userId = authResult.user.uid
-            
-            // ユーザーデータを更新
+
+            // 2. 認証後にAppStatusを取得
+            try await fetchAppStatus()
+
+            // 3. ユーザーデータを更新
             try await updateUserData(userId: userId)
-            
-            // 認証成功時の処理
+
             await MainActor.run {
                 self.isAuthenticating = false
                 self.progressManager.hide()
                 self.shouldNavigate = true
             }
         } catch {
-            // エラー発生時の処理
             await MainActor.run {
                 print("Authentication error: \(error.localizedDescription)")
                 self.errorMessage = error.localizedDescription

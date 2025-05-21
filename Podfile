@@ -22,6 +22,7 @@ target 'DotenkoV2' do
   pod 'FirebaseDatabase'  # Realtime Database
   pod 'FirebaseFunctions'
   pod 'FirebaseFirestoreSwift'
+  pod 'Firebase/Storage'
 
   target 'DotenkoV2Tests' do
     inherit! :search_paths
