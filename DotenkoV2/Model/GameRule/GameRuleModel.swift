@@ -6,30 +6,30 @@ struct GameRuleModel {
     
     /// ゲーム数の設定値
     /// - Note: デフォルト値は5ゲーム
-    var roundCount: String = "5"
+    var roundCount: String = UserProfileRepository.shared.roundCount
     
     /// ジョーカーの枚数
     /// - Note: デフォルト値は2枚
-    var jokerCount: String = "2"
+    var jokerCount: String = UserProfileRepository.shared.jokerCount
     
     /// 1ゲームあたりのレート
     /// - Note: デフォルト値は1ポイント
-    var gameRate: String = "1"
+    var gameRate: String = UserProfileRepository.shared.gameRate
     
     /// 最大掛け金
     /// - Note: デフォルト値は1000ポイント
     /// - Note: nilの場合は制限なし
-    var maxScore: String? = "1000"
+    var maxScore: String? = UserProfileRepository.shared.maxScore
     
     /// アップレート（スコア上限）
     /// - Note: デフォルト値は3倍
     /// - Note: nilの場合は制限なし
-    var upRate: String? = "3"
+    var upRate: String? = UserProfileRepository.shared.upRate
     
     /// デッキサイクル
     /// - Note: デフォルト値は3回
     /// - Note: nilの場合は制限なし
-    var deckCycle: String? = "3"
+    var deckCycle: String? = UserProfileRepository.shared.deckCycle
     
     // MARK: - Initialization
     
@@ -38,12 +38,12 @@ struct GameRuleModel {
     
     /// 指定された値で初期化
     init(
-        roundCount: String = "5",
-        jokerCount: String = "2",
-        gameRate: String = "1",
-        maxScore: String? = "1000",
-        upRate: String? = "3",
-        deckCycle: String? = "3"
+        roundCount: String = UserProfileRepository.shared.roundCount,
+        jokerCount: String = UserProfileRepository.shared.jokerCount,
+        gameRate: String = UserProfileRepository.shared.gameRate,
+        maxScore: String? = UserProfileRepository.shared.maxScore,
+        upRate: String? = UserProfileRepository.shared.upRate,
+        deckCycle: String? = UserProfileRepository.shared.deckCycle
     ) {
         self.roundCount = roundCount
         self.jokerCount = jokerCount

@@ -8,42 +8,65 @@ class GameRuleViewModel: ObservableObject {
     /// ゲームルールの設定値
     @Published var gameRule = GameRuleModel()
     
+    /// UserProfileRepositoryのインスタンス
+    private let userProfile = UserProfileRepository.shared
+    
+    // MARK: - Initialization
+    
+    init() {
+        // 現在のRealmの値を取得
+        gameRule = GameRuleModel(
+            roundCount: userProfile.roundCount,
+            jokerCount: userProfile.jokerCount,
+            gameRate: userProfile.gameRate,
+            maxScore: userProfile.maxScore,
+            upRate: userProfile.upRate,
+            deckCycle: userProfile.deckCycle
+        )
+    }
+    
     // MARK: - Update Methods
     
     /// ゲーム数を更新
     /// - Parameter value: 新しいゲーム数の値
     func updateRoundCount(_ value: String) {
         gameRule.roundCount = value
+        userProfile.roundCount = value
     }
     
     /// ジョーカーの枚数を更新
     /// - Parameter value: 新しいジョーカー枚数の値
     func updateJokerCount(_ value: String) {
         gameRule.jokerCount = value
+        userProfile.jokerCount = value
     }
     
     /// レートを更新
     /// - Parameter value: 新しいレートの値
     func updateGameRate(_ value: String) {
         gameRule.gameRate = value
+        userProfile.gameRate = value
     }
     
     /// 最大掛け金を更新
     /// - Parameter value: 新しい最大掛け金の値
     func updateMaxScore(_ value: String) {
         gameRule.maxScore = value
+        userProfile.maxScore = value
     }
     
     /// アップレートを更新
     /// - Parameter value: 新しいアップレートの値
     func updateUpRate(_ value: String) {
         gameRule.upRate = value
+        userProfile.upRate = value
     }
     
     /// デッキサイクルを更新
     /// - Parameter value: 新しいデッキサイクルの値
     func updateDeckCycle(_ value: String) {
         gameRule.deckCycle = value
+        userProfile.deckCycle = value
     }
     
     // MARK: - Helper Methods
