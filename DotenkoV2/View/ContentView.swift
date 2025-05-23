@@ -19,7 +19,7 @@ struct ContentView: View {
                         HomeMainView()
                             .tag(Tab.home)
                         
-                        ProfileMainView()
+                        GameRuleView()
                             .tag(Tab.profile)
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
