@@ -30,8 +30,8 @@ enum GameSetting: String, Identifiable {
         case .roundCount: return "ゲーム数"
         case .jokerCount: return "ジョーカー"
         case .gameRate: return "レート"
-        case .upRate: return "スコア上限"
-        case .maxScore: return "重ねレートアップ"
+        case .upRate: return "重ねレートアップ"
+        case .maxScore: return "スコア上限"
         case .deckCycle: return "デッキ"
         }
     }
