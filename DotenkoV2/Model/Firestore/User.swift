@@ -17,6 +17,9 @@ struct User: Identifiable, Codable {
     /// ユーザー名
     let name: String
     
+    /// プロフィール画像のURL
+    var iconUrl: String?
+    
     /// 最終ログイン日時
     var lastLoginAt: Date
     
@@ -24,15 +27,18 @@ struct User: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case name
+        case iconUrl = "icon_url"
         case lastLoginAt = "last_login_at"
     }
     
     /// イニシャライザ
     /// - Parameters:
     ///   - name: ユーザー名
+    ///   - iconUrl: プロフィール画像のURL（オプション）
     ///   - lastLoginAt: 最終ログイン日時
-    init(name: String, lastLoginAt: Date = Date()) {
+    init(name: String, iconUrl: String? = nil, lastLoginAt: Date = Date()) {
         self.name = name
+        self.iconUrl = iconUrl
         self.lastLoginAt = lastLoginAt
     }
 } 

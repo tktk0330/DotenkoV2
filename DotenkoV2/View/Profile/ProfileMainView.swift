@@ -19,28 +19,35 @@ struct ProfileMainView: View {
         BaseLayout {
             VStack(spacing: 20) {
                 
-                Spacer().frame(height: 100)
+                Spacer().frame(height: 80)
                 
                 // プロフィールアイコンとユーザー名
-                HStack {
-                    
-                    
-                    VStack(spacing: 16) {
+                VStack(spacing: 32) {
+                    ZStack {
                         // プロフィール画像表示
                         Group {
                             if let uiImage = profileVM.image {
                                 Image(uiImage: uiImage)
                                     .resizable()
+                                
+                                    .scaledToFill()
                             } else {
                                 // デフォルトアイコン
-                                Image(systemName: "person.crop.circle.fill")
+                                Image(systemName: "person.fill")
                                     .resizable()
+                                    .scaledToFit()
+                                    .padding(20)
                                     .foregroundStyle(.gray)
                             }
                         }
                         .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.gray, lineWidth: 1))
+                        .clipped()
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray, lineWidth: 1)
+                        )
                         .onTapGesture {
                             profileVM.isPickerPresented = true
                         }
@@ -61,38 +68,37 @@ struct ProfileMainView: View {
                         }
                     }
                     
-                    
-                    
-                    
-                    if profileVM.isEditingName {
-                        // 名前編集モード
-                        TextField("名前を入力", text: $profileVM.newUsername)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .font(Font(Appearance.Font.body))
-                            .frame(width: 150)
-                        
-                        // 保存/キャンセルボタン
-                        HStack(spacing: 8) {
-                            Button(action: profileVM.updateUsername) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            }
+                    HStack(spacing: 16) {
+                        if profileVM.isEditingName {
+                            // 名前編集モード
+                            TextField("名前を入力", text: $profileVM.newUsername)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .font(Font(Appearance.Font.body))
+                                .frame(width: 150)
                             
-                            Button(action: profileVM.cancelEditing) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.red)
+                            // 保存/キャンセルボタン
+                            HStack(spacing: 8) {
+                                Button(action: profileVM.updateUsername) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                }
+                                
+                                Button(action: profileVM.cancelEditing) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.red)
+                                }
                             }
-                        }
-                    } else {
-                        // 表示モード
-                        Text(profileVM.username)
-                            .font(Font(Appearance.Font.casinoHeading))
-                            .foregroundColor(.white)
-                        
-                        // 編集ボタン
-                        Button(action: profileVM.startEditing) {
-                            Image(systemName: "pencil.circle.fill")
-                                .foregroundColor(Color(uiColor: Appearance.Color.goldenYellow))
+                        } else {
+                            // 表示モード
+                            Text(profileVM.username)
+                                .font(Font(Appearance.Font.casinoHeading))
+                                .foregroundColor(.white)
+                            
+                            // 編集ボタン
+                            Button(action: profileVM.startEditing) {
+                                Image(systemName: "pencil.circle.fill")
+                                    .foregroundColor(Color(uiColor: Appearance.Color.goldenYellow))
+                            }
                         }
                     }
                 }

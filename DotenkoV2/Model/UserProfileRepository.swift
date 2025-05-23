@@ -30,7 +30,7 @@ class UserProfileRepository {
         }
         
         // 新規プロフィールを作成
-        let newProfile = UserProfile(username: "名無しさん")
+        let newProfile = UserProfile(rmUserName: "ゲスト")
         do {
             try realm.write {
                 realm.add(newProfile)
@@ -53,8 +53,8 @@ class UserProfileRepository {
         
         do {
             try realm.write {
-                profile.username = newUsername
-                profile.updatedAt = Date()
+                profile.rmUserName = newUsername
+                profile.rmUpdatedAt = Date()
             }
             return true
         } catch {
@@ -62,4 +62,127 @@ class UserProfileRepository {
             return false
         }
     }
-} 
+    
+    /// プロフィール画像のURLを更新する
+    /// - Parameter iconUrl: 新しいプロフィール画像のURL
+    /// - Returns: 更新が成功した場合はtrue、失敗した場合はfalse
+    func updateIconUrl(_ iconUrl: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmIconUrl = iconUrl
+                profile.rmUpdatedAt = Date()
+            }
+            return true
+        } catch {
+            print("アイコンURL更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateRoundCount(_ roundCount: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmRoundCount = roundCount
+            }
+            return true
+        } catch {
+            print("roundCount更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateJokerCount(_ jokerCount: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmJokerCount = jokerCount
+            }
+            return true
+        } catch {
+            print("jokerCount更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateGameRate(_ gameRate: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmGameRate = gameRate
+            }
+            return true
+        } catch {
+            print("gameRate更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateMaxScore(_ maxScore: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmMaxScore = maxScore
+            }
+            return true
+        } catch {
+            print("maxScore更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateUpRate(_ upRate: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmUpRate = upRate
+            }
+            return true
+        } catch {
+            print("upRate更新エラー: \(error)")
+            return false
+        }
+    }
+    
+    func updateDeckCycle(_ deckCycle: String) -> Bool {
+        guard let realm = realm,
+              let profile = realm.objects(UserProfile.self).first else {
+            return false
+        }
+        
+        do {
+            try realm.write {
+                profile.rmDeckCycle = deckCycle
+            }
+            return true
+        } catch {
+            print("deckCycle 更新エラー: \(error)")
+            return false
+        }
+    }
+}
