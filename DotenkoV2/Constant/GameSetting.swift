@@ -36,6 +36,8 @@ enum GameSetting: String, Identifiable {
         }
     }
     
+    
+    
     /// 設定可能な値の配列
     /// - Note: 特殊な値として "なし" や "♾️"(無制限) が含まれる場合があります
     var values: [String] {

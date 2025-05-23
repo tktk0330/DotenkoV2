@@ -15,7 +15,12 @@ extension UserProfileRepository {
     
     /// 現在のプロフィール
     private var currentProfile: UserProfile? {
-        getOrCreateProfile()
+        switch getOrCreateProfile() {
+        case .success(let profile):
+            return profile
+        case .failure:
+            return nil
+        }
     }
 }
 
@@ -25,7 +30,7 @@ extension UserProfileRepository {
     var userName: String {
         get { currentProfile?.userName ?? "" }
         set {
-            currentProfile?.userName = newValue
+            _ = updateUsername(newValue)
         }
     }
     
@@ -33,7 +38,7 @@ extension UserProfileRepository {
     var iconUrl: String {
         get { currentProfile?.iconUrl ?? "" }
         set {
-            currentProfile?.iconUrl = newValue
+            _ = updateIconUrl(newValue)
         }
     }
     
@@ -41,7 +46,7 @@ extension UserProfileRepository {
     var roundCount: String {
         get { currentProfile?.roundCount ?? "10" }
         set {
-            currentProfile?.roundCount = newValue
+            _ = updateRoundCount(newValue)
         }
     }
     
@@ -49,7 +54,7 @@ extension UserProfileRepository {
     var jokerCount: String {
         get { currentProfile?.jokerCount ?? "2" }
         set {
-            currentProfile?.jokerCount = newValue
+            _ = updateJokerCount(newValue)
         }
     }
     
@@ -57,7 +62,7 @@ extension UserProfileRepository {
     var gameRate: String {
         get { currentProfile?.gameRate ?? "10" }
         set {
-            currentProfile?.gameRate = newValue
+            _ = updateGameRate(newValue)
         }
     }
     
@@ -65,7 +70,7 @@ extension UserProfileRepository {
     var maxScore: String {
         get { currentProfile?.maxScore ?? "1000" }
         set {
-            currentProfile?.maxScore = newValue
+            _ = updateMaxScore(newValue)
         }
     }
     
@@ -73,7 +78,7 @@ extension UserProfileRepository {
     var upRate: String {
         get { currentProfile?.upRate ?? "3" }
         set {
-            currentProfile?.upRate = newValue
+            _ = updateUpRate(newValue)
         }
     }
     
@@ -81,7 +86,7 @@ extension UserProfileRepository {
     var deckCycle: String {
         get { currentProfile?.deckCycle ?? "5" }
         set {
-            currentProfile?.deckCycle = newValue
+            _ = updateDeckCycle(newValue)
         }
     }
     
@@ -100,6 +105,11 @@ extension UserProfileRepository {
 extension UserProfileRepository {
     /// プロフィール情報を更新
     func updateProfile(userName: String? = nil, iconUrl: String? = nil) {
-        currentProfile?.update(userName: userName, iconUrl: iconUrl)
+        if let userName = userName {
+            _ = updateUsername(userName)
+        }
+        if let iconUrl = iconUrl {
+            _ = updateIconUrl(iconUrl)
+        }
     }
 } 

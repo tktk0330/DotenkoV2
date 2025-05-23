@@ -9,8 +9,7 @@ struct ProfileMainView: View {
     @State private var isSoundOn = true
     @State private var isVibrationOn = true
     @State private var selectedImage: UIImage?
-    @State private var isUploading = false
-
+    
     // PhotosPicker用
     @State private var photoItem: PhotosPickerItem?
     @State private var showPhotoPicker = false
@@ -29,7 +28,6 @@ struct ProfileMainView: View {
                             if let uiImage = profileVM.image {
                                 Image(uiImage: uiImage)
                                     .resizable()
-                                
                                     .scaledToFill()
                             } else {
                                 // デフォルトアイコン
@@ -52,12 +50,12 @@ struct ProfileMainView: View {
                             profileVM.isPickerPresented = true
                         }
 
-                        if profileVM.isUploading {
+                        if case .loading = profileVM.updateState {
                             ProgressView("アップロード中…")
                         }
 
-                        if let error = profileVM.errorMessage {
-                            Text(error)
+                        if case .error(let message) = profileVM.updateState {
+                            Text(message)
                                 .foregroundColor(.red)
                                 .font(.caption)
                         }
