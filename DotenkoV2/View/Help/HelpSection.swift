@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct HelpItem: Hashable {
-    let title: String
-    let icon: String
+    let type: RuleDetail
 }
 
 // ヘルプセクション
@@ -37,32 +36,126 @@ enum HelpSection: CaseIterable {
         switch self {
         case .basicRule:
             return [
-                HelpItem(title: "概要", icon: "hand.tap"),
-                HelpItem(title: "ゲームイベント", icon: "gear"),
-                HelpItem(title: "カードの効果", icon: "star")
+                HelpItem(type: .aboutDotenko),
+                HelpItem(type: .flow),
+                HelpItem(type: .operation),
+                HelpItem(type: .event),
+                HelpItem(type: .card),
             ]
         case .customRule:
             return [
-                HelpItem(title: "ゲーム数 / Game", icon: "person"),
-                HelpItem(title: "ジョーカー枚数 / Joker", icon: "creditcard"),
-                HelpItem(title: "レート / Rate", icon: "person"),
-                HelpItem(title: "重ねレートアップ / UpRate", icon: "person"),
-                HelpItem(title: "スコア上限 / Max", icon: "creditcard"),
-                HelpItem(title: "デッキサイクル / Deck", icon: "wrench")
+                HelpItem(type: .roundCount),
+                HelpItem(type: .jokerCount),
+                HelpItem(type: .gameRate),
+                HelpItem(type: .maxScore),
+                HelpItem(type: .upRate),
+                HelpItem(type: .deckCycle),
             ]
         case .contact:
             return [
-                HelpItem(title: "お問い合わせ", icon: "phone")
+                HelpItem(type: .contact),
             ]
         case .review:
             return [
-                HelpItem(title: "レビュー", icon: "doc")
+                HelpItem(type: .review),
             ]
         case .privacy:
             return [
-                HelpItem(title: "プライバシーポリシー", icon: "lock.shield"),
-                HelpItem(title: "利用規約", icon: "person.badge.shield.checkmark"),
+                HelpItem(type: .privacyPoricy),
+                HelpItem(type: .poricy),
             ]
+        }
+    }
+}
+
+enum RuleDetail {
+    case aboutDotenko
+    case flow
+    case operation
+    case event
+    case card
+    
+    case roundCount
+    case jokerCount
+    case gameRate
+    case upRate
+    case maxScore
+    case deckCycle
+    
+    case contact
+    
+    case review
+    
+    case privacyPoricy
+    case poricy
+    
+    var title: String {
+        switch self {
+        case .aboutDotenko:
+            "どてんことは"
+        case .flow:
+            "ゲームの流れ"
+        case .operation:
+            "カードの出し方"
+        case .event:
+            "イベント"
+        case .card:
+            "カードについて"
+        case .roundCount:
+            GameSetting.roundCount.title
+        case .jokerCount:
+            GameSetting.jokerCount.title
+        case .gameRate:
+            GameSetting.gameRate.title
+        case .upRate:
+            GameSetting.upRate.title
+        case .maxScore:
+            GameSetting.maxScore.title
+        case .deckCycle:
+            GameSetting.deckCycle.title
+        case .contact:
+            "お問い合わせ"
+        case .review:
+            "レビュー"
+        case .privacyPoricy:
+            "プライバシーポリシー"
+        case .poricy:
+            "利用規約"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .aboutDotenko:
+            "hand.tap"
+        case .flow:
+            "hand.tap"
+        case .operation:
+            "hand.tap"
+        case .event:
+            "hand.tap"
+        case .card:
+            "hand.tap"
+        case .roundCount:
+            GameSetting.roundCount.icon
+        case .jokerCount:
+            GameSetting.jokerCount.icon
+        case .gameRate:
+            GameSetting.gameRate.icon
+        case .upRate:
+            GameSetting.upRate.icon
+        case .maxScore:
+            GameSetting.maxScore.icon
+        case .deckCycle:
+            GameSetting.deckCycle.icon
+        case .contact:
+            "hand.tap"
+        case .review:
+            "hand.tap"
+        case .privacyPoricy:
+            "hand.tap"
+        case .poricy:
+            "hand.tap"
         }
     }
 }

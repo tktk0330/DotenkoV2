@@ -2,17 +2,20 @@ import SwiftUI
 
 struct HelpMainView: View {
     @EnvironmentObject private var navigator: NavigationStateManager
+    @State private var isSEOn = true
+    @State private var isSoundOn = true
+    @State private var isVibrationOn = true
     
     var body: some View {
         ZStack {
             BaseLayout {
-                VStack(spacing: 20) {
-                    Spacer().frame(height: 24)
+                VStack(spacing: 32) {
+                    Spacer().frame(height: 80)
                     
                     // ヘルプセクション
                     ForEach(HelpSection.allCases, id: \.self) { section in
                         AccordionView(title: section.title) {
-                            VStack(alignment: .leading, spacing: 15) {
+                            VStack(alignment: .leading, spacing: 16) {
                                 Text(section.description)
                                     .font(.body)
                                     .foregroundColor(.secondary)
@@ -20,15 +23,15 @@ struct HelpMainView: View {
                                 ForEach(section.items, id: \.self) { item in
                                     Button(action: {
                                         ModalManager.shared.show {
-                                            HelpDetailView(title: item.title, icon: item.icon)
+                                            HelpDetailView(detailType: item.type)
                                         }
                                     }) {
                                         HStack(spacing: 15) {
-                                            Image(systemName: item.icon)
+                                            Image(systemName: item.type.icon)
                                                 .foregroundColor(.blue)
                                                 .frame(width: 20)
                                             
-                                            Text(item.title)
+                                            Text(item.type.title)
                                                 .font(.body)
                                                 .foregroundColor(.primary)
                                             
@@ -45,6 +48,13 @@ struct HelpMainView: View {
                             .padding(.leading, 10)
                         }
                     }
+                    
+                    // 設定ボタン
+                    SettingsButtonsView(
+                        isSEOn: $isSEOn,
+                        isSoundOn: $isSoundOn,
+                        isVibrationOn: $isVibrationOn
+                    )
                     
                     // MENU1への遷移ボタン
                     Button(action: {

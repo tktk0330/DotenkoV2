@@ -27,16 +27,38 @@ enum GameSetting: String, Identifiable {
     /// 設定項目の表示名
     var title: String {
         switch self {
-        case .roundCount: return "ゲーム数"
-        case .jokerCount: return "ジョーカー"
-        case .gameRate: return "レート"
+        case .roundCount: return "ラウンド数"
+        case .jokerCount: return "ジョーカー枚数"
+        case .gameRate: return "ゲームレート"
         case .upRate: return "重ねレートアップ"
         case .maxScore: return "スコア上限"
-        case .deckCycle: return "デッキ"
+        case .deckCycle: return "デッキサイクル"
         }
     }
     
+    /// 設定項目の表示名
+    var detail: String {
+        switch self {
+        case .roundCount: return "１ゲームのラウンド数を決めます"
+        case .jokerCount: return "利用するジョーカーの枚数を決めます"
+        case .gameRate: return "ゲームの初期レートを決めます"
+        case .upRate: return "場に同じカードが何枚重なった時、レートが上がるかを決めます"
+        case .maxScore: return "１ラウンドのスコア上限を決めます"
+        case .deckCycle: return "１ラウンドのデッキリミットを決めます"
+        }
+    }
     
+    /// 設定項目の表示名
+    var example: String {
+        switch self {
+        case .roundCount: return "例：１０ラウンドで１ゲーム終了"
+        case .jokerCount: return "例：ジョーカー１枚利用"
+        case .gameRate: return "例：レート１０なら、最後の数字に✖︎１０をする"
+        case .upRate: return "例：３の場合、同じ数字が３枚連続で出た時にレートが✖︎２される"
+        case .maxScore: return "例：１０００点の場合、ラウンドスコアで算出された数字が１５００点でも１０００点がやり取りされる"
+        case .deckCycle: return "例：３の場合、デッキサイクルが３周すると勝敗がつかず、ラウンドが終了となる"
+        }
+    }
     
     /// 設定可能な値の配列
     /// - Note: 特殊な値として "なし" や "♾️"(無制限) が含まれる場合があります
