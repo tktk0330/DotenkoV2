@@ -109,6 +109,18 @@ enum Appearance {
             /// カードの装飾
             static let cardDecoration = UIImage(named: "CardDecoration")
         }
+        
+        struct BotIcon {
+            static let bot1 = "botIcon01"
+            static let bot2 = "botIcon02"
+            static let bot3 = "botIcon03"
+            static let bot4 = "botIcon04"
+            static let bot5 = "botIcon05"
+            static let bot6 = "botIcon06"
+            static let bot7 = "botIcon07"
+            static let bot8 = "botIcon08"
+            static let bot9 = "botIcon09"
+        }
     }
 }
 
