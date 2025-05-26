@@ -49,10 +49,7 @@ struct MatchingView: View {
                 
                 // スタートボタン（全員揃った場合のみ表示）
                 if viewModel.players.count == maxPlayers {
-                    Button(action: {
-                        // ゲーム開始処理
-                        viewModel.startGame()
-                    }) {
+                    Button(action: startGame) {
                         Text("ゲームを開始")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
@@ -69,6 +66,11 @@ struct MatchingView: View {
         .onAppear {
             viewModel.startMatching(maxPlayers: maxPlayers)
         }
+    }
+    
+    private func startGame() {
+        // ゲーム開始時の処理を実装
+        allViewNavigator.push(GameMainView())
     }
 }
 
@@ -188,7 +190,6 @@ struct Player: Identifiable {
 // ビューモデル
 class MatchingViewModel: ObservableObject {
     @Published var players: [Player] = []
-    @EnvironmentObject private var allViewNavigator: NavigationAllViewStateManager
     private var gameType: GameType
     private var botList = BotPlayerList()
     private var loadingIndexes: Set<Int> = []
@@ -236,9 +237,5 @@ class MatchingViewModel: ObservableObject {
         return loadingIndexes.contains(index)
     }
     
-    func startGame() {
-        // ゲーム開始時の処理を実装
-        allViewNavigator.push(GameMainView())
-    }
 }
 
