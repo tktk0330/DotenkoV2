@@ -4,6 +4,21 @@
 
 import UIKit
 
+// カードモデル
+struct Card: Identifiable, Equatable{
+    let id = UUID()
+    let card: PlayCard
+    var location: CardLocation
+    
+}
+
+// カードの位置を表す列挙型
+enum CardLocation: Equatable{
+    case hand(playerIndex: Int, cardIndex: Int)
+    case deck
+    case field
+}
+
 enum PlayCard: String, CaseIterable {
     
     case back = "back-1"
@@ -29,17 +44,106 @@ enum PlayCard: String, CaseIterable {
     func name() -> String {
         return self.rawValue
     }
-
-    func state() -> String {
+    
+    func suit() -> Suit {
         switch self {
         case .back:
-            return "裏"
-        default:
-            return "表"
+            return .other
+        case .whiteJoker, .blackJoker:
+            return .joker
+        case .spade1, .spade2, .spade3, .spade4, .spade5, .spade6, .spade7, .spade8, .spade9, .spade10, .spade11, .spade12, .spade13:
+            return .spade
+        case .club1, .club2, .club3, .club4, .club5, .club6, .club7, .club8, .club9, .club10, .club11, .club12, .club13:
+            return .club
+        case .heart1, .heart2, .heart3, .heart4, .heart5, .heart6, .heart7, .heart8, .heart9, .heart10, .heart11, .heart12, .heart13:
+            return .heart
+        case .diamond1, .diamond2, .diamond3, .diamond4, .diamond5, .diamond6, .diamond7, .diamond8, .diamond9, .diamond10, .diamond11, .diamond12, .diamond13:
+            return .diamond
+        }
+    }
+    
+    //　手札で取りうる値
+    func handValue() -> [Int] {
+        switch self {
+        case .spade1, .heart1, .diamond1, .club1:
+            return [1]
+        case .spade2, .heart2, .diamond2, .club2:
+            return [2]
+        case .spade3, .heart3, .diamond3, .club3:
+            return [3]
+        case .spade4, .heart4, .diamond4, .club4:
+            return [4]
+        case .spade5, .heart5, .diamond5, .club5:
+            return [5]
+        case .spade6, .heart6, .diamond6, .club6:
+            return [6]
+        case .spade7, .heart7, .diamond7, .club7:
+            return [7]
+        case .spade8, .heart8, .diamond8, .club8:
+            return [8]
+        case .spade9, .heart9, .diamond9, .club9:
+            return [9]
+        case .spade10, .heart10, .diamond10, .club10:
+            return [10]
+        case .spade11, .heart11, .diamond11, .club11:
+            return [11]
+        case .spade12, .heart12, .diamond12, .club12:
+            return [12]
+        case .spade13, .heart13, .diamond13, .club13:
+            return [13]
+        case .blackJoker, .whiteJoker:
+            return [-1,0,1]
+        case .back:
+            return [900]
+        }
+    }
+    
+    //　最初にめくった時のレート値[開始時, 終了時]([0,1])　倍：５０　逆転：２０　ダイ３：３０
+    func rateValue() -> [Int] {
+        switch self {
+        case .spade1, .heart1, .diamond1, .club1, .spade2, .heart2, .diamond2, .club2, .whiteJoker, .blackJoker:
+            return [50,50]
+        case .spade3, .club3:
+            return [3,20]
+        case .diamond3:
+            return [3,30]
+        case .heart3:
+            return [3,3]
+        case .spade4, .heart4, .diamond4, .club4:
+            return [4,4]
+        case .spade5, .heart5, .diamond5, .club5:
+            return [5,5]
+        case .spade6, .heart6, .diamond6, .club6:
+            return [6,6]
+        case .spade7, .heart7, .diamond7, .club7:
+            return [7,7]
+        case .spade8, .heart8, .diamond8, .club8:
+            return [8,8]
+        case .spade9, .heart9, .diamond9, .club9:
+            return [9,9]
+        case .spade10, .heart10, .diamond10, .club10:
+            return [10,10]
+        case .spade11, .heart11, .diamond11, .club11:
+            return [11,11]
+        case .spade12, .heart12, .diamond12, .club12:
+            return [12,12]
+        case .spade13, .heart13, .diamond13, .club13:
+            return [13,13]
+        case .back:
+            return [900]
         }
     }
 
     func image() -> UIImage? {
         return UIImage(named: self.rawValue)
     }
+}
+
+enum Suit: String {
+    case spade = "s"
+    case heart = "h"
+    case diamond = "d"
+    case club = "c"
+    case joker = "j"
+    case other = "o"
 }
