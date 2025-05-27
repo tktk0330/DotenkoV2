@@ -5,18 +5,28 @@ import Combine
 /// ゲーム画面のレイアウト設定
 struct GameLayoutConfig {
     // MARK: - Screen Area Ratios (画面エリアの比率)
+    /// ヘッダーエリアの高さ比率（ゲーム情報表示エリア）
+    static let headerAreaHeightRatio: CGFloat = 0.1
     /// 上部エリアの高さ比率（相手プレイヤー配置エリア）
-    static let topAreaHeightRatio: CGFloat = 0.2
+    static let topAreaHeightRatio: CGFloat = 0.18
     /// 中央エリアの高さ比率（ゲームフィールド）
-    static let centerAreaHeightRatio: CGFloat = 0.6
+    static let centerAreaHeightRatio: CGFloat = 0.54
     /// 下部エリアの高さ比率（自分のプレイヤー配置エリア）
-    static let bottomAreaHeightRatio: CGFloat = 0.2
+    static let bottomAreaHeightRatio: CGFloat = 0.18
+    
+    // MARK: - Header Area (ヘッダーエリア設定)
+    /// ヘッダーエリアの左右パディング
+    static let headerHorizontalPadding: CGFloat = 20
+    /// ヘッダーエリアの上下パディング
+    static let headerVerticalPadding: CGFloat = 10
+    /// ヘッダー内要素間のスペース
+    static let headerItemSpacing: CGFloat = 10
     
     // MARK: - Player Icon Positioning (プレイヤーアイコンの位置調整)
     /// 上部プレイヤーの左右パディング
     static let topPlayersHorizontalPadding: CGFloat = 40
     /// 上部プレイヤーの上パディング（もっと上に配置）
-    static let topPlayersTopPadding: CGFloat = 20
+    static let topPlayersTopPadding: CGFloat = 10
     
     /// 左右サイドプレイヤーエリアの幅（幅を狭める）
     static let sidePlayersAreaWidth: CGFloat = 60
@@ -36,7 +46,7 @@ struct GameLayoutConfig {
     /// 戻るボタンの左パディング
     static let backButtonLeadingPadding: CGFloat = 20
     /// 戻るボタンの上パディング
-    static let backButtonTopPadding: CGFloat = 20
+    static let backButtonTopPadding: CGFloat = 50
 }
 
 struct GameMainView: View {
@@ -45,6 +55,7 @@ struct GameMainView: View {
     let gameType: GameType
     
     @EnvironmentObject private var allViewNavigator: NavigationAllViewStateManager
+    @StateObject private var gameInfo = GameInfoManager()
     
     init(players: [Player] = [], maxPlayers: Int = 5, gameType: GameType = .vsBot) {
         self.players = players
@@ -63,6 +74,9 @@ struct GameMainView: View {
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)
+        .onAppear {
+            gameInfo.initializeGameInfo(maxPlayers: maxPlayers, gameType: gameType)
+        }
     }
     
     // MARK: - Main Layout Components
@@ -70,6 +84,9 @@ struct GameMainView: View {
     /// メインゲーム画面のレイアウト
     private func gameMainLayout(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
+            // ヘッダーエリア（ゲーム情報表示）
+            headerArea(geometry: geometry)
+            
             // 上部エリア（相手プレイヤー配置）
             topPlayersArea(geometry: geometry)
             
@@ -107,6 +124,179 @@ struct GameMainView: View {
     }
     
     // MARK: - Player Areas (プレイヤー配置エリア)
+    
+    /// ヘッダーエリア（ゲーム情報表示）
+    private func headerArea(geometry: GeometryProxy) -> some View {
+        HStack(spacing: GameLayoutConfig.headerItemSpacing) {
+            // 左側：ラウンド情報
+            casinoInfoCard(
+                icon: "chart.bar.fill",
+                label: "ROUND",
+                value: "\(gameInfo.currentRound)/\(gameInfo.totalRounds)",
+                valueColor: .white,
+                accentColor: Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                fixedWidth: 100
+            )
+            
+            Spacer()
+            
+            // 中央：UP（メイン表示）
+            VStack(spacing: 6) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0))
+                    
+                    Text("UP")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .tracking(1.5)
+                }
+                
+                Text("×\(gameInfo.upRate)")
+                    .font(.system(size: 28, weight: .black))
+                    .foregroundColor(.white)
+                    .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0), radius: 3, x: 0, y: 0)
+                    .overlay(
+                        Text("×\(gameInfo.upRate)")
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3))
+                            .blur(radius: 1)
+                    )
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.2, green: 0.1, blue: 0.0),
+                                Color(red: 0.4, green: 0.2, blue: 0.0)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 1.0, green: 0.84, blue: 0.0),
+                                        Color(red: 0.8, green: 0.6, blue: 0.0)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+                    .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3), radius: 8, x: 0, y: 4)
+            )
+            
+            Spacer()
+            
+            // 右側：レート
+            casinoInfoCard(
+                icon: "multiply.circle.fill",
+                label: "RATE",
+                value: "×\(gameInfo.currentRate)",
+                valueColor: Color(red: 0.0, green: 0.8, blue: 0.4), // エメラルドグリーン
+                accentColor: Color(red: 0.0, green: 0.8, blue: 0.4),
+                fixedWidth: 100
+            )
+        }
+        .padding(.horizontal, GameLayoutConfig.headerHorizontalPadding)
+        .padding(.vertical, GameLayoutConfig.headerVerticalPadding)
+        .frame(height: geometry.size.height * GameLayoutConfig.headerAreaHeightRatio)
+        .background(
+            // カジノ風グラデーション背景
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: Color(red: 0.05, green: 0.15, blue: 0.05), location: 0.0),
+                    .init(color: Color(red: 0.1, green: 0.25, blue: 0.1), location: 0.5),
+                    .init(color: Color(red: 0.05, green: 0.15, blue: 0.05), location: 1.0)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .overlay(
+                // 上部のゴールドライン
+                VStack {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                                    Color(red: 0.8, green: 0.6, blue: 0.0),
+                                    Color(red: 1.0, green: 0.84, blue: 0.0)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 3)
+                    Spacer()
+                    // 下部のゴールドライン
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                                    Color(red: 0.8, green: 0.6, blue: 0.0),
+                                    Color(red: 1.0, green: 0.84, blue: 0.0)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 2)
+                }
+            )
+            .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+        )
+    }
+    
+    /// カジノ風情報カード
+    private func casinoInfoCard(
+        icon: String,
+        label: String,
+        value: String,
+        valueColor: Color,
+        accentColor: Color,
+        fixedWidth: CGFloat? = nil
+    ) -> some View {
+        VStack(alignment: .center, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(accentColor)
+                
+                Text(label)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .tracking(1.0)
+            }
+            
+            Text(value)
+                .font(.system(size: 16, weight: .heavy))
+                .foregroundColor(valueColor)
+                .shadow(color: accentColor.opacity(0.5), radius: 2, x: 0, y: 1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(width: fixedWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(accentColor.opacity(0.6), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+        )
+    }
     
     /// 上部プレイヤー配置エリア
     private func topPlayersArea(geometry: GeometryProxy) -> some View {
@@ -362,4 +552,76 @@ enum PlayerPosition {
     case bottom
     case left
     case right
+}
+
+// MARK: - Game Info Manager
+/// ゲーム情報管理クラス
+class GameInfoManager: ObservableObject {
+    // MARK: - Published Properties
+    @Published var currentRound: Int = 1
+    @Published var totalRounds: Int = 10
+    @Published var currentRate: Int = 10
+    @Published var upRate: Int = 3
+    @Published var currentPot: Int = 0
+    @Published var gamePhase: GamePhase = .waiting
+    
+    // MARK: - Private Properties
+    private let userProfileRepository = UserProfileRepository.shared
+    
+    // MARK: - Initialization
+    func initializeGameInfo(maxPlayers: Int, gameType: GameType) {
+        // ユーザー設定からゲーム情報を取得
+        if case .success(let profile) = userProfileRepository.getOrCreateProfile() {
+            totalRounds = Int(profile.rmRoundCount) ?? 10
+            currentRate = Int(profile.rmGameRate) ?? 10
+            upRate = Int(profile.rmUpRate) ?? 3
+        }
+        
+        // 初期ポット計算（プレイヤー数 × 基本レート）
+        currentPot = maxPlayers * currentRate
+        
+        // ゲーム開始
+        gamePhase = .playing
+    }
+    
+    // MARK: - Game Control Methods
+    
+    /// 次のラウンドに進む
+    func nextRound() {
+        if currentRound < totalRounds {
+            currentRound += 1
+            resetRoundInfo()
+        } else {
+            gamePhase = .finished
+        }
+    }
+    
+    /// レートを更新
+    func updateRate(_ newRate: Int) {
+        currentRate = newRate
+    }
+    
+    /// アップレートを更新
+    func updateUpRate(_ newUpRate: Int) {
+        upRate = newUpRate
+    }
+    
+    /// ポットを更新
+    func updatePot(_ newPot: Int) {
+        currentPot = newPot
+    }
+    
+    /// ラウンド情報をリセット
+    private func resetRoundInfo() {
+        // 新しいラウンドの初期設定
+        // 必要に応じてレートやポットをリセット
+    }
+}
+
+// MARK: - Game Phase Enum
+/// ゲームフェーズ
+enum GamePhase {
+    case waiting    // 待機中
+    case playing    // プレイ中
+    case finished   // 終了
 }
