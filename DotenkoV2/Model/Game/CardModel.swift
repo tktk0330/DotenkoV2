@@ -5,15 +5,24 @@
 import UIKit
 
 // カードモデル
-struct Card: Identifiable, Equatable{
+struct Card: Identifiable, Equatable, Hashable{
     let id = UUID()
     let card: PlayCard
     var location: CardLocation
     
+    // Hashable conformance
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    // Equatable conformance
+    static func == (lhs: Card, rhs: Card) -> Bool {
+        return lhs.id == rhs.id
+    }
 }
 
 // カードの位置を表す列挙型
-enum CardLocation: Equatable{
+enum CardLocation: Equatable, Hashable{
     case hand(playerIndex: Int, cardIndex: Int)
     case deck
     case field

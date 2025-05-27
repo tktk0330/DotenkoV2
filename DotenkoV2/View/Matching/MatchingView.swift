@@ -70,7 +70,11 @@ struct MatchingView: View {
     
     private func startGame() {
         // ゲーム開始時の処理を実装
-        allViewNavigator.push(GameMainView())
+        allViewNavigator.push(GameMainView(
+            players: viewModel.players,
+            maxPlayers: maxPlayers,
+            gameType: gameType
+        ))
     }
 }
 

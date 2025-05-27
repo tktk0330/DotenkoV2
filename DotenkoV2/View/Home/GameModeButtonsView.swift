@@ -9,14 +9,14 @@ struct GameModeButtonsView: View {
             GameModeButton(
                 title: "個人戦",
                 backgroundImage: Appearance.Image.GameMode.singlePlayButton,
-                action: { allViewNavigator.push(MatchingView(maxPlayers: 4, gameType: GameType.vsBot)) }
+                action: { allViewNavigator.push(MatchingView(maxPlayers: 5, gameType: GameType.vsBot)) }
             )
             
             // 友人戦ボタン
             GameModeButton(
                 title: "友人戦",
                 backgroundImage: Appearance.Image.GameMode.friendPlayButton,
-                action: { allViewNavigator.push(MatchingView(maxPlayers: 4, gameType: GameType.vsFriend)) }
+                action: { allViewNavigator.push(MatchingView(maxPlayers: 5, gameType: GameType.vsFriend)) }
             )
         }
         .padding(.horizontal, 30)
