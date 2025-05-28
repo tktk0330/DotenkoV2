@@ -24,7 +24,7 @@ struct GameMainView: View {
                     deckCount: viewModel.deckCount,
                     onDeckTap: viewModel.handleDeckTap
                 )
-                .position(x: geometry.size.width * 0.0, y: geometry.size.height * 0.65)
+                    .position(x: geometry.size.width * 0.0, y: geometry.size.height * 0.65)
                 
                 // UI オーバーレイ（戻るボタンなど）
                 GameUIOverlayView(
@@ -50,14 +50,19 @@ struct GameMainView: View {
             )
             .frame(height: geometry.size.height * GameLayoutConfig.headerAreaHeightRatio)
             
-            // プレイヤーエリア（上部、中央、下部）
+            // プレイヤーエリア
             GamePlayersAreaView(
                 topPlayers: viewModel.topPlayers,
                 leftPlayers: viewModel.leftPlayers,
                 rightPlayers: viewModel.rightPlayers,
                 currentPlayer: viewModel.currentPlayer,
-                onPassAction: viewModel.handlePassAction,
-                onPlayAction: viewModel.handlePlayAction
+                onPassAction: {
+                    viewModel.handlePassAction()
+                },
+                onPlayAction: {
+                    viewModel.handlePlayAction()
+                },
+                viewModel: viewModel
             )
         }
     }

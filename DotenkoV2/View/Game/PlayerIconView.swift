@@ -5,6 +5,7 @@ struct PlayerIconView: View {
     let player: Player
     let position: PlayerPosition
     @StateObject private var imageLoader = ImageLoader()
+    @ObservedObject var viewModel: GameViewModel
     
     // 試験的に7枚の手札を表示
     private let testCards: [Card] = [
@@ -135,6 +136,15 @@ struct PlayerIconView: View {
                 CardView(card: card, size: config.hand.cardSize)
                     .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: testCards.count, config: config.hand)))
                     .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: testCards.count, config: config.hand))
+                    // 自分のカードの場合のみ選択機能とアニメーションを追加
+                    .offset(y: position == .bottom && viewModel.isCardSelected(at: index) ? -20 : 0)
+                    .scaleEffect(position == .bottom && viewModel.isCardSelected(at: index) ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 2.5), value: viewModel.isCardSelected(at: index))
+                    .onTapGesture {
+                        if position == .bottom {
+                            viewModel.toggleCardSelection(at: index)
+                        }
+                    }
             }
         }
         .frame(width: config.hand.handAreaSize.width, height: config.hand.handAreaSize.height)

@@ -29,6 +29,9 @@ class GameViewModel: ObservableObject {
     @Published var rightPlayers: [Player] = []
     @Published var currentPlayer: Player?
     
+    // カード選択状態
+    @Published var selectedCardIndices: Set<Int> = []
+    
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
     
@@ -122,6 +125,32 @@ class GameViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Card Selection Management
+    
+    /// カードを選択/選択解除する
+    func toggleCardSelection(at index: Int) {
+        if selectedCardIndices.contains(index) {
+            selectedCardIndices.remove(index)
+        } else {
+            selectedCardIndices.insert(index)
+        }
+    }
+    
+    /// 指定されたカードが選択されているかチェック
+    func isCardSelected(at index: Int) -> Bool {
+        return selectedCardIndices.contains(index)
+    }
+    
+    /// 全てのカード選択を解除
+    func clearCardSelection() {
+        selectedCardIndices.removeAll()
+    }
+    
+    /// 選択されたカードの数を取得
+    var selectedCardCount: Int {
+        return selectedCardIndices.count
+    }
+    
     // MARK: - Game Control Methods
     
     /// 次のラウンドに進む
@@ -153,6 +182,7 @@ class GameViewModel: ObservableObject {
     private func resetRoundInfo() {
         // 新しいラウンドの初期設定
         // 必要に応じてレートやポットをリセット
+        clearCardSelection()
     }
     
     // MARK: - Game Actions
@@ -161,12 +191,14 @@ class GameViewModel: ObservableObject {
     func handlePassAction() {
         // TODO: パス/引くロジックを実装
         print("パス/引くアクションが実行されました")
+        clearCardSelection()
     }
     
     /// 出すアクションを処理
     func handlePlayAction() {
         // TODO: 出すロジックを実装
-        print("出すアクションが実行されました")
+        print("出すアクションが実行されました - 選択されたカード数: \(selectedCardCount)")
+        clearCardSelection()
     }
     
     /// デッキタップ時の処理
