@@ -72,7 +72,7 @@ struct MatchingView: View {
         // ゲーム開始時の処理を実装
         allViewNavigator.push(GameMainView(
             players: viewModel.players,
-            maxPlayers: 3,
+            maxPlayers: 5,
             gameType: gameType
         ))
     }
