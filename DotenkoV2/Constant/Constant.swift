@@ -25,9 +25,9 @@ struct GameLayoutConfig {
     /// 上部エリアの高さ比率（相手プレイヤー配置エリア）
     static let topAreaHeightRatio: CGFloat = 0.18
     /// 中央エリアの高さ比率（ゲームフィールド）
-    static let centerAreaHeightRatio: CGFloat = 0.50
+    static let centerAreaHeightRatio: CGFloat = 0.47
     /// 下部エリアの高さ比率（自分のプレイヤー配置エリア）
-    static let bottomAreaHeightRatio: CGFloat = 0.22
+    static let bottomAreaHeightRatio: CGFloat = 0.25
     
     // MARK: - Header Area (ヘッダーエリア設定)
     /// ヘッダーエリアの左右パディング
@@ -49,7 +49,7 @@ struct GameLayoutConfig {
     static let centerAreaHorizontalPadding: CGFloat = 30
     
     /// 下部プレイヤーの下パディング（広告エリアからの距離）
-    static let bottomPlayerBottomPadding: CGFloat = 60
+    static let bottomPlayerBottomPadding: CGFloat = 10
     
     // MARK: - Game Field (ゲームフィールド設定)
     /// 中央カード配置エリアの幅

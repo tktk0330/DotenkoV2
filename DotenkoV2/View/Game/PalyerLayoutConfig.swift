@@ -106,7 +106,7 @@ struct PlayerLayoutConfig {
     /// 下部プレイヤー（自分）の設定
     static let bottomPlayer = (
         icon: IconPosition(
-            offset: CGSize(width: 0, height: 0),
+            offset: CGSize(width: 0, height: 50), // アイコンの位置設定
             size: 80,
             nameTextSize: 16
         ),

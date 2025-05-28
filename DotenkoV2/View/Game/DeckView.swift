@@ -4,10 +4,8 @@ import SwiftUI
 // MARK: - Deck View
 /// デッキ表示コンポーネント
 struct DeckView: View {
-    @State private var deckCards: [Card] = []
-    
-    // デッキのカード枚数（表示用）
-    @State private var deckCount: Int = 30
+    let deckCount: Int
+    let onDeckTap: () -> Void
     
     var body: some View {
         ZStack {
@@ -36,19 +34,7 @@ struct DeckView: View {
         }
         .frame(width: 80, height: 112)
         .onTapGesture {
-            // デッキタップ時の処理（カードを引く）
-            handleDeckTap()
-        }
-    }
-    
-    /// デッキタップ時の処理
-    private func handleDeckTap() {
-        // TODO: カードを引く処理を実装
-        print("デッキがタップされました - カードを引く処理")
-        
-        // デッキ枚数を減らす（仮の処理）
-        if deckCount > 0 {
-            deckCount -= 1
+            onDeckTap()
         }
     }
 }
