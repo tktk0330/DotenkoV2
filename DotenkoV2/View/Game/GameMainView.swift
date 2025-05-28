@@ -49,6 +49,141 @@ struct GameLayoutConfig {
     static let backButtonTopPadding: CGFloat = 50
 }
 
+// MARK: - Player Layout Configuration
+/// プレイヤーアイコンと手札の配置設定
+struct PlayerLayoutConfig {
+    // MARK: - Bot Icon Positioning (Botアイコンの配置)
+    struct IconPosition {
+        /// アイコンのオフセット位置
+        let offset: CGSize
+        /// アイコンのサイズ
+        let size: CGFloat
+        /// 名前テキストのサイズ
+        let nameTextSize: CGFloat
+        
+        init(offset: CGSize = .zero, size: CGFloat = 50, nameTextSize: CGFloat = 12) {
+            self.offset = offset
+            self.size = size
+            self.nameTextSize = nameTextSize
+        }
+    }
+    
+    // MARK: - Hand Cards Configuration (手札の配置設定)
+    struct HandConfiguration {
+        /// 手札全体のオフセット位置
+        let globalOffset: CGSize
+        /// 手札全体の回転角度（度）
+        let globalRotation: Double
+        /// 扇形の最大角度（度）
+        let fanMaxAngle: Double
+        /// 扇形の半径
+        let fanRadius: CGFloat
+        /// カードサイズ
+        let cardSize: CGFloat
+        /// 手札エリアのサイズ
+        let handAreaSize: CGSize
+        
+        init(
+            globalOffset: CGSize = .zero,
+            globalRotation: Double = 0,
+            fanMaxAngle: Double = 60,
+            fanRadius: CGFloat = 50,
+            cardSize: CGFloat = 60,
+            handAreaSize: CGSize = CGSize(width: 120, height: 80)
+        ) {
+            self.globalOffset = globalOffset
+            self.globalRotation = globalRotation
+            self.fanMaxAngle = fanMaxAngle
+            self.fanRadius = fanRadius
+            self.cardSize = cardSize
+            self.handAreaSize = handAreaSize
+        }
+    }
+    
+    // MARK: - Position-specific Configurations
+    /// 上部プレイヤーの設定
+    static let topPlayer = (
+        icon: IconPosition(
+            offset: CGSize(width: 0, height: 0),
+            size: 50,
+            nameTextSize: 12
+        ),
+        hand: HandConfiguration(
+            globalOffset: CGSize(width: 0, height: -30),
+            globalRotation: 0,
+            fanMaxAngle: 60,
+            fanRadius: 50,
+            cardSize: 60,
+            handAreaSize: CGSize(width: 120, height: 80)
+        )
+    )
+    
+    /// 左側プレイヤーの設定
+    static let leftPlayer = (
+        icon: IconPosition(
+            offset: CGSize(width: 0, height: 0),
+            size: 50,
+            nameTextSize: 12
+        ),
+        hand: HandConfiguration(
+            globalOffset: CGSize(width: -30, height: 0),
+            globalRotation: 0,
+            fanMaxAngle: 60,
+            fanRadius: 40,
+            cardSize: 60,
+            handAreaSize: CGSize(width: 100, height: 100)
+        )
+    )
+    
+    /// 右側プレイヤーの設定
+    static let rightPlayer = (
+        icon: IconPosition(
+            offset: CGSize(width: 0, height: 0),
+            size: 50,
+            nameTextSize: 12
+        ),
+        hand: HandConfiguration(
+            globalOffset: CGSize(width: 30, height: 0),
+            globalRotation: 0,
+            fanMaxAngle: 60,
+            fanRadius: 40,
+            cardSize: 60,
+            handAreaSize: CGSize(width: 100, height: 100)
+        )
+    )
+    
+    /// 下部プレイヤー（自分）の設定
+    static let bottomPlayer = (
+        icon: IconPosition(
+            offset: CGSize(width: 0, height: 0),
+            size: 60,
+            nameTextSize: 14
+        ),
+        hand: HandConfiguration(
+            globalOffset: CGSize(width: 0, height: 30),
+            globalRotation: 0,
+            fanMaxAngle: 60,
+            fanRadius: 60,
+            cardSize: 120,
+            handAreaSize: CGSize(width: 120, height: 80)
+        )
+    )
+    
+    /// 位置に応じた設定を取得
+    static func configuration(for position: PlayerPosition) -> (icon: IconPosition, hand: HandConfiguration) {
+        switch position {
+        case .top:
+            return topPlayer
+        case .left:
+            return leftPlayer
+        case .right:
+            return rightPlayer
+        case .bottom:
+            return bottomPlayer
+        }
+    }
+}
+
 struct GameMainView: View {
     let players: [Player]
     let maxPlayers: Int
@@ -488,11 +623,17 @@ struct PlayerIconView: View {
         Card(card: .diamond8, location: .hand(playerIndex: 0, cardIndex: 6))
     ]
     
+    // 設定を取得
+    private var config: (icon: PlayerLayoutConfig.IconPosition, hand: PlayerLayoutConfig.HandConfiguration) {
+        PlayerLayoutConfig.configuration(for: position)
+    }
+    
     var body: some View {
         ZStack {
             // 手札表示（下に配置）
             handCardsView
-                .offset(handOffset)
+                .offset(config.hand.globalOffset)
+                .rotationEffect(.degrees(config.hand.globalRotation))
             
             // プレイヤーアイコン（上に配置）
             VStack(spacing: 8) {
@@ -500,11 +641,12 @@ struct PlayerIconView: View {
                 
                 // プレイヤー名
                 Text(player.name)
-                    .font(.system(size: nameTextSize, weight: .medium))
+                    .font(.system(size: config.icon.nameTextSize, weight: .medium))
                     .foregroundColor(.white)
                     .lineLimit(1)
-                    .frame(maxWidth: iconSize + 20)
+                    .frame(maxWidth: config.icon.size + 20)
             }
+            .offset(config.icon.offset)
         }
     }
     
@@ -539,7 +681,7 @@ struct PlayerIconView: View {
                     .foregroundColor(.gray)
             }
         }
-        .frame(width: iconSize, height: iconSize)
+        .frame(width: config.icon.size, height: config.icon.size)
         .background(Color.black.opacity(0.3))
         .clipShape(Circle())
         .overlay(
@@ -551,128 +693,12 @@ struct PlayerIconView: View {
     private var handCardsView: some View {
         ZStack {
             ForEach(Array(testCards.enumerated()), id: \.element.id) { index, card in
-                CardView(card: card, size: cardSize)
-                    .rotationEffect(.degrees(cardRotation(for: index)))
-                    .offset(cardOffset(for: index))
+                CardView(card: card, size: config.hand.cardSize)
+                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: testCards.count, config: config.hand)))
+                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: testCards.count, config: config.hand))
             }
         }
-        .frame(width: handAreaWidth, height: handAreaHeight)
-    }
-    
-    // カードの回転角度を計算
-    private func cardRotation(for index: Int) -> Double {
-        let totalCards = testCards.count
-        let maxAngle: Double = 60 // 最大扇角度
-        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
-        let startAngle = -maxAngle / 2
-        let baseRotation = startAngle + (Double(index) * angleStep)
-        
-        // 位置に応じて基本回転を調整
-        switch position {
-        case .bottom:
-            return baseRotation // 下部は上向きの扇（回転なし）
-        case .top:
-            return -baseRotation // 上部は下向きの扇（逆回転）
-        case .left:
-            return baseRotation + 90 // 左側は右向きの扇（90度回転）
-        case .right:
-            return baseRotation - 90 // 右側は左向きの扇（-90度回転）
-        }
-    }
-    
-    // カードのオフセット位置を計算
-    private func cardOffset(for index: Int) -> CGSize {
-        let totalCards = testCards.count
-        let radius: CGFloat = fanRadius // 扇の半径
-        let maxAngle: Double = 60 // 最大扇角度
-        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
-        let startAngle = -maxAngle / 2
-        let currentAngle = startAngle + (Double(index) * angleStep)
-        
-        let radians = currentAngle * .pi / 180
-        let x = radius * sin(radians)
-        let y = radius * cos(radians)
-        
-        // 位置に応じてオフセットを調整
-        switch position {
-        case .bottom:
-            return CGSize(width: x, height: -y) // 下部は上向きの扇
-        case .top:
-            return CGSize(width: x, height: y) // 上部は下向きの扇（元に戻す）
-        case .left:
-            return CGSize(width: -y, height: x) // 左側は内側向きの扇
-        case .right:
-            return CGSize(width: y, height: -x) // 右側は内側向きの扇（修正）
-        }
-    }
-    
-    // 扇の半径（位置とカードサイズに応じて調整）
-    private var fanRadius: CGFloat {
-        switch position {
-        case .bottom:
-            return 60 // 自分の手札は大きな扇
-        case .top, .left, .right:
-            return 50 // 相手の手札は中サイズの扇
-        }
-    }
-    
-    private var iconSize: CGFloat {
-        switch position {
-        case .bottom:
-            return 60 // 自分は少し大きく
-        case .top, .left, .right:
-            return 50 // 相手は標準サイズ
-        }
-    }
-    
-    private var nameTextSize: CGFloat {
-        switch position {
-        case .bottom:
-            return 14
-        case .top, .left, .right:
-            return 12
-        }
-    }
-    
-    private var cardSize: CGFloat {
-        switch position {
-        case .bottom:
-            return 80 // 自分の手札は大きく（40pt × 2）
-        case .top, .left, .right:
-            return 60 // 相手の手札は中サイズ（30pt × 2）
-        }
-    }
-    
-    private var handAreaWidth: CGFloat {
-        switch position {
-        case .bottom, .top:
-            return 120
-        case .left, .right:
-            return 80
-        }
-    }
-    
-    private var handAreaHeight: CGFloat {
-        switch position {
-        case .bottom, .top:
-            return 80
-        case .left, .right:
-            return 120
-        }
-    }
-    
-    // 手札の位置オフセット
-    private var handOffset: CGSize {
-        switch position {
-        case .bottom:
-            return CGSize(width: 0, height: 30) // 自分の手札は下に
-        case .top:
-            return CGSize(width: 0, height: -30) // 相手の手札は上に
-        case .left:
-            return CGSize(width: -30, height: 0) // 左側の手札は左に
-        case .right:
-            return CGSize(width: 30, height: 0) // 右側の手札は右に
-        }
+        .frame(width: config.hand.handAreaSize.width, height: config.hand.handAreaSize.height)
     }
 }
 
@@ -788,4 +814,53 @@ enum GamePhase {
     case waiting    // 待機中
     case playing    // プレイ中
     case finished   // 終了
+}
+
+// MARK: - Fan Layout Manager
+/// 扇形レイアウト管理クラス
+struct FanLayoutManager {
+    
+    /// カードの回転角度を計算
+    static func cardRotation(for index: Int, position: PlayerPosition, totalCards: Int, config: PlayerLayoutConfig.HandConfiguration) -> Double {
+        let maxAngle: Double = config.fanMaxAngle
+        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
+        let startAngle = -maxAngle / 2
+        let baseRotation = startAngle + (Double(index) * angleStep)
+        
+        // 位置に応じて基本回転を調整
+        switch position {
+        case .bottom:
+            return baseRotation // 下部は上向きの扇（回転なし）
+        case .top:
+            return -baseRotation // 上部は下向きの扇（逆回転）
+        case .left:
+            return -baseRotation // 左側も下向きの扇（上部と同じ）
+        case .right:
+            return -baseRotation // 右側も下向きの扇（上部と同じ）
+        }
+    }
+    
+    /// カードのオフセット位置を計算
+    static func cardOffset(for index: Int, position: PlayerPosition, totalCards: Int, config: PlayerLayoutConfig.HandConfiguration) -> CGSize {
+        let maxAngle: Double = config.fanMaxAngle
+        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
+        let startAngle = -maxAngle / 2
+        let currentAngle = startAngle + (Double(index) * angleStep)
+        
+        let radians = currentAngle * .pi / 180
+        let x = config.fanRadius * sin(radians)
+        let y = config.fanRadius * cos(radians)
+        
+        // 位置に応じてオフセットを調整
+        switch position {
+        case .bottom:
+            return CGSize(width: x, height: -y) // 下部は上向きの扇
+        case .top:
+            return CGSize(width: x, height: y) // 上部は下向きの扇
+        case .left:
+            return CGSize(width: x, height: y) // 左側も下向きの扇（上部と同じ）
+        case .right:
+            return CGSize(width: x, height: y) // 右側も下向きの扇（上部と同じ）
+        }
+    }
 }
