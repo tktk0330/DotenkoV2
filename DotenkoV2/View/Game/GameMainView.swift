@@ -210,6 +210,10 @@ struct GameMainView: View {
                 
                 // UI オーバーレイ（戻るボタンなど）
                 uiOverlay
+                
+                // 設定ボタン
+                settingsButton
+                    .position(x: geometry.size.width * 0.05, y: geometry.size.height * 0.85)
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)
@@ -260,6 +264,18 @@ struct GameMainView: View {
         }
         .padding(.leading, GameLayoutConfig.backButtonLeadingPadding)
         .padding(.top, GameLayoutConfig.backButtonTopPadding)
+    }
+    
+    /// 設定ボタン
+    private var settingsButton: some View {
+        Button(action: { print("Press") }) {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.white)
+                .padding(12)
+                .background(Color.black.opacity(0.3))
+                .clipShape(Circle())
+        }
     }
     
     // MARK: - Player Areas (プレイヤー配置エリア)
