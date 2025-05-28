@@ -477,53 +477,142 @@ struct PlayerIconView: View {
     let position: PlayerPosition
     @StateObject private var imageLoader = ImageLoader()
     
+    // 試験的に7枚の手札を表示
+    private let testCards: [Card] = [
+        Card(card: .spade1, location: .hand(playerIndex: 0, cardIndex: 0)),
+        Card(card: .heart5, location: .hand(playerIndex: 0, cardIndex: 1)),
+        Card(card: .diamond10, location: .hand(playerIndex: 0, cardIndex: 2)),
+        Card(card: .club7, location: .hand(playerIndex: 0, cardIndex: 3)),
+        Card(card: .spade13, location: .hand(playerIndex: 0, cardIndex: 4)),
+        Card(card: .heart2, location: .hand(playerIndex: 0, cardIndex: 5)),
+        Card(card: .diamond8, location: .hand(playerIndex: 0, cardIndex: 6))
+    ]
+    
     var body: some View {
-        VStack(spacing: 8) {
-            // プレイヤーアイコン
-            ZStack {
-                if let imageUrl = player.image {
-                    if player.id.hasPrefix("bot-") {
-                        // Botの場合は内部の画像を使用
-                        if let image = UIImage(named: imageUrl) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                        }
-                    } else {
-                        // ユーザーの場合はURLから読み込み
-                        if let uiImage = imageLoader.image {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            ProgressView()
-                                .onAppear {
-                                    imageLoader.loadImage(from: imageUrl)
-                                }
-                        }
+        ZStack {
+            // 手札表示（下に配置）
+            handCardsView
+                .offset(handOffset)
+            
+            // プレイヤーアイコン（上に配置）
+            VStack(spacing: 8) {
+                playerIcon
+                
+                // プレイヤー名
+                Text(player.name)
+                    .font(.system(size: nameTextSize, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .frame(maxWidth: iconSize + 20)
+            }
+        }
+    }
+    
+    private var playerIcon: some View {
+        ZStack {
+            if let imageUrl = player.image {
+                if player.id.hasPrefix("bot-") {
+                    // Botの場合は内部の画像を使用
+                    if let image = UIImage(named: imageUrl) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
                     }
                 } else {
-                    Image(systemName: "person.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .padding(8)
-                        .foregroundColor(.gray)
+                    // ユーザーの場合はURLから読み込み
+                    if let uiImage = imageLoader.image {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        ProgressView()
+                            .onAppear {
+                                imageLoader.loadImage(from: imageUrl)
+                            }
+                    }
                 }
+            } else {
+                Image(systemName: "person.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(8)
+                    .foregroundColor(.gray)
             }
-            .frame(width: iconSize, height: iconSize)
-            .background(Color.black.opacity(0.3))
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(Color.white, lineWidth: 2)
-            )
-            
-            // プレイヤー名
-            Text(player.name)
-                .font(.system(size: nameTextSize, weight: .medium))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .frame(maxWidth: iconSize + 20)
+        }
+        .frame(width: iconSize, height: iconSize)
+        .background(Color.black.opacity(0.3))
+        .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(Color.white, lineWidth: 2)
+        )
+    }
+    
+    private var handCardsView: some View {
+        ZStack {
+            ForEach(Array(testCards.enumerated()), id: \.element.id) { index, card in
+                CardView(card: card, size: cardSize)
+                    .rotationEffect(.degrees(cardRotation(for: index)))
+                    .offset(cardOffset(for: index))
+            }
+        }
+        .frame(width: handAreaWidth, height: handAreaHeight)
+    }
+    
+    // カードの回転角度を計算
+    private func cardRotation(for index: Int) -> Double {
+        let totalCards = testCards.count
+        let maxAngle: Double = 60 // 最大扇角度
+        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
+        let startAngle = -maxAngle / 2
+        let baseRotation = startAngle + (Double(index) * angleStep)
+        
+        // 位置に応じて基本回転を調整
+        switch position {
+        case .bottom:
+            return baseRotation // 下部は上向きの扇（回転なし）
+        case .top:
+            return -baseRotation // 上部は下向きの扇（逆回転）
+        case .left:
+            return baseRotation + 90 // 左側は右向きの扇（90度回転）
+        case .right:
+            return baseRotation - 90 // 右側は左向きの扇（-90度回転）
+        }
+    }
+    
+    // カードのオフセット位置を計算
+    private func cardOffset(for index: Int) -> CGSize {
+        let totalCards = testCards.count
+        let radius: CGFloat = fanRadius // 扇の半径
+        let maxAngle: Double = 60 // 最大扇角度
+        let angleStep = maxAngle / Double(max(totalCards - 1, 1))
+        let startAngle = -maxAngle / 2
+        let currentAngle = startAngle + (Double(index) * angleStep)
+        
+        let radians = currentAngle * .pi / 180
+        let x = radius * sin(radians)
+        let y = radius * cos(radians)
+        
+        // 位置に応じてオフセットを調整
+        switch position {
+        case .bottom:
+            return CGSize(width: x, height: -y) // 下部は上向きの扇
+        case .top:
+            return CGSize(width: x, height: y) // 上部は下向きの扇（元に戻す）
+        case .left:
+            return CGSize(width: -y, height: x) // 左側は内側向きの扇
+        case .right:
+            return CGSize(width: y, height: -x) // 右側は内側向きの扇（修正）
+        }
+    }
+    
+    // 扇の半径（位置とカードサイズに応じて調整）
+    private var fanRadius: CGFloat {
+        switch position {
+        case .bottom:
+            return 60 // 自分の手札は大きな扇
+        case .top, .left, .right:
+            return 50 // 相手の手札は中サイズの扇
         }
     }
     
@@ -543,6 +632,81 @@ struct PlayerIconView: View {
         case .top, .left, .right:
             return 12
         }
+    }
+    
+    private var cardSize: CGFloat {
+        switch position {
+        case .bottom:
+            return 80 // 自分の手札は大きく（40pt × 2）
+        case .top, .left, .right:
+            return 60 // 相手の手札は中サイズ（30pt × 2）
+        }
+    }
+    
+    private var handAreaWidth: CGFloat {
+        switch position {
+        case .bottom, .top:
+            return 120
+        case .left, .right:
+            return 80
+        }
+    }
+    
+    private var handAreaHeight: CGFloat {
+        switch position {
+        case .bottom, .top:
+            return 80
+        case .left, .right:
+            return 120
+        }
+    }
+    
+    // 手札の位置オフセット
+    private var handOffset: CGSize {
+        switch position {
+        case .bottom:
+            return CGSize(width: 0, height: 30) // 自分の手札は下に
+        case .top:
+            return CGSize(width: 0, height: -30) // 相手の手札は上に
+        case .left:
+            return CGSize(width: -30, height: 0) // 左側の手札は左に
+        case .right:
+            return CGSize(width: 30, height: 0) // 右側の手札は右に
+        }
+    }
+}
+
+// MARK: - Card View
+struct CardView: View {
+    let card: Card
+    let size: CGFloat
+    
+    var body: some View {
+        ZStack {
+//            // カード背景
+//            RoundedRectangle(cornerRadius: 4)
+//                .fill(Color.white)
+//                .frame(width: size, height: size * 1.4)
+//                .overlay(
+//                    RoundedRectangle(cornerRadius: 4)
+//                        .stroke(Color.black.opacity(0.3), lineWidth: 1)
+//                )
+            
+            // カード画像
+            if let cardImage = card.card.image() {
+                Image(uiImage: cardImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size * 0.9, height: size * 1.26)
+                    .clipped()
+            } else {
+                // フォールバック表示
+                Text(card.card.rawValue)
+                    .font(.system(size: size * 0.2, weight: .bold))
+                    .foregroundColor(.black)
+            }
+        }
+//        .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 1)
     }
 }
 
