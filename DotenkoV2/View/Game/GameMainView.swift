@@ -10,9 +10,9 @@ struct GameLayoutConfig {
     /// 上部エリアの高さ比率（相手プレイヤー配置エリア）
     static let topAreaHeightRatio: CGFloat = 0.18
     /// 中央エリアの高さ比率（ゲームフィールド）
-    static let centerAreaHeightRatio: CGFloat = 0.54
+    static let centerAreaHeightRatio: CGFloat = 0.50
     /// 下部エリアの高さ比率（自分のプレイヤー配置エリア）
-    static let bottomAreaHeightRatio: CGFloat = 0.18
+    static let bottomAreaHeightRatio: CGFloat = 0.22
     
     // MARK: - Header Area (ヘッダーエリア設定)
     /// ヘッダーエリアの左右パディング
@@ -34,7 +34,7 @@ struct GameLayoutConfig {
     static let centerAreaHorizontalPadding: CGFloat = 30
     
     /// 下部プレイヤーの下パディング（広告エリアからの距離）
-    static let bottomPlayerBottomPadding: CGFloat = 20
+    static let bottomPlayerBottomPadding: CGFloat = 60
     
     // MARK: - Game Field (ゲームフィールド設定)
     /// 中央カード配置エリアの幅
@@ -156,8 +156,8 @@ struct PlayerLayoutConfig {
     static let bottomPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
-            size: 60,
-            nameTextSize: 14
+            size: 80,
+            nameTextSize: 16
         ),
         hand: HandConfiguration(
             globalOffset: CGSize(width: 0, height: 30),
@@ -518,11 +518,6 @@ struct GameMainView: View {
     /// 中央ゲームフィールド
     private var gameField: some View {
         VStack {
-            Text("ゲームエリア")
-                .font(.title2)
-                .foregroundColor(.white)
-                .padding()
-            
             // カード配置エリア（後で実際のゲーム要素に置き換え）
             Rectangle()
                 .fill(Color.black.opacity(0.3))
@@ -542,11 +537,48 @@ struct GameMainView: View {
         
         return VStack {
             if let player = currentPlayer {
-                PlayerIconView(player: player, position: .bottom)
-                    .padding(.bottom, CGFloat(Constant.BANNER_HEIGHT) + GameLayoutConfig.bottomPlayerBottomPadding)
+                HStack(spacing: 15) {
+                    // 左側：パス/引くボタン
+                    GameActionButton(
+                        icon: "arrow.down.circle.fill",
+                        label: "パス",
+                        action: { handlePassAction() },
+                        backgroundColor: Color(red: 0.8, green: 0.2, blue: 0.2),
+                        size: 75
+                    )
+                    
+                    // 中央：プレイヤーアイコン
+                    PlayerIconView(player: player, position: .bottom)
+                        .scaleEffect(1.0) // アイコンの相対サイズ調整
+                    
+                    // 右側：出すボタン
+                    GameActionButton(
+                        icon: "arrow.up.circle.fill",
+                        label: "出す",
+                        action: { handlePlayAction() },
+                        backgroundColor: Color(red: 0.2, green: 0.6, blue: 0.2),
+                        size: 75
+                    )
+                }
+                .zIndex(1001) // ボタンエリア全体を最前面に
+                .padding(.bottom, CGFloat(Constant.BANNER_HEIGHT) + GameLayoutConfig.bottomPlayerBottomPadding)
             }
         }
         .frame(height: geometry.size.height * GameLayoutConfig.bottomAreaHeightRatio)
+    }
+    
+    // MARK: - Game Action Methods
+    
+    /// パス/引くアクションを処理
+    private func handlePassAction() {
+        // TODO: パス/引くロジックを実装
+        print("パス/引くアクションが実行されました")
+    }
+    
+    /// 出すアクションを処理
+    private func handlePlayAction() {
+        // TODO: 出すロジックを実装
+        print("出すアクションが実行されました")
     }
 }
 
@@ -636,15 +668,34 @@ struct PlayerIconView: View {
                 .rotationEffect(.degrees(config.hand.globalRotation))
             
             // プレイヤーアイコン（上に配置）
-            VStack(spacing: 8) {
+            VStack(spacing: 1) {
                 playerIcon
                 
                 // プレイヤー名
-                Text(player.name)
-                    .font(.system(size: config.icon.nameTextSize, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .frame(maxWidth: config.icon.size + 20)
+                if position != .bottom {
+                    Text(player.name)
+                        .font(.system(size: config.icon.nameTextSize, weight: .medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .frame(maxWidth: config.icon.size + 20)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.black.opacity(0.7))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                }
+                
+                // スコア表示（自分とBotで異なるデザイン）
+                if position == .bottom {
+                    playerScoreDisplay
+                } else {
+                    botScoreDisplay
+                }
             }
             .offset(config.icon.offset)
         }
@@ -685,8 +736,34 @@ struct PlayerIconView: View {
         .background(Color.black.opacity(0.3))
         .clipShape(Circle())
         .overlay(
-            Circle()
-                .stroke(Color.white, lineWidth: 2)
+            // 自分のアイコンの場合は特別な装飾を追加
+            Group {
+                if position == .bottom {
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                                    Color(red: 0.8, green: 0.6, blue: 0.0),
+                                    Color(red: 1.0, green: 0.84, blue: 0.0)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 3
+                        )
+                        .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.5), radius: 6, x: 0, y: 3)
+                } else {
+                    Circle()
+                        .stroke(Color.white, lineWidth: 2)
+                }
+            }
+        )
+        .shadow(
+            color: position == .bottom ? Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3) : .black.opacity(0.3),
+            radius: position == .bottom ? 8 : 4,
+            x: 0,
+            y: position == .bottom ? 4 : 2
         )
     }
     
@@ -699,6 +776,61 @@ struct PlayerIconView: View {
             }
         }
         .frame(width: config.hand.handAreaSize.width, height: config.hand.handAreaSize.height)
+    }
+    
+    private var playerScoreDisplay: some View {
+        VStack(spacing: 4) {
+            Text("100,000")
+                .font(.system(size: 14, weight: .black))
+                .foregroundColor(.white)
+                .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0), radius: 2, x: 0, y: 1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.1, green: 0.1, blue: 0.1),
+                            Color(red: 0.2, green: 0.2, blue: 0.2)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                                    Color(red: 0.8, green: 0.6, blue: 0.0)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                )
+                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+        )
+    }
+    
+    private var botScoreDisplay: some View {
+        Text("50,000")
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(.gray)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.black.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+            )
     }
 }
 
@@ -867,5 +999,108 @@ struct FanLayoutManager {
         case .right:
             return CGSize(width: x, height: abs(y)) // 右側も下向きの扇（上部と同じ）
         }
+    }
+}
+
+// MARK: - Game Action Button
+/// ゲーム操作ボタンコンポーネント
+struct GameActionButton: View {
+    let icon: String
+    let label: String
+    let action: () -> Void
+    let backgroundColor: Color
+    let size: CGFloat
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: size * 0.35, weight: .bold))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                
+                Text(label)
+                    .font(.system(size: size * 0.18, weight: .heavy))
+                    .foregroundColor(.white)
+                    .tracking(1.2)
+                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .lineLimit(1)
+            }
+            .frame(width: size, height: size)
+            .background(
+                ZStack {
+                    // ベースの円形背景
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: backgroundColor.opacity(0.9), location: 0.0),
+                                    .init(color: backgroundColor, location: 0.7),
+                                    .init(color: backgroundColor.opacity(0.6), location: 1.0)
+                                ]),
+                                center: .topLeading,
+                                startRadius: 0,
+                                endRadius: size * 0.8
+                            )
+                        )
+                    
+                    // カジノ風の装飾リング
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                                    Color(red: 0.8, green: 0.6, blue: 0.0),
+                                    Color(red: 1.0, green: 0.84, blue: 0.0)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 3
+                        )
+                    
+                    // 内側の装飾リング
+                    Circle()
+                        .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                        .scaleEffect(0.85)
+                    
+                    // 光沢エフェクト
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: Color.white.opacity(0.3), location: 0.0),
+                                    .init(color: Color.clear, location: 0.4)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .center
+                            )
+                        )
+                        .scaleEffect(0.6)
+                        .offset(x: -size * 0.1, y: -size * 0.1)
+                }
+            )
+            .overlay(
+                // 押下時のエフェクト
+                Circle()
+                    .fill(Color.white.opacity(isPressed ? 0.2 : 0.0))
+                    .animation(.easeInOut(duration: 0.1), value: isPressed)
+            )
+            .scaleEffect(isPressed ? 0.92 : 1.0)
+            .shadow(
+                color: backgroundColor.opacity(0.6),
+                radius: isPressed ? 6 : 12,
+                x: 0,
+                y: isPressed ? 2 : 6
+            )
+            .animation(.easeInOut(duration: 0.15), value: isPressed)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .zIndex(1000) // 最前面に配置
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
     }
 }
