@@ -7,6 +7,9 @@ struct PlayerIconView: View {
     @StateObject private var imageLoader = ImageLoader()
     @ObservedObject var viewModel: GameViewModel
     
+    // アニメーション制御用の状態
+    @State private var cardAnimationStates: [Bool] = Array(repeating: false, count: 7)
+    
     // 試験的に7枚の手札を表示
     private let testCards: [Card] = [
         Card(card: .spade1, location: .hand(playerIndex: 0, cardIndex: 0)),
@@ -133,16 +136,42 @@ struct PlayerIconView: View {
     private var handCardsView: some View {
         ZStack {
             ForEach(Array(testCards.enumerated()), id: \.element.id) { index, card in
+                let isSelected = viewModel.isCardSelected(at: index)
+                
                 CardView(card: card, size: config.hand.cardSize)
                     .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: testCards.count, config: config.hand)))
                     .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: testCards.count, config: config.hand))
-                    // 自分のカードの場合のみ選択機能とアニメーションを追加
-                    .offset(y: position == .bottom && viewModel.isCardSelected(at: index) ? -20 : 0)
-                    .scaleEffect(position == .bottom && viewModel.isCardSelected(at: index) ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: 2.5), value: viewModel.isCardSelected(at: index))
+                    // 選択時のy軸移動とスケール変更
+                    .offset(y: position == .bottom && cardAnimationStates[index] ? -30 : 0)
+                    .scaleEffect(position == .bottom && cardAnimationStates[index] ? 1.15 : 1.0)
+                    .shadow(
+                        color: position == .bottom && cardAnimationStates[index] ? .yellow.opacity(0.6) : .clear,
+                        radius: position == .bottom && cardAnimationStates[index] ? 8 : 0,
+                        x: 0,
+                        y: position == .bottom && cardAnimationStates[index] ? 4 : 0
+                    )
                     .onTapGesture {
                         if position == .bottom {
+                            // ViewModelの状態を更新
                             viewModel.toggleCardSelection(at: index)
+                            
+                            // アニメーション状態を更新
+                            withAnimation(.easeInOut(duration: 0.8)) {
+                                cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+                            }
+                        }
+                    }
+                    .onAppear {
+                        // 初期状態を同期
+                        cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+                    }
+                    .onChange(of: viewModel.selectedCardIndices) { _ in
+                        // ViewModelの変更を監視してアニメーション状態を同期
+                        let newState = viewModel.isCardSelected(at: index)
+                        if cardAnimationStates[index] != newState {
+                            withAnimation(.easeInOut(duration: 0.8)) {
+                                cardAnimationStates[index] = newState
+                            }
                         }
                     }
             }
