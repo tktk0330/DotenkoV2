@@ -69,25 +69,59 @@ struct PlayerIconView: View {
     
     private var playerIcon: some View {
         ZStack {
-            if let imageUrl = player.image {
+            if let imageUrl = player.image, !imageUrl.isEmpty {
                 if player.id.hasPrefix("bot-") {
                     // Botの場合は内部の画像を使用
                     if let image = UIImage(named: imageUrl) {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
+                    } else {
+                        // ローカル画像が見つからない場合はデフォルトアイコン
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(8)
+                            .foregroundColor(.gray)
                     }
-                } else {
-                    // ユーザーの場合はURLから読み込み
+                } else if imageUrl.hasPrefix("http") {
+                    // ユーザーの場合でHTTP/HTTPSのURLの場合はURLから読み込み
                     if let uiImage = imageLoader.image {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFill()
-                    } else {
+                    } else if imageLoader.isLoading {
                         ProgressView()
                             .onAppear {
                                 imageLoader.loadImage(from: imageUrl)
                             }
+                    } else {
+                        // ロードに失敗した場合はデフォルトアイコン
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(8)
+                            .foregroundColor(.gray)
+                            .onAppear {
+                                // まだロードを試していない場合は開始
+                                if imageLoader.image == nil && !imageLoader.isLoading {
+                                    imageLoader.loadImage(from: imageUrl)
+                                }
+                            }
+                    }
+                } else {
+                    // URLではないがローカル画像名の可能性がある場合
+                    if let image = UIImage(named: imageUrl) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        // ローカル画像も見つからない場合はデフォルトアイコン
+                        Image(systemName: "person.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .padding(8)
+                            .foregroundColor(.gray)
                     }
                 }
             } else {
@@ -141,22 +175,15 @@ struct PlayerIconView: View {
                 CardView(card: card, size: config.hand.cardSize)
                     .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: testCards.count, config: config.hand)))
                     .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: testCards.count, config: config.hand))
-                    // 選択時のy軸移動とスケール変更
+                    // 選択時のy軸移動
                     .offset(y: position == .bottom && cardAnimationStates[index] ? -30 : 0)
-                    .scaleEffect(position == .bottom && cardAnimationStates[index] ? 1.15 : 1.0)
-                    .shadow(
-                        color: position == .bottom && cardAnimationStates[index] ? .yellow.opacity(0.6) : .clear,
-                        radius: position == .bottom && cardAnimationStates[index] ? 8 : 0,
-                        x: 0,
-                        y: position == .bottom && cardAnimationStates[index] ? 4 : 0
-                    )
                     .onTapGesture {
                         if position == .bottom {
                             // ViewModelの状態を更新
                             viewModel.toggleCardSelection(at: index)
                             
                             // アニメーション状態を更新
-                            withAnimation(.easeInOut(duration: 0.8)) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
                                 cardAnimationStates[index] = viewModel.isCardSelected(at: index)
                             }
                         }
@@ -169,7 +196,7 @@ struct PlayerIconView: View {
                         // ViewModelの変更を監視してアニメーション状態を同期
                         let newState = viewModel.isCardSelected(at: index)
                         if cardAnimationStates[index] != newState {
-                            withAnimation(.easeInOut(duration: 0.8)) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
                                 cardAnimationStates[index] = newState
                             }
                         }

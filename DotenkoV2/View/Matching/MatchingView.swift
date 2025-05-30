@@ -89,25 +89,59 @@ struct PlayerSlotView: View {
             // プレイヤーアイコン
             ZStack {
                 if let player = player {
-                    if let imageUrl = player.image {
+                    if let imageUrl = player.image, !imageUrl.isEmpty {
                         if player.id.hasPrefix("bot-") {
                             // Botの場合は内部の画像を使用
                             if let image = UIImage(named: imageUrl) {
                                 Image(uiImage: image)
                                     .resizable()
                                     .scaledToFill()
+                            } else {
+                                // ローカル画像が見つからない場合はデフォルトアイコン
+                                Image(systemName: "person.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(12)
+                                    .foregroundColor(.gray)
                             }
-                        } else {
-                            // ユーザーの場合はURLから読み込み
+                        } else if imageUrl.hasPrefix("http") {
+                            // ユーザーの場合でHTTP/HTTPSのURLの場合はURLから読み込み
                             if let uiImage = imageLoader.image {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .scaledToFill()
-                            } else {
+                            } else if imageLoader.isLoading {
                                 ProgressView()
                                     .onAppear {
                                         imageLoader.loadImage(from: imageUrl)
                                     }
+                            } else {
+                                // ロードに失敗した場合はデフォルトアイコン
+                                Image(systemName: "person.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(12)
+                                    .foregroundColor(.gray)
+                                    .onAppear {
+                                        // まだロードを試していない場合は開始
+                                        if imageLoader.image == nil && !imageLoader.isLoading {
+                                            imageLoader.loadImage(from: imageUrl)
+                                        }
+                                    }
+                            }
+                        } else {
+                            // URLではないがローカル画像名の可能性がある場合
+                            if let image = UIImage(named: imageUrl) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                            } else {
+                                // ローカル画像も見つからない場合はデフォルトアイコン
+                                Image(systemName: "person.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(12)
+                                    .foregroundColor(.gray)
                             }
                         }
                     } else {
@@ -157,18 +191,29 @@ struct PlayerSlotView: View {
 // 画像ローダー
 class ImageLoader: ObservableObject {
     @Published var image: UIImage?
+    @Published var isLoading: Bool = false
     private var cancellables = Set<AnyCancellable>()
     
     func loadImage(from urlString: String) {
+        // 既にロード中の場合は重複実行を防ぐ
+        guard !isLoading else { return }
+        
         guard let url = URL(string: urlString) else {
             return
         }
+        
+        isLoading = true
         
         URLSession.shared.dataTaskPublisher(for: url)
             .map { UIImage(data: $0.data) }
             .receive(on: DispatchQueue.main)
             .sink(
-                receiveCompletion: { _ in },
+                receiveCompletion: { [weak self] completion in
+                    self?.isLoading = false
+                    if case .failure = completion {
+                        // ロードに失敗した場合、imageはnilのまま
+                    }
+                },
                 receiveValue: { [weak self] image in
                     self?.image = image
                 }
@@ -242,4 +287,5 @@ class MatchingViewModel: ObservableObject {
     }
     
 }
+
 
