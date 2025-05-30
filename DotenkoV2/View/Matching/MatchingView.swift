@@ -188,39 +188,8 @@ struct PlayerSlotView: View {
     }
 }
 
-// 画像ローダー
-class ImageLoader: ObservableObject {
-    @Published var image: UIImage?
-    @Published var isLoading: Bool = false
-    private var cancellables = Set<AnyCancellable>()
-    
-    func loadImage(from urlString: String) {
-        // 既にロード中の場合は重複実行を防ぐ
-        guard !isLoading else { return }
-        
-        guard let url = URL(string: urlString) else {
-            return
-        }
-        
-        isLoading = true
-        
-        URLSession.shared.dataTaskPublisher(for: url)
-            .map { UIImage(data: $0.data) }
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    self?.isLoading = false
-                    if case .failure = completion {
-                        // ロードに失敗した場合、imageはnilのまま
-                    }
-                },
-                receiveValue: { [weak self] image in
-                    self?.image = image
-                }
-            )
-            .store(in: &cancellables)
-    }
-}
+// 画像ローダー（キャッシュ機能付き）
+// ImageLoader is now defined in Utility/ImageCacheManager.swift
 
 // 配列の安全なインデックスアクセスのための拡張
 extension Collection {
@@ -285,7 +254,6 @@ class MatchingViewModel: ObservableObject {
     func isLoadingAtIndex(_ index: Int) -> Bool {
         return loadingIndexes.contains(index)
     }
-    
 }
 
 

@@ -1,17 +1,36 @@
 import SwiftUI
 
-// MARK: - Player Icon View
-struct PlayerIconView: View {
-    let player: Player
-    let position: PlayerPosition
-    @StateObject private var imageLoader = ImageLoader()
-    @ObservedObject var viewModel: GameViewModel
+// MARK: - Constants
+private enum PlayerIconConstants {
+    enum Animation {
+        static let cardSelectionOffset: CGFloat = -30
+        static let duration: Double = 0.3
+    }
     
-    // アニメーション制御用の状態
-    @State private var cardAnimationStates: [Bool] = Array(repeating: false, count: 7)
+    enum Spacing {
+        static let nameVertical: CGFloat = 1
+        static let scoreVertical: CGFloat = 4
+    }
     
-    // 試験的に7枚の手札を表示
-    private let testCards: [Card] = [
+    enum Decoration {
+        static let playerBorderWidth: CGFloat = 3
+        static let botBorderWidth: CGFloat = 2
+        static let nameCornerRadius: CGFloat = 6
+        static let scoreCornerRadius: CGFloat = 8
+        static let botScoreCornerRadius: CGFloat = 4
+    }
+    
+    enum Color {
+        static let gold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        static let darkGold = SwiftUI.Color(red: 0.8, green: 0.6, blue: 0.0)
+        static let darkBackground = SwiftUI.Color(red: 0.1, green: 0.1, blue: 0.1)
+        static let mediumBackground = SwiftUI.Color(red: 0.2, green: 0.2, blue: 0.2)
+    }
+}
+
+// MARK: - Test Data Provider
+private struct TestDataProvider {
+    static let testCards: [Card] = [
         Card(card: .spade1, location: .hand(playerIndex: 0, cardIndex: 0)),
         Card(card: .heart5, location: .hand(playerIndex: 0, cardIndex: 1)),
         Card(card: .diamond10, location: .hand(playerIndex: 0, cardIndex: 2)),
@@ -20,244 +39,315 @@ struct PlayerIconView: View {
         Card(card: .heart2, location: .hand(playerIndex: 0, cardIndex: 5)),
         Card(card: .diamond8, location: .hand(playerIndex: 0, cardIndex: 6))
     ]
+}
+
+// MARK: - Player Image Component
+private struct PlayerImageView: View {
+    let player: Player
+    let size: CGFloat
+    @StateObject private var imageLoader = ImageLoader()
     
-    // 設定を取得
+    var body: some View {
+        Group {
+            if let imageUrl = player.image, !imageUrl.isEmpty {
+                if player.id.hasPrefix("bot-") {
+                    localImageView(imageUrl: imageUrl)
+                } else if imageUrl.hasPrefix("http") {
+                    remoteImageView(imageUrl: imageUrl)
+                } else {
+                    localImageView(imageUrl: imageUrl)
+                }
+            } else {
+                defaultImageView
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func localImageView(imageUrl: String) -> some View {
+        if let image = UIImage(named: imageUrl) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            defaultImageView
+        }
+    }
+    
+    @ViewBuilder
+    private func remoteImageView(imageUrl: String) -> some View {
+        if let uiImage = imageLoader.image {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+        } else if imageLoader.isLoading {
+            ProgressView()
+                .onAppear {
+                    imageLoader.loadImage(from: imageUrl)
+                }
+        } else {
+            defaultImageView
+                .onAppear {
+                    if imageLoader.image == nil && !imageLoader.isLoading {
+                        imageLoader.loadImage(from: imageUrl)
+                    }
+                }
+        }
+    }
+    
+    private var defaultImageView: some View {
+        Image(systemName: "person.fill")
+            .resizable()
+            .scaledToFit()
+            .padding(8)
+            .foregroundColor(.gray)
+    }
+}
+
+// MARK: - Player Score Component
+private struct PlayerScoreView: View {
+    let score: String
+    let isMainPlayer: Bool
+    
+    var body: some View {
+        if isMainPlayer {
+            mainPlayerScore
+        } else {
+            botPlayerScore
+        }
+    }
+    
+    private var mainPlayerScore: some View {
+        VStack(spacing: PlayerIconConstants.Spacing.scoreVertical) {
+            Text(score)
+                .font(.system(size: 14, weight: .black))
+                .foregroundColor(.white)
+                .shadow(color: PlayerIconConstants.Color.gold, radius: 2, x: 0, y: 1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(mainPlayerScoreBackground)
+    }
+    
+    private var mainPlayerScoreBackground: some View {
+        RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.scoreCornerRadius)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        PlayerIconConstants.Color.darkBackground,
+                        PlayerIconConstants.Color.mediumBackground
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.scoreCornerRadius)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                PlayerIconConstants.Color.gold,
+                                PlayerIconConstants.Color.darkGold
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+    }
+    
+    private var botPlayerScore: some View {
+        Text(score)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(.gray)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.botScoreCornerRadius)
+                    .fill(Color.black.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.botScoreCornerRadius)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+// MARK: - Player Icon Container
+private struct PlayerIconContainer: View {
+    let player: Player
+    let position: PlayerPosition
+    let config: PlayerLayoutConfig.IconPosition
+    
+    var body: some View {
+        PlayerImageView(player: player, size: config.size)
+            .frame(width: config.size, height: config.size)
+            .background(Color.black.opacity(0.3))
+            .clipShape(Circle())
+            .overlay(borderOverlay)
+            .shadow(
+                color: shadowColor,
+                radius: shadowRadius,
+                x: 0,
+                y: shadowOffset
+            )
+    }
+    
+    @ViewBuilder
+    private var borderOverlay: some View {
+        if position == .bottom {
+            Circle()
+                .stroke(goldGradient, lineWidth: PlayerIconConstants.Decoration.playerBorderWidth)
+                .shadow(color: PlayerIconConstants.Color.gold.opacity(0.5), radius: 6, x: 0, y: 3)
+        } else {
+            Circle()
+                .stroke(Color.white, lineWidth: PlayerIconConstants.Decoration.botBorderWidth)
+        }
+    }
+    
+    private var goldGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                PlayerIconConstants.Color.gold,
+                PlayerIconConstants.Color.darkGold,
+                PlayerIconConstants.Color.gold
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private var shadowColor: Color {
+        position == .bottom ? PlayerIconConstants.Color.gold.opacity(0.3) : .black.opacity(0.3)
+    }
+    
+    private var shadowRadius: CGFloat {
+        position == .bottom ? 8 : 4
+    }
+    
+    private var shadowOffset: CGFloat {
+        position == .bottom ? 4 : 2
+    }
+}
+
+// MARK: - Player Name Component
+private struct PlayerNameView: View {
+    let playerName: String
+    let config: PlayerLayoutConfig.IconPosition
+    
+    var body: some View {
+        Text(playerName)
+            .font(.system(size: config.nameTextSize, weight: .medium))
+            .foregroundColor(.white)
+            .lineLimit(1)
+            .frame(maxWidth: config.size + 20)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(nameBackground)
+    }
+    
+    private var nameBackground: some View {
+        RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.nameCornerRadius)
+            .fill(Color.black.opacity(0.7))
+            .overlay(
+                RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.nameCornerRadius)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Hand Cards Component  
+private struct HandCardsView: View {
+    let position: PlayerPosition
+    let config: PlayerLayoutConfig.HandConfiguration
+    @ObservedObject var viewModel: GameViewModel
+    @Binding var cardAnimationStates: [Bool]
+    
+    private let cards = TestDataProvider.testCards
+    
+    var body: some View {
+        ZStack {
+            ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                CardView(card: card, size: config.cardSize)
+                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: cards.count, config: config)))
+                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: cards.count, config: config))
+                    .offset(y: cardSelectionOffset(for: index))
+                    .onTapGesture {
+                        handleCardTap(at: index)
+                    }
+                    .onAppear {
+                        cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+                    }
+                    .onChange(of: viewModel.selectedCardIndices) { _, _ in
+                        syncAnimationState(for: index)
+                    }
+            }
+        }
+        .frame(width: config.handAreaSize.width, height: config.handAreaSize.height)
+    }
+    
+    private func cardSelectionOffset(for index: Int) -> CGFloat {
+        position == .bottom && cardAnimationStates[index] ? PlayerIconConstants.Animation.cardSelectionOffset : 0
+    }
+    
+    private func handleCardTap(at index: Int) {
+        guard position == .bottom else { return }
+        
+        viewModel.toggleCardSelection(at: index)
+        withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
+            cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+        }
+    }
+    
+    private func syncAnimationState(for index: Int) {
+        let newState = viewModel.isCardSelected(at: index)
+        guard cardAnimationStates[index] != newState else { return }
+        
+        withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
+            cardAnimationStates[index] = newState
+        }
+    }
+}
+
+// MARK: - Main Player Icon View
+struct PlayerIconView: View {
+    let player: Player
+    let position: PlayerPosition
+    @ObservedObject var viewModel: GameViewModel
+    
+    @State private var cardAnimationStates: [Bool] = Array(repeating: false, count: 7)
+    
     private var config: (icon: PlayerLayoutConfig.IconPosition, hand: PlayerLayoutConfig.HandConfiguration) {
         PlayerLayoutConfig.configuration(for: position)
     }
     
     var body: some View {
         ZStack {
-            // 手札表示（下に配置）
-            handCardsView
-                .offset(config.hand.globalOffset)
-                .rotationEffect(.degrees(config.hand.globalRotation))
+            HandCardsView(
+                position: position,
+                config: config.hand,
+                viewModel: viewModel,
+                cardAnimationStates: $cardAnimationStates
+            )
+            .offset(config.hand.globalOffset)
+            .rotationEffect(.degrees(config.hand.globalRotation))
             
-            // プレイヤーアイコン（上に配置）
-            VStack(spacing: 1) {
-                playerIcon
+            VStack(spacing: PlayerIconConstants.Spacing.nameVertical) {
+                PlayerIconContainer(player: player, position: position, config: config.icon)
                 
-                // プレイヤー名
                 if position != .bottom {
-                    Text(player.name)
-                        .font(.system(size: config.icon.nameTextSize, weight: .medium))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .frame(maxWidth: config.icon.size + 20)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.black.opacity(0.7))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                )
-                        )
+                    PlayerNameView(playerName: player.name, config: config.icon)
                 }
                 
-                // スコア表示（自分とBotで異なるデザイン）
-                if position == .bottom {
-                    playerScoreDisplay
-                } else {
-                    botScoreDisplay
-                }
+                PlayerScoreView(
+                    score: position == .bottom ? "100,000" : "50,000",
+                    isMainPlayer: position == .bottom
+                )
             }
             .offset(config.icon.offset)
         }
     }
-    
-    private var playerIcon: some View {
-        ZStack {
-            if let imageUrl = player.image, !imageUrl.isEmpty {
-                if player.id.hasPrefix("bot-") {
-                    // Botの場合は内部の画像を使用
-                    if let image = UIImage(named: imageUrl) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        // ローカル画像が見つからない場合はデフォルトアイコン
-                        Image(systemName: "person.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                            .foregroundColor(.gray)
-                    }
-                } else if imageUrl.hasPrefix("http") {
-                    // ユーザーの場合でHTTP/HTTPSのURLの場合はURLから読み込み
-                    if let uiImage = imageLoader.image {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                    } else if imageLoader.isLoading {
-                        ProgressView()
-                            .onAppear {
-                                imageLoader.loadImage(from: imageUrl)
-                            }
-                    } else {
-                        // ロードに失敗した場合はデフォルトアイコン
-                        Image(systemName: "person.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                            .foregroundColor(.gray)
-                            .onAppear {
-                                // まだロードを試していない場合は開始
-                                if imageLoader.image == nil && !imageLoader.isLoading {
-                                    imageLoader.loadImage(from: imageUrl)
-                                }
-                            }
-                    }
-                } else {
-                    // URLではないがローカル画像名の可能性がある場合
-                    if let image = UIImage(named: imageUrl) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                    } else {
-                        // ローカル画像も見つからない場合はデフォルトアイコン
-                        Image(systemName: "person.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                            .foregroundColor(.gray)
-                    }
-                }
-            } else {
-                Image(systemName: "person.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .padding(8)
-                    .foregroundColor(.gray)
-            }
-        }
-        .frame(width: config.icon.size, height: config.icon.size)
-        .background(Color.black.opacity(0.3))
-        .clipShape(Circle())
-        .overlay(
-            // 自分のアイコンの場合は特別な装飾を追加
-            Group {
-                if position == .bottom {
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
-                                    Color(red: 0.8, green: 0.6, blue: 0.0),
-                                    Color(red: 1.0, green: 0.84, blue: 0.0)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 3
-                        )
-                        .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.5), radius: 6, x: 0, y: 3)
-                } else {
-                    Circle()
-                        .stroke(Color.white, lineWidth: 2)
-                }
-            }
-        )
-        .shadow(
-            color: position == .bottom ? Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3) : .black.opacity(0.3),
-            radius: position == .bottom ? 8 : 4,
-            x: 0,
-            y: position == .bottom ? 4 : 2
-        )
-    }
-    
-    private var handCardsView: some View {
-        ZStack {
-            ForEach(Array(testCards.enumerated()), id: \.element.id) { index, card in
-                let isSelected = viewModel.isCardSelected(at: index)
-                
-                CardView(card: card, size: config.hand.cardSize)
-                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: testCards.count, config: config.hand)))
-                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: testCards.count, config: config.hand))
-                    // 選択時のy軸移動
-                    .offset(y: position == .bottom && cardAnimationStates[index] ? -30 : 0)
-                    .onTapGesture {
-                        if position == .bottom {
-                            // ViewModelの状態を更新
-                            viewModel.toggleCardSelection(at: index)
-                            
-                            // アニメーション状態を更新
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                cardAnimationStates[index] = viewModel.isCardSelected(at: index)
-                            }
-                        }
-                    }
-                    .onAppear {
-                        // 初期状態を同期
-                        cardAnimationStates[index] = viewModel.isCardSelected(at: index)
-                    }
-                    .onChange(of: viewModel.selectedCardIndices) { _ in
-                        // ViewModelの変更を監視してアニメーション状態を同期
-                        let newState = viewModel.isCardSelected(at: index)
-                        if cardAnimationStates[index] != newState {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                cardAnimationStates[index] = newState
-                            }
-                        }
-                    }
-            }
-        }
-        .frame(width: config.hand.handAreaSize.width, height: config.hand.handAreaSize.height)
-    }
-    
-    private var playerScoreDisplay: some View {
-        VStack(spacing: 4) {
-            Text("100,000")
-                .font(.system(size: 14, weight: .black))
-                .foregroundColor(.white)
-                .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0), radius: 2, x: 0, y: 1)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0.1, green: 0.1, blue: 0.1),
-                            Color(red: 0.2, green: 0.2, blue: 0.2)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(red: 1.0, green: 0.84, blue: 0.0),
-                                    Color(red: 0.8, green: 0.6, blue: 0.0)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.5
-                        )
-                )
-                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
-        )
-    }
-    
-    private var botScoreDisplay: some View {
-        Text("50,000")
-            .font(.system(size: 10, weight: .medium))
-            .foregroundColor(.gray)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.black.opacity(0.6))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                    )
-            )
-    }
 }
+
