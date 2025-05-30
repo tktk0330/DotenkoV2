@@ -18,16 +18,16 @@ struct ProfileSectionView: View {
                             .resizable()
                             .scaledToFit()
                             .padding(20)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(Appearance.Color.commonGray)
                     }
                 }
                 .frame(width: 100, height: 100)
                 .clipped()
-                .background(Color.black.opacity(0.1))
+                .background(Appearance.Color.commonBlack.opacity(0.1))
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.gray, lineWidth: 1)
+                        .stroke(Appearance.Color.commonGray, lineWidth: 1)
                 )
                 .onTapGesture {
                     profileVM.isPickerPresented = true
@@ -39,7 +39,7 @@ struct ProfileSectionView: View {
 
                 if case .error(let message) = profileVM.updateState {
                     Text(message)
-                        .foregroundColor(.red)
+                        .foregroundColor(Appearance.Color.commonRed)
                         .font(.caption)
                 }
             }
@@ -61,19 +61,19 @@ struct ProfileSectionView: View {
                     HStack(spacing: 8) {
                         Button(action: profileVM.updateUsername) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
+                                .foregroundColor(Appearance.Color.commonGreen)
                         }
                         
                         Button(action: profileVM.cancelEditing) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
+                                .foregroundColor(Appearance.Color.commonRed)
                         }
                     }
                 } else {
                     // 表示モード
                     Text(profileVM.username)
                         .font(Font(Appearance.Font.casinoHeading))
-                        .foregroundColor(.white)
+                        .foregroundColor(Appearance.Color.commonWhite)
                     
                     // 編集ボタン
                     Button(action: profileVM.startEditing) {

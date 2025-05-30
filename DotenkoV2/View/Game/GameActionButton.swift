@@ -16,14 +16,14 @@ struct GameActionButton: View {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: size * 0.35, weight: .bold))
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .foregroundColor(Appearance.Color.commonWhite)
+                    .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 2, x: 0, y: 1)
                 
                 Text(label)
                     .font(.system(size: size * 0.18, weight: .heavy))
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .tracking(1.2)
-                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 2, x: 0, y: 1)
                     .lineLimit(1)
             }
             .frame(width: size, height: size)
@@ -49,9 +49,9 @@ struct GameActionButton: View {
                         .stroke(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
-                                    Color(red: 0.8, green: 0.6, blue: 0.0),
-                                    Color(red: 1.0, green: 0.84, blue: 0.0)
+                                    Appearance.Color.playerGold,
+                                    Appearance.Color.playerDarkGold,
+                                    Appearance.Color.playerGold
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -61,7 +61,7 @@ struct GameActionButton: View {
                     
                     // 内側の装飾リング
                     Circle()
-                        .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                        .stroke(Appearance.Color.commonWhite.opacity(0.4), lineWidth: 1)
                         .scaleEffect(0.85)
                     
                     // 光沢エフェクト
@@ -69,8 +69,8 @@ struct GameActionButton: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(stops: [
-                                    .init(color: Color.white.opacity(0.3), location: 0.0),
-                                    .init(color: Color.clear, location: 0.4)
+                                    .init(color: Appearance.Color.commonWhite.opacity(0.3), location: 0.0),
+                                    .init(color: Appearance.Color.commonClear, location: 0.4)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .center
@@ -83,7 +83,7 @@ struct GameActionButton: View {
             .overlay(
                 // 押下時のエフェクト
                 Circle()
-                    .fill(Color.white.opacity(isPressed ? 0.2 : 0.0))
+                    .fill(Appearance.Color.commonWhite.opacity(isPressed ? 0.2 : 0.0))
                     .animation(.easeInOut(duration: 0.1), value: isPressed)
             )
             .scaleEffect(isPressed ? 0.92 : 1.0)

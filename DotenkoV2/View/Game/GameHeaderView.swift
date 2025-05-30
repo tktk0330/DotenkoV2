@@ -15,8 +15,8 @@ struct GameHeaderView: View {
                 icon: "chart.bar.fill",
                 label: "ROUND",
                 value: "\(currentRound)/\(totalRounds)",
-                valueColor: .white,
-                accentColor: Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                valueColor: Appearance.Color.commonWhite,
+                accentColor: Appearance.Color.playerGold, // ゴールド
                 fixedWidth: 100
             )
             
@@ -32,8 +32,8 @@ struct GameHeaderView: View {
                 icon: "multiply.circle.fill",
                 label: "RATE",
                 value: "×\(currentRate)",
-                valueColor: Color(red: 0.0, green: 0.8, blue: 0.4), // エメラルドグリーン
-                accentColor: Color(red: 0.0, green: 0.8, blue: 0.4),
+                valueColor: Appearance.Color.emeraldGreen, // エメラルドグリーン
+                accentColor: Appearance.Color.emeraldGreen, // エメラルドグリーン
                 fixedWidth: 100
             )
         }
@@ -46,9 +46,9 @@ struct GameHeaderView: View {
         // カジノ風グラデーション背景
         LinearGradient(
             gradient: Gradient(stops: [
-                .init(color: Color(red: 0.05, green: 0.15, blue: 0.05), location: 0.0),
-                .init(color: Color(red: 0.1, green: 0.25, blue: 0.1), location: 0.5),
-                .init(color: Color(red: 0.05, green: 0.15, blue: 0.05), location: 1.0)
+                .init(color: Appearance.Color.headerDarkGreen, location: 0.0),
+                .init(color: Appearance.Color.headerMediumGreen, location: 0.5),
+                .init(color: Appearance.Color.headerDarkGreen, location: 1.0)
             ]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -60,9 +60,9 @@ struct GameHeaderView: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color(red: 1.0, green: 0.84, blue: 0.0),
-                                Color(red: 0.8, green: 0.6, blue: 0.0),
-                                Color(red: 1.0, green: 0.84, blue: 0.0)
+                                Appearance.Color.playerGold,
+                                Appearance.Color.playerDarkGold,
+                                Appearance.Color.playerGold
                             ]),
                             startPoint: .leading,
                             endPoint: .trailing
@@ -75,9 +75,9 @@ struct GameHeaderView: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color(red: 1.0, green: 0.84, blue: 0.0),
-                                Color(red: 0.8, green: 0.6, blue: 0.0),
-                                Color(red: 1.0, green: 0.84, blue: 0.0)
+                                Appearance.Color.playerGold,
+                                Appearance.Color.playerDarkGold,
+                                Appearance.Color.playerGold
                             ]),
                             startPoint: .leading,
                             endPoint: .trailing
@@ -86,7 +86,7 @@ struct GameHeaderView: View {
                     .frame(height: 2)
             }
         )
-        .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
+        .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 10, x: 0, y: 5)
     }
 }
 
@@ -125,7 +125,7 @@ struct CasinoInfoCardView: View {
                 
                 Text(label)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.9))
                     .tracking(1.0)
             }
             
@@ -139,12 +139,12 @@ struct CasinoInfoCardView: View {
         .frame(width: fixedWidth)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.black.opacity(0.4))
+                .fill(Appearance.Color.commonBlack.opacity(0.4))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(accentColor.opacity(0.6), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.3), radius: 4, x: 0, y: 2)
         )
     }
 }
@@ -159,22 +159,22 @@ struct UpRateDisplayView: View {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0))
+                    .foregroundColor(Appearance.Color.playerGold)
                 
                 Text("UP")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .tracking(1.5)
             }
             
             Text("×\(upRate)")
                 .font(.system(size: 28, weight: .black))
-                .foregroundColor(.white)
-                .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0), radius: 3, x: 0, y: 0)
+                .foregroundColor(Appearance.Color.commonWhite)
+                .shadow(color: Appearance.Color.playerGold.opacity(0.3), radius: 3, x: 0, y: 0)
                 .overlay(
                     Text("×\(upRate)")
                         .font(.system(size: 28, weight: .black))
-                        .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3))
+                        .foregroundColor(Appearance.Color.playerGold.opacity(0.3))
                         .blur(radius: 1)
                 )
         }
@@ -185,8 +185,8 @@ struct UpRateDisplayView: View {
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0.2, green: 0.1, blue: 0.0),
-                            Color(red: 0.4, green: 0.2, blue: 0.0)
+                            Appearance.Color.upDisplayDarkBrown,
+                            Appearance.Color.upDisplayLightBrown
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -197,8 +197,8 @@ struct UpRateDisplayView: View {
                         .stroke(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 1.0, green: 0.84, blue: 0.0),
-                                    Color(red: 0.8, green: 0.6, blue: 0.0)
+                                    Appearance.Color.playerGold,
+                                    Appearance.Color.playerDarkGold
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -206,7 +206,7 @@ struct UpRateDisplayView: View {
                             lineWidth: 2
                         )
                 )
-                .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.3), radius: 8, x: 0, y: 4)
+                .shadow(color: Appearance.Color.playerGold.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
 } 

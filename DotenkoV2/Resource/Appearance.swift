@@ -16,6 +16,72 @@ enum Appearance {
         /// 明るい黄金色 (R: 1.0, G: 0.85, B: 0.4) - 選択状態やハイライトとして使用
         static let goldenYellow = UIColor(red: 1.0, green: 0.85, blue: 0.4, alpha: 1.0)
         
+        // PlayerIcon関連の色定義
+        /// プレイヤーアイコンの金色 (R: 1.0, G: 0.84, B: 0.0) - メインプレイヤーのハイライトに使用
+        static let playerGold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// プレイヤーアイコンの暗い金色 (R: 0.8, G: 0.6, B: 0.0) - グラデーション効果に使用
+        static let playerDarkGold = SwiftUI.Color(red: 0.8, green: 0.6, blue: 0.0)
+        /// プレイヤーアイコンの暗い背景色 (R: 0.1, G: 0.1, B: 0.1) - スコア表示の背景に使用
+        static let playerDarkBackground = SwiftUI.Color(red: 0.1, green: 0.1, blue: 0.1)
+        /// プレイヤーアイコンの中間背景色 (R: 0.2, G: 0.2, B: 0.2) - グラデーション効果に使用
+        static let playerMediumBackground = SwiftUI.Color(red: 0.2, green: 0.2, blue: 0.2)
+        
+        // 共通で使用される基本色
+        /// 汎用白色 - テキストや境界線に使用
+        static let commonWhite = SwiftUI.Color.white
+        /// 汎用黒色 - 背景や影に使用
+        static let commonBlack = SwiftUI.Color.black
+        /// 汎用グレー - セカンダリテキストや無効状態に使用
+        static let commonGray = SwiftUI.Color.gray
+        /// 汎用赤色 - エラーや警告に使用
+        static let commonRed = SwiftUI.Color.red
+        /// 汎用青色 - リンクやアクセントに使用
+        static let commonBlue = SwiftUI.Color.blue
+        /// 汎用緑色 - 成功や承認に使用
+        static let commonGreen = SwiftUI.Color.green
+        /// 汎用黄色 - 注意や強調に使用
+        static let commonYellow = SwiftUI.Color.yellow
+        /// 汎用オレンジ色 - 警告やアクセントに使用
+        static let commonOrange = SwiftUI.Color.orange
+        /// 汎用透明色 - 透明背景に使用
+        static let commonClear = SwiftUI.Color.clear
+        
+        // UI特殊色
+        /// 設定ボタンの有効状態色 - 深い緑色
+        static let settingActiveGreen = SwiftUI.Color(red: 32/255, green: 64/255, blue: 32/255)
+        
+        // ゲームアクションボタン色
+        /// パスボタンの背景色 - 赤色
+        static let passButtonBackground = SwiftUI.Color(red: 0.8, green: 0.2, blue: 0.2)
+        /// プレイボタンの背景色 - 緑色
+        static let playButtonBackground = SwiftUI.Color(red: 0.2, green: 0.6, blue: 0.2)
+        
+        // GameHeader専用色
+        /// エメラルドグリーン - レート表示に使用
+        static let emeraldGreen = SwiftUI.Color(red: 0.0, green: 0.8, blue: 0.4)
+        /// ヘッダー背景の暗い緑
+        static let headerDarkGreen = SwiftUI.Color(red: 0.05, green: 0.15, blue: 0.05)
+        /// ヘッダー背景の中間緑
+        static let headerMediumGreen = SwiftUI.Color(red: 0.1, green: 0.25, blue: 0.1)
+        /// UP表示の暗い茶色背景
+        static let upDisplayDarkBrown = SwiftUI.Color(red: 0.2, green: 0.1, blue: 0.0)
+        /// UP表示の明るい茶色背景
+        static let upDisplayLightBrown = SwiftUI.Color(red: 0.4, green: 0.2, blue: 0.0)
+        
+        // 背景色グラデーション
+        /// メイン背景グラデーション - カジノ風の深緑グラデーション
+        static let mainBackgroundGradient = [
+            SwiftUI.Color(red: 0/255, green: 29/255, blue: 11/255),    // 深緑
+            SwiftUI.Color(red: 0/255, green: 45/255, blue: 20/255),    // 中間の緑
+            SwiftUI.Color(red: 0/255, green: 35/255, blue: 15/255)     // やや明るい緑
+        ]
+        
+        /// オーバーレイ用白色グラデーション
+        static let overlayWhiteGradient = [
+            SwiftUI.Color.white.opacity(0.1),
+            SwiftUI.Color.clear
+        ]
+        
         // カジノ風グラデーション
         static let casinoGradient = CasinoGradient()
         

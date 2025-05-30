@@ -21,8 +21,8 @@ struct Menu2View: View {
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.orange)
-                    .foregroundColor(.white)
+                    .background(Appearance.Color.commonOrange)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .cornerRadius(8)
             }
             .padding(.horizontal, 24)

@@ -9,7 +9,7 @@ struct CasinoButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(Appearance.Color.commonWhite)
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)
                 .background(
@@ -50,7 +50,7 @@ struct CasinoButton: View {
                         .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: isBlinking)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 30))
-                .shadow(color: Color.yellow.opacity(0.7), radius: 16, x: 0, y: 0) // より強い影
+                .shadow(color: Appearance.Color.commonYellow.opacity(0.7), radius: 16, x: 0, y: 0) // より強い影
         }
         .buttonStyle(CasinoButtonStyle())
         .padding(.horizontal, 40)

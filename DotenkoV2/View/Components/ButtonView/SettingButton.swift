@@ -11,18 +11,18 @@ struct SettingButton: View {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 36, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .frame(width: 50)
                 Spacer()
                 Text(title)
                     .font(.system(size: 32, weight: .heavy))
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
                 Spacer()
             }
             .padding()
-            .background(isOn ? Color(red: 32/255, green: 64/255, blue: 32/255) : Color.gray)
+            .background(isOn ? Appearance.Color.settingActiveGreen : Appearance.Color.commonGray)
             .cornerRadius(10)
-            .shadow(color: .black.opacity(0.3), radius: 8, x: 8, y: 8)
+            .shadow(color: Appearance.Color.commonBlack.opacity(0.3), radius: 8, x: 8, y: 8)
         }
         .padding(.horizontal)
     }

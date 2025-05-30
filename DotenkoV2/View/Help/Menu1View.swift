@@ -17,8 +17,8 @@ struct Menu1View: View {
                     .fontWeight(.bold)
                     .padding()
                     .frame(width: 200)
-                    .background(Color.green)
-                    .foregroundColor(.white)
+                    .background(Appearance.Color.commonGreen)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .cornerRadius(10)
             }
             
@@ -29,8 +29,8 @@ struct Menu1View: View {
                     .fontWeight(.bold)
                     .padding()
                     .frame(width: 200)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(Appearance.Color.commonBlue)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .cornerRadius(10)
             }
             .onDisappear {

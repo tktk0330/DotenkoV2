@@ -149,7 +149,7 @@ struct GameFieldView: View {
         VStack {
             // カード配置エリア（後で実際のゲーム要素に置き換え）
             Rectangle()
-                .fill(Color.black.opacity(0.3))
+                .fill(Appearance.Color.commonBlack.opacity(0.3))
                 .frame(
                     width: GameLayoutConfig.gameFieldWidth,
                     height: GameLayoutConfig.gameFieldHeight
@@ -157,7 +157,7 @@ struct GameFieldView: View {
                 .cornerRadius(12)
                 .overlay(
                     Text("カード配置エリア")
-                        .foregroundColor(.white)
+                        .foregroundColor(Appearance.Color.commonWhite)
                         .font(.caption)
                 )
         }
@@ -177,7 +177,7 @@ struct BottomPlayerAreaView: View {
         ZStack(alignment: .bottom) {
             // フレーム全体を使用
             Rectangle()
-                .fill(Color.clear)
+                .fill(Appearance.Color.commonClear)
                 .frame(height: geometry.size.height * GameLayoutConfig.bottomAreaHeightRatio)
             
             if let player = player {
@@ -187,7 +187,7 @@ struct BottomPlayerAreaView: View {
                         icon: "arrow.down.circle.fill",
                         label: "パス",
                         action: onPassAction,
-                        backgroundColor: Color(red: 0.8, green: 0.2, blue: 0.2),
+                        backgroundColor: Appearance.Color.passButtonBackground,
                         size: 75
                     )
                     .offset(x: 0, y: 50)
@@ -201,7 +201,7 @@ struct BottomPlayerAreaView: View {
                         icon: "arrow.up.circle.fill",
                         label: "出す",
                         action: onPlayAction,
-                        backgroundColor: Color(red: 0.2, green: 0.6, blue: 0.2),
+                        backgroundColor: Appearance.Color.playButtonBackground,
                         size: 75
                     )
                     .offset(x: 0, y: 50)

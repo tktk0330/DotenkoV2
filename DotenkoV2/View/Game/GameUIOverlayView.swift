@@ -38,9 +38,9 @@ struct BackButtonView: View {
         Button(action: action) {
             Image(systemName: "chevron.left")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(Appearance.Color.commonWhite)
                 .padding()
-                .background(Color.black.opacity(0.3))
+                .background(Appearance.Color.commonBlack.opacity(0.3))
                 .clipShape(Circle())
         }
         .padding(.leading, GameLayoutConfig.backButtonLeadingPadding)
@@ -57,9 +57,9 @@ struct SettingsButtonView: View {
         Button(action: action) {
             Image(systemName: "gearshape.fill")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(Appearance.Color.commonWhite)
                 .padding(12)
-                .background(Color.black.opacity(0.3))
+                .background(Appearance.Color.commonBlack.opacity(0.3))
                 .clipShape(Circle())
         }
     }

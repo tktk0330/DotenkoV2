@@ -64,20 +64,13 @@ struct CasinoBackground: View {
     var body: some View {
         GeometryReader { geometry in
             LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0/255, green: 29/255, blue: 11/255),
-                    Color(red: 0/255, green: 45/255, blue: 20/255),
-                    Color(red: 0/255, green: 35/255, blue: 15/255)
-                ]),
+                gradient: Gradient(colors: Appearance.Color.mainBackgroundGradient),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .overlay(
                 RadialGradient(
-                    gradient: Gradient(colors: [
-                        Color.white.opacity(0.1),
-                        Color.clear
-                    ]),
+                    gradient: Gradient(colors: Appearance.Color.overlayWhiteGradient),
                     center: .topLeading,
                     startRadius: 0,
                     endRadius: geometry.size.width

@@ -10,7 +10,7 @@ struct ErrorView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 40, height: 40)
-                .foregroundColor(.red)
+                .foregroundColor(Appearance.Color.commonRed)
                 .padding(.top, 24)
             
             // エラーメッセージ
@@ -30,8 +30,8 @@ struct ErrorView: View {
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
+                    .background(Appearance.Color.commonBlue)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .cornerRadius(8)
             }
             .padding(.horizontal, 24)

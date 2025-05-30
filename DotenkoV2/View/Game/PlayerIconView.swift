@@ -1,33 +1,5 @@
 import SwiftUI
 
-// MARK: - Constants
-private enum PlayerIconConstants {
-    enum Animation {
-        static let cardSelectionOffset: CGFloat = -30
-        static let duration: Double = 0.3
-    }
-    
-    enum Spacing {
-        static let nameVertical: CGFloat = 1
-        static let scoreVertical: CGFloat = 4
-    }
-    
-    enum Decoration {
-        static let playerBorderWidth: CGFloat = 3
-        static let botBorderWidth: CGFloat = 2
-        static let nameCornerRadius: CGFloat = 6
-        static let scoreCornerRadius: CGFloat = 8
-        static let botScoreCornerRadius: CGFloat = 4
-    }
-    
-    enum Color {
-        static let gold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
-        static let darkGold = SwiftUI.Color(red: 0.8, green: 0.6, blue: 0.0)
-        static let darkBackground = SwiftUI.Color(red: 0.1, green: 0.1, blue: 0.1)
-        static let mediumBackground = SwiftUI.Color(red: 0.2, green: 0.2, blue: 0.2)
-    }
-}
-
 // MARK: - Test Data Provider
 private struct TestDataProvider {
     static let testCards: [Card] = [
@@ -100,7 +72,7 @@ private struct PlayerImageView: View {
             .resizable()
             .scaledToFit()
             .padding(8)
-            .foregroundColor(.gray)
+            .foregroundColor(Appearance.Color.commonWhite)
     }
 }
 
@@ -121,8 +93,8 @@ private struct PlayerScoreView: View {
         VStack(spacing: PlayerIconConstants.Spacing.scoreVertical) {
             Text(score)
                 .font(.system(size: 14, weight: .black))
-                .foregroundColor(.white)
-                .shadow(color: PlayerIconConstants.Color.gold, radius: 2, x: 0, y: 1)
+                .foregroundColor(Appearance.Color.commonWhite)
+                .shadow(color: Appearance.Color.playerGold, radius: 2, x: 0, y: 1)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
@@ -134,8 +106,8 @@ private struct PlayerScoreView: View {
             .fill(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        PlayerIconConstants.Color.darkBackground,
-                        PlayerIconConstants.Color.mediumBackground
+                        Appearance.Color.playerDarkBackground,
+                        Appearance.Color.playerMediumBackground
                     ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -146,8 +118,8 @@ private struct PlayerScoreView: View {
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                PlayerIconConstants.Color.gold,
-                                PlayerIconConstants.Color.darkGold
+                                Appearance.Color.playerGold,
+                                Appearance.Color.playerDarkGold
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -155,21 +127,21 @@ private struct PlayerScoreView: View {
                         lineWidth: 1.5
                     )
             )
-            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+            .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 4, x: 0, y: 2)
     }
     
     private var botPlayerScore: some View {
         Text(score)
             .font(.system(size: 10, weight: .medium))
-            .foregroundColor(.gray)
+            .foregroundColor(Appearance.Color.commonGray)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.botScoreCornerRadius)
-                    .fill(Color.black.opacity(0.6))
+                    .fill(Appearance.Color.commonBlack.opacity(0.6))
                     .overlay(
                         RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.botScoreCornerRadius)
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            .stroke(Appearance.Color.commonGray.opacity(0.5), lineWidth: 1)
                     )
             )
     }
@@ -184,7 +156,7 @@ private struct PlayerIconContainer: View {
     var body: some View {
         PlayerImageView(player: player, size: config.size)
             .frame(width: config.size, height: config.size)
-            .background(Color.black.opacity(0.3))
+            .background(Appearance.Color.commonBlack.opacity(0.3))
             .clipShape(Circle())
             .overlay(borderOverlay)
             .shadow(
@@ -200,19 +172,19 @@ private struct PlayerIconContainer: View {
         if position == .bottom {
             Circle()
                 .stroke(goldGradient, lineWidth: PlayerIconConstants.Decoration.playerBorderWidth)
-                .shadow(color: PlayerIconConstants.Color.gold.opacity(0.5), radius: 6, x: 0, y: 3)
+                .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 6, x: 0, y: 3)
         } else {
             Circle()
-                .stroke(Color.white, lineWidth: PlayerIconConstants.Decoration.botBorderWidth)
+                .stroke(Appearance.Color.commonWhite, lineWidth: PlayerIconConstants.Decoration.botBorderWidth)
         }
     }
     
     private var goldGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [
-                PlayerIconConstants.Color.gold,
-                PlayerIconConstants.Color.darkGold,
-                PlayerIconConstants.Color.gold
+                Appearance.Color.playerGold,
+                Appearance.Color.playerDarkGold,
+                Appearance.Color.playerGold
             ]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -220,7 +192,7 @@ private struct PlayerIconContainer: View {
     }
     
     private var shadowColor: Color {
-        position == .bottom ? PlayerIconConstants.Color.gold.opacity(0.3) : .black.opacity(0.3)
+        position == .bottom ? Appearance.Color.playerGold.opacity(0.3) : Appearance.Color.commonBlack.opacity(0.3)
     }
     
     private var shadowRadius: CGFloat {
@@ -240,7 +212,7 @@ private struct PlayerNameView: View {
     var body: some View {
         Text(playerName)
             .font(.system(size: config.nameTextSize, weight: .medium))
-            .foregroundColor(.white)
+            .foregroundColor(Appearance.Color.commonWhite)
             .lineLimit(1)
             .frame(maxWidth: config.size + 20)
             .padding(.horizontal, 8)
@@ -250,10 +222,10 @@ private struct PlayerNameView: View {
     
     private var nameBackground: some View {
         RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.nameCornerRadius)
-            .fill(Color.black.opacity(0.7))
+            .fill(Appearance.Color.commonBlack.opacity(0.7))
             .overlay(
                 RoundedRectangle(cornerRadius: PlayerIconConstants.Decoration.nameCornerRadius)
-                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    .stroke(Appearance.Color.commonWhite.opacity(0.3), lineWidth: 1)
             )
     }
 }

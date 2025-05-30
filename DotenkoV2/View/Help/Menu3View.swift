@@ -37,7 +37,7 @@ struct Menu3View: View {
                     .fontWeight(.bold)
                     .padding()
                     .frame(width: 200)
-                    .background(Color.blue)
+                    .background(Appearance.Color.commonBlue)
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
