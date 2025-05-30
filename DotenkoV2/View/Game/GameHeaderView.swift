@@ -157,7 +157,7 @@ struct UpRateDisplayView: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 4) {
-                Image(systemName: "arrow.up.circle.fill")
+                Image(systemName: Appearance.Icon.arrowUpCircleFill)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(Appearance.Color.playerGold)
                 

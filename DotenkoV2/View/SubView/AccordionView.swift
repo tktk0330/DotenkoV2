@@ -24,8 +24,8 @@ struct AccordionView<Content: View>: View {
                     
                     Spacer()
                     
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.white)
+                    Image(systemName: isExpanded ? Appearance.Icon.chevronUp : Appearance.Icon.chevronDown)
+                        .foregroundColor(Appearance.Color.commonWhite)
                         .font(.system(size: 14))
                 }
             }

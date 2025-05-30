@@ -188,5 +188,41 @@ enum Appearance {
             static let bot9 = "botIcon09"
         }
     }
+    
+    struct Icon {
+        // ナビゲーション関連
+        /// 戻るボタン用シェブロン
+        static let chevronLeft = "chevron.left"
+        /// 右向きシェブロン
+        static let chevronRight = "chevron.right"
+        /// 上向きシェブロン
+        static let chevronUp = "chevron.up"
+        /// 下向きシェブロン
+        static let chevronDown = "chevron.down"
+        /// 閉じるボタン用X印
+        static let xmark = "xmark"
+        
+        // ユーザー関連
+        /// デフォルトプロフィールアイコン
+        static let personFill = "person.fill"
+        /// 編集用鉛筆アイコン
+        static let pencilCircleFill = "pencil.circle.fill"
+        /// 確認用チェックマーク
+        static let checkmarkCircleFill = "checkmark.circle.fill"
+        /// キャンセル用Xマーク
+        static let xmarkCircleFill = "xmark.circle.fill"
+        
+        // ゲーム関連
+        /// パスボタン用下向き矢印
+        static let arrowDownCircleFill = "arrow.down.circle.fill"
+        /// プレイボタン用上向き矢印
+        static let arrowUpCircleFill = "arrow.up.circle.fill"
+        /// 設定用ギアアイコン
+        static let gearshapeFill = "gearshape.fill"
+        
+        // エラー・警告関連
+        /// エラー用三角警告アイコン
+        static let exclamationmarkTriangleFill = "exclamationmark.triangle.fill"
+    }
 }
 

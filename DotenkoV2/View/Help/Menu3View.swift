@@ -10,9 +10,9 @@ struct Menu3View: View {
                 Button(action: {
                     allViewNavigator.pop()
                 }) {
-                    Image(systemName: "xmark")
+                    Image(systemName: Appearance.Icon.xmark)
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(Appearance.Color.commonWhite)
                         .padding()
                 }
             }
@@ -22,11 +22,11 @@ struct Menu3View: View {
             Text("MENU 3")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(Appearance.Color.commonWhite)
             
             Text("全画面表示のメニュー")
                 .font(.title2)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
             
             Spacer()
             
@@ -38,7 +38,7 @@ struct Menu3View: View {
                     .padding()
                     .frame(width: 200)
                     .background(Appearance.Color.commonBlue)
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
                     .cornerRadius(10)
             }
             

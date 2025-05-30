@@ -20,9 +20,9 @@ struct MatchingView: View {
                 // 戻るボタンと参加人数
                 HStack {
                     Button(action: { allViewNavigator.pop() }) {
-                        Image(systemName: "chevron.left")
+                        Image(systemName: Appearance.Icon.chevronLeft)
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Appearance.Color.commonWhite)
                     }
                     
                     Spacer()
@@ -30,7 +30,7 @@ struct MatchingView: View {
                     // 参加人数表示
                     Text("\(viewModel.players.count)/\(maxPlayers)が参加中")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(Appearance.Color.commonWhite)
                 }
                 .padding(.horizontal, 20)
                 
@@ -52,7 +52,7 @@ struct MatchingView: View {
                     Button(action: startGame) {
                         Text("ゲームを開始")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Appearance.Color.commonWhite)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Appearance.Color.commonGreen)
@@ -98,11 +98,11 @@ struct PlayerSlotView: View {
                                     .scaledToFill()
                             } else {
                                 // ローカル画像が見つからない場合はデフォルトアイコン
-                                Image(systemName: "person.fill")
+                                Image(systemName: Appearance.Icon.personFill)
                                     .resizable()
                                     .scaledToFit()
                                     .padding(12)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Appearance.Color.commonGray)
                             }
                         } else if imageUrl.hasPrefix("http") {
                             // ユーザーの場合でHTTP/HTTPSのURLの場合はURLから読み込み
@@ -117,11 +117,11 @@ struct PlayerSlotView: View {
                                     }
                             } else {
                                 // ロードに失敗した場合はデフォルトアイコン
-                                Image(systemName: "person.fill")
+                                Image(systemName: Appearance.Icon.personFill)
                                     .resizable()
                                     .scaledToFit()
                                     .padding(12)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Appearance.Color.commonGray)
                                     .onAppear {
                                         // まだロードを試していない場合は開始
                                         if imageLoader.image == nil && !imageLoader.isLoading {
@@ -137,52 +137,52 @@ struct PlayerSlotView: View {
                                     .scaledToFill()
                             } else {
                                 // ローカル画像も見つからない場合はデフォルトアイコン
-                                Image(systemName: "person.fill")
+                                Image(systemName: Appearance.Icon.personFill)
                                     .resizable()
                                     .scaledToFit()
                                     .padding(12)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(Appearance.Color.commonGray)
                             }
                         }
                     } else {
-                        Image(systemName: "person.fill")
+                        Image(systemName: Appearance.Icon.personFill)
                             .resizable()
                             .scaledToFit()
                             .padding(12)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Appearance.Color.commonGray)
                     }
                 } else {
                     if isLoading {
                         ProgressView()
                     } else {
-                        Image(systemName: "person.fill")
+                        Image(systemName: Appearance.Icon.personFill)
                             .resizable()
                             .scaledToFit()
                             .padding(12)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Appearance.Color.commonGray)
                     }
                 }
             }
             .frame(width: 50, height: 50)
-            .background(Color.black.opacity(0.3))
+            .background(Appearance.Color.commonBlack.opacity(0.2))
             .clipShape(Circle())
             
             // プレイヤー名
             if let player = player {
                 Text(player.name)
                     .font(.system(size: 16))
-                    .foregroundColor(.white)
+                    .foregroundColor(Appearance.Color.commonWhite)
             } else {
                 Text("募集中")
                     .font(.system(size: 16))
-                    .foregroundColor(.gray)
+                    .foregroundColor(Appearance.Color.commonGray)
             }
             
             Spacer()
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.black.opacity(0.2))
+        .background(Appearance.Color.commonBlack.opacity(0.2))
         .cornerRadius(12)
         .padding(.horizontal, 20)
     }

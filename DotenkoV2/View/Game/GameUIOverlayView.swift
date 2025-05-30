@@ -36,7 +36,7 @@ struct BackButtonView: View {
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: "chevron.left")
+            Image(systemName: Appearance.Icon.chevronLeft)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(Appearance.Color.commonWhite)
                 .padding()
@@ -55,7 +55,7 @@ struct SettingsButtonView: View {
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: "gearshape.fill")
+            Image(systemName: Appearance.Icon.gearshapeFill)
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(Appearance.Color.commonWhite)
                 .padding(12)

@@ -68,7 +68,7 @@ private struct PlayerImageView: View {
     }
     
     private var defaultImageView: some View {
-        Image(systemName: "person.fill")
+        Image(systemName: Appearance.Icon.personFill)
             .resizable()
             .scaledToFit()
             .padding(8)

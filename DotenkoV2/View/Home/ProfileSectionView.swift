@@ -14,7 +14,7 @@ struct ProfileSectionView: View {
                             .scaledToFill()
                     } else {
                         // デフォルトアイコン
-                        Image(systemName: "person.fill")
+                        Image(systemName: Appearance.Icon.personFill)
                             .resizable()
                             .scaledToFit()
                             .padding(20)
@@ -60,12 +60,12 @@ struct ProfileSectionView: View {
                     // 保存/キャンセルボタン
                     HStack(spacing: 8) {
                         Button(action: profileVM.updateUsername) {
-                            Image(systemName: "checkmark.circle.fill")
+                            Image(systemName: Appearance.Icon.checkmarkCircleFill)
                                 .foregroundColor(Appearance.Color.commonGreen)
                         }
                         
                         Button(action: profileVM.cancelEditing) {
-                            Image(systemName: "xmark.circle.fill")
+                            Image(systemName: Appearance.Icon.xmarkCircleFill)
                                 .foregroundColor(Appearance.Color.commonRed)
                         }
                     }
@@ -77,7 +77,7 @@ struct ProfileSectionView: View {
                     
                     // 編集ボタン
                     Button(action: profileVM.startEditing) {
-                        Image(systemName: "pencil.circle.fill")
+                        Image(systemName: Appearance.Icon.pencilCircleFill)
                             .foregroundColor(Color(uiColor: Appearance.Color.goldenYellow))
                     }
                 }

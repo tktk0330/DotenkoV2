@@ -6,7 +6,7 @@ struct ErrorView: View {
     var body: some View {
         VStack(spacing: 16) {
             // エラーアイコン
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: Appearance.Icon.exclamationmarkTriangleFill)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 40, height: 40)

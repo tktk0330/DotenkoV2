@@ -184,7 +184,7 @@ struct BottomPlayerAreaView: View {
                 HStack(spacing: 15) {
                     // 左側：パス/引くボタン
                     GameActionButton(
-                        icon: "arrow.down.circle.fill",
+                        icon: Appearance.Icon.arrowDownCircleFill,
                         label: "パス",
                         action: onPassAction,
                         backgroundColor: Appearance.Color.passButtonBackground,
@@ -198,7 +198,7 @@ struct BottomPlayerAreaView: View {
                     
                     // 右側：出すボタン
                     GameActionButton(
-                        icon: "arrow.up.circle.fill",
+                        icon: Appearance.Icon.arrowUpCircleFill,
                         label: "出す",
                         action: onPlayAction,
                         backgroundColor: Appearance.Color.playButtonBackground,
