@@ -21,7 +21,7 @@ struct GameMainView: View {
                 
                 // Deck（座標を直接指定）
                 DeckView(
-                    deckCount: viewModel.deckCount,
+                    deckCards: viewModel.deckCards,
                     onDeckTap: viewModel.handleDeckTap
                 )
                     .position(x: geometry.size.width * 0.0, y: geometry.size.height * 0.65)

@@ -23,7 +23,6 @@ class GameViewModel: ObservableObject {
     @Published var currentPot: Int = 0
     
     // デッキ情報
-    @Published var deckCount: Int = 30
     @Published var deckCards: [Card] = []
     // フィールド情報
     @Published var fieldCards: [Card] = []
@@ -79,8 +78,26 @@ class GameViewModel: ObservableObject {
     }
     
     private func setupDeck() {
-        deckCount = 30
-        deckCards = []
+        // 標準的なトランプデッキを作成（52枚 + ジョーカー2枚）
+        var cards: [Card] = []
+        
+        // 各スートの1-13のカードを追加
+        let spadeCards: [PlayCard] = [.spade1, .spade2, .spade3, .spade4, .spade5, .spade6, .spade7, .spade8, .spade9, .spade10, .spade11, .spade12, .spade13]
+        let heartCards: [PlayCard] = [.heart1, .heart2, .heart3, .heart4, .heart5, .heart6, .heart7, .heart8, .heart9, .heart10, .heart11, .heart12, .heart13]
+        let diamondCards: [PlayCard] = [.diamond1, .diamond2, .diamond3, .diamond4, .diamond5, .diamond6, .diamond7, .diamond8, .diamond9, .diamond10, .diamond11, .diamond12, .diamond13]
+        let clubCards: [PlayCard] = [.club1, .club2, .club3, .club4, .club5, .club6, .club7, .club8, .club9, .club10, .club11, .club12, .club13]
+        
+        // 各スートのカードをデッキに追加
+        for playCard in spadeCards + heartCards + diamondCards + clubCards {
+            cards.append(Card(card: playCard, location: .deck))
+        }
+        
+        // ジョーカーを追加
+        cards.append(Card(card: .whiteJoker, location: .deck))
+        cards.append(Card(card: .blackJoker, location: .deck))
+        
+        // デッキをシャッフル
+        deckCards = cards.shuffled()
     }
     
     // MARK: - Player Position Management
@@ -212,9 +229,10 @@ class GameViewModel: ObservableObject {
         // TODO: カードを引く処理を実装
         print("デッキがタップされました - カードを引く処理")
         
-        // デッキ枚数を減らす（仮の処理）
-        if deckCount > 0 {
-            deckCount -= 1
+        // デッキからカードを引く処理（仮の処理）
+        if !deckCards.isEmpty {
+            let drawnCard = deckCards.removeFirst()
+            print("引いたカード: \(drawnCard.card.rawValue)")
         }
     }
     
