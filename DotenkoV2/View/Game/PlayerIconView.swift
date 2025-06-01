@@ -1,18 +1,5 @@
 import SwiftUI
 
-// MARK: - Test Data Provider
-private struct TestDataProvider {
-    static let testCards: [Card] = [
-        Card(card: .spade1, location: .hand(playerIndex: 0, cardIndex: 0)),
-        Card(card: .heart5, location: .hand(playerIndex: 0, cardIndex: 1)),
-        Card(card: .diamond10, location: .hand(playerIndex: 0, cardIndex: 2)),
-        Card(card: .club7, location: .hand(playerIndex: 0, cardIndex: 3)),
-        Card(card: .spade13, location: .hand(playerIndex: 0, cardIndex: 4)),
-        Card(card: .heart2, location: .hand(playerIndex: 0, cardIndex: 5)),
-        Card(card: .diamond8, location: .hand(playerIndex: 0, cardIndex: 6))
-    ]
-}
-
 // MARK: - Player Image Component
 private struct PlayerImageView: View {
     let player: Player
@@ -232,25 +219,26 @@ private struct PlayerNameView: View {
 
 // MARK: - Hand Cards Component  
 private struct HandCardsView: View {
+    let player: Player
     let position: PlayerPosition
     let config: PlayerLayoutConfig.HandConfiguration
     @ObservedObject var viewModel: GameViewModel
     @Binding var cardAnimationStates: [Bool]
     
-    private let cards = TestDataProvider.testCards
-    
     var body: some View {
         ZStack {
-            ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+            ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
                 CardView(card: card, size: config.cardSize)
-                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: cards.count, config: config)))
-                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: cards.count, config: config))
+                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: player.hand.count, config: config)))
+                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: player.hand.count, config: config))
                     .offset(y: cardSelectionOffset(for: index))
                     .onTapGesture {
                         handleCardTap(at: index)
                     }
                     .onAppear {
-                        cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+                        if index < cardAnimationStates.count {
+                            cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+                        }
                     }
                     .onChange(of: viewModel.selectedCardIndices) { _, _ in
                         syncAnimationState(for: index)
@@ -261,19 +249,22 @@ private struct HandCardsView: View {
     }
     
     private func cardSelectionOffset(for index: Int) -> CGFloat {
-        position == .bottom && cardAnimationStates[index] ? PlayerIconConstants.Animation.cardSelectionOffset : 0
+        position == .bottom && index < cardAnimationStates.count && cardAnimationStates[index] ? PlayerIconConstants.Animation.cardSelectionOffset : 0
     }
     
     private func handleCardTap(at index: Int) {
         guard position == .bottom else { return }
         
         viewModel.toggleCardSelection(at: index)
-        withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
-            cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+        if index < cardAnimationStates.count {
+            withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
+                cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+            }
         }
     }
     
     private func syncAnimationState(for index: Int) {
+        guard index < cardAnimationStates.count else { return }
         let newState = viewModel.isCardSelected(at: index)
         guard cardAnimationStates[index] != newState else { return }
         
@@ -289,7 +280,7 @@ struct PlayerIconView: View {
     let position: PlayerPosition
     @ObservedObject var viewModel: GameViewModel
     
-    @State private var cardAnimationStates: [Bool] = Array(repeating: false, count: 7)
+    @State private var cardAnimationStates: [Bool] = []
     
     private var config: (icon: PlayerLayoutConfig.IconPosition, hand: PlayerLayoutConfig.HandConfiguration) {
         PlayerLayoutConfig.configuration(for: position)
@@ -298,6 +289,7 @@ struct PlayerIconView: View {
     var body: some View {
         ZStack {
             HandCardsView(
+                player: player,
                 position: position,
                 config: config.hand,
                 viewModel: viewModel,
@@ -305,6 +297,14 @@ struct PlayerIconView: View {
             )
             .offset(config.hand.globalOffset)
             .rotationEffect(.degrees(config.hand.globalRotation))
+            .onAppear {
+                // プレイヤーの手札数に応じてアニメーション状態を初期化
+                cardAnimationStates = Array(repeating: false, count: player.hand.count)
+            }
+            .onChange(of: player.hand.count) { _, newCount in
+                // 手札数が変更された場合にアニメーション状態を更新
+                cardAnimationStates = Array(repeating: false, count: newCount)
+            }
             
             VStack(spacing: PlayerIconConstants.Spacing.nameVertical) {
                 PlayerIconContainer(player: player, position: position, config: config.icon)
