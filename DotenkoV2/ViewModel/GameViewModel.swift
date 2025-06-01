@@ -12,6 +12,9 @@ class GameViewModel: ObservableObject {
     @Published var gameType: GameType = .vsBot
     @Published var gamePhase: GamePhase = .waiting
     
+    // ゲームルール情報
+    @Published var gameRuleInfo: GameRuleModel
+    
     // ゲーム進行情報
     @Published var currentRound: Int = 1
     @Published var totalRounds: Int = 10
@@ -22,6 +25,8 @@ class GameViewModel: ObservableObject {
     // デッキ情報
     @Published var deckCount: Int = 30
     @Published var deckCards: [Card] = []
+    // フィールド情報
+    @Published var fieldCards: [Card] = []
     
     // プレイヤー配置情報
     @Published var topPlayers: [Player] = []
@@ -40,6 +45,7 @@ class GameViewModel: ObservableObject {
         self.players = players
         self.maxPlayers = maxPlayers
         self.gameType = gameType
+        self.gameRuleInfo = GameRuleModel()
         
         initializeGame()
     }
@@ -215,5 +221,57 @@ class GameViewModel: ObservableObject {
     /// 設定ボタンアクション
     func handleSettingsAction() {
         print("設定ボタンが押されました")
+    }
+    
+    // MARK: - Player Management Methods
+    
+    /// プレイヤーの手札を更新
+    func updatePlayerHand(playerId: String, cards: [Card]) {
+        if let index = players.firstIndex(where: { $0.id == playerId }) {
+            players[index].hand = cards
+        }
+    }
+    
+    /// プレイヤーの選択されたカードを更新
+    func updatePlayerSelectedCards(playerId: String, cards: [Card]) {
+        if let index = players.firstIndex(where: { $0.id == playerId }) {
+            players[index].selectedCards = cards
+        }
+    }
+    
+    /// プレイヤーのスコアを更新
+    func updatePlayerScore(playerId: String, score: Int) {
+        if let index = players.firstIndex(where: { $0.id == playerId }) {
+            players[index].score = score
+        }
+    }
+    
+    /// プレイヤーのランクを更新
+    func updatePlayerRank(playerId: String, rank: Int) {
+        if let index = players.firstIndex(where: { $0.id == playerId }) {
+            players[index].rank = rank
+        }
+    }
+    
+    /// プレイヤーのドテンコ状態を更新
+    func updatePlayerDtnkStatus(playerId: String, dtnk: Bool) {
+        if let index = players.firstIndex(where: { $0.id == playerId }) {
+            players[index].dtnk = dtnk
+        }
+    }
+    
+    /// 指定されたプレイヤーを取得
+    func getPlayer(by id: String) -> Player? {
+        return players.first { $0.id == id }
+    }
+    
+    /// 現在のプレイヤーの手札を取得
+    func getCurrentPlayerHand() -> [Card] {
+        return currentPlayer?.hand ?? []
+    }
+    
+    /// 現在のプレイヤーの選択されたカードを取得
+    func getCurrentPlayerSelectedCards() -> [Card] {
+        return currentPlayer?.selectedCards ?? []
     }
 } 

@@ -21,7 +21,7 @@ private struct PlayerImageView: View {
     
     var body: some View {
         Group {
-            if let imageUrl = player.image, !imageUrl.isEmpty {
+            if let imageUrl = player.icon_url, !imageUrl.isEmpty {
                 if player.id.hasPrefix("bot-") {
                     localImageView(imageUrl: imageUrl)
                 } else if imageUrl.hasPrefix("http") {

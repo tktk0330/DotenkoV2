@@ -89,7 +89,7 @@ struct PlayerSlotView: View {
             // プレイヤーアイコン
             ZStack {
                 if let player = player {
-                    if let imageUrl = player.image, !imageUrl.isEmpty {
+                    if let imageUrl = player.icon_url, !imageUrl.isEmpty {
                         if player.id.hasPrefix("bot-") {
                             // Botの場合は内部の画像を使用
                             if let image = UIImage(named: imageUrl) {
@@ -198,13 +198,6 @@ extension Collection {
     }
 }
 
-// プレイヤーモデル
-struct Player: Identifiable {
-    let id: String
-    let name: String
-    var image: String?
-}
-
 // ビューモデル
 class MatchingViewModel: ObservableObject {
     @Published var players: [Player] = []
@@ -224,13 +217,15 @@ class MatchingViewModel: ObservableObject {
                 print(profile.rmIconUrl)
                 let currentPlayer = Player(
                     id: profile.id.stringValue,
+                    side: 0,
                     name: profile.rmUserName,
-                    image: profile.rmIconUrl
+                    icon_url: profile.rmIconUrl,
+                    dtnk: false
                 )
                 players = [currentPlayer]
             } else {
                 // Fallback to default if profile fetch fails
-                players = [Player(id: "current", name: "あなた")]
+                players = [Player(id: "current", side: 0, name: "あなた", icon_url: nil, dtnk: false)]
             }
             
             // Add bots with delay
@@ -241,8 +236,10 @@ class MatchingViewModel: ObservableObject {
                     guard let self = self else { return }
                     let botPlayer = Player(
                         id: bot.id,
+                        side: index + 1,
                         name: bot.name,
-                        image: bot.icon_url
+                        icon_url: bot.icon_url,
+                        dtnk: false
                     )
                     self.players.append(botPlayer)
                     self.loadingIndexes.remove(index + 1)
