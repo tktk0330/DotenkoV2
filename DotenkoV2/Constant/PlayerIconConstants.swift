@@ -38,4 +38,29 @@ struct PlayerIconConstants {
         /// ボットプレイヤーのスコア表示の角丸半径
         static let botScoreCornerRadius: CGFloat = 4
     }
+    
+    // MARK: - Hand Count Badge Constants
+    /// 手札枚数バッジ関連の定数
+    struct HandCountBadge {
+        /// プレイヤーバッジのサイズ
+        static let playerBadgeSize: CGFloat = 24
+        /// ボットバッジのサイズ
+        static let botBadgeSize: CGFloat = 20
+        /// プレイヤーバッジのテキストサイズ
+        static let playerTextSize: CGFloat = 12
+        /// ボットバッジのテキストサイズ
+        static let botTextSize: CGFloat = 10
+        
+        /// バッジとアイコンの間隔
+        static let iconSpacing: CGFloat = 2
+        
+        // MARK: - Casino Colors
+        /// カジノ風バッジ色
+        struct CasinoColors {
+            static let redTop = Color.red.opacity(0.9)
+            static let redMiddle = Color(red: 0.8, green: 0.0, blue: 0.2)
+            static let redBottom = Color(red: 0.6, green: 0.0, blue: 0.1)
+            static let goldBorder = Color(red: 1.0, green: 0.8, blue: 0.0)
+        }
+    }
 } 

@@ -146,6 +146,7 @@ private struct PlayerIconContainer: View {
             .background(Appearance.Color.commonBlack.opacity(0.3))
             .clipShape(Circle())
             .overlay(borderOverlay)
+            .overlay(handCountBadgeOverlay, alignment: .top)
             .shadow(
                 color: shadowColor,
                 radius: shadowRadius,
@@ -164,6 +165,22 @@ private struct PlayerIconContainer: View {
             Circle()
                 .stroke(Appearance.Color.commonWhite, lineWidth: PlayerIconConstants.Decoration.botBorderWidth)
         }
+    }
+    
+    @ViewBuilder
+    private var handCountBadgeOverlay: some View {
+        if player.hand.count > 0 {
+            HandCountBadgeView(handCount: player.hand.count, position: position)
+                .offset(x: 0, y: badgeTopOffset)
+        }
+    }
+    
+    private var badgeTopOffset: CGFloat {
+        let badgeSize: CGFloat = position == .bottom ? PlayerIconConstants.HandCountBadge.playerBadgeSize : PlayerIconConstants.HandCountBadge.botBadgeSize
+        let iconRadius = config.size / 2
+        
+        // バッジをアイコンにより近く配置（間隔を調整可能）
+        return -iconRadius - badgeSize / 2 + PlayerIconConstants.HandCountBadge.iconSpacing
     }
     
     private var goldGradient: LinearGradient {
@@ -217,6 +234,53 @@ private struct PlayerNameView: View {
     }
 }
 
+// MARK: - Hand Count Badge Component
+private struct HandCountBadgeView: View {
+    let handCount: Int
+    let position: PlayerPosition
+    
+    var body: some View {
+        Text("\(handCount)")
+            .font(.system(size: badgeTextSize, weight: .bold))
+            .foregroundColor(Appearance.Color.commonWhite)
+            .frame(width: badgeSize, height: badgeSize)
+            .background(casinoBadgeBackground)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(casinoBorderColor, lineWidth: 2)
+            )
+            .shadow(color: Appearance.Color.commonBlack.opacity(0.4), radius: 3, x: 0, y: 2)
+    }
+    
+    private var badgeSize: CGFloat {
+        position == .bottom ? PlayerIconConstants.HandCountBadge.playerBadgeSize : PlayerIconConstants.HandCountBadge.botBadgeSize
+    }
+    
+    private var badgeTextSize: CGFloat {
+        position == .bottom ? PlayerIconConstants.HandCountBadge.playerTextSize : PlayerIconConstants.HandCountBadge.botTextSize
+    }
+    
+    private var casinoBadgeBackground: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        PlayerIconConstants.HandCountBadge.CasinoColors.redTop,
+                        PlayerIconConstants.HandCountBadge.CasinoColors.redMiddle,
+                        PlayerIconConstants.HandCountBadge.CasinoColors.redBottom
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+    }
+    
+    private var casinoBorderColor: Color {
+        PlayerIconConstants.HandCountBadge.CasinoColors.goldBorder
+    }
+}
+
 // MARK: - Hand Cards Component  
 private struct HandCardsView: View {
     let player: Player
@@ -228,6 +292,7 @@ private struct HandCardsView: View {
     var body: some View {
         // すべてのプレイヤーに扇形配置を適用
         fanLayoutHandCards
+            .offset(adjustedGlobalOffset) // 人数に応じて位置を動的調整
     }
     
     // MARK: - Fan Layout (扇形配置)
@@ -468,6 +533,46 @@ private struct HandCardsView: View {
         guard position == .bottom else { return }
         
         viewModel.togglePlayerCardSelection(playerId: player.id, card: card)
+    }
+    
+    // MARK: - Dynamic Position Adjustment
+    /// 参加人数に応じて手札の位置を動的調整
+    private var adjustedGlobalOffset: CGSize {
+        let baseOffset = config.globalOffset
+        let playerCount = viewModel.maxPlayers
+        
+        switch position {
+        case .top:
+            // 全ての人数で上部Botを下に移動
+            return CGSize(
+                width: baseOffset.width, 
+                height: baseOffset.height + LayoutConstants.PlayerCountAdjustment.topBotDownwardOffset
+            )
+            
+        case .left:
+            // 4人・5人対戦：左側Botを中央に寄せる
+            if playerCount >= 4 {
+                return CGSize(
+                    width: baseOffset.width + LayoutConstants.PlayerCountAdjustment.sideBotCenterOffset, 
+                    height: baseOffset.height
+                )
+            }
+            return baseOffset
+            
+        case .right:
+            // 4人・5人対戦：右側Botを中央に寄せる
+            if playerCount >= 4 {
+                return CGSize(
+                    width: baseOffset.width - LayoutConstants.PlayerCountAdjustment.sideBotCenterOffset, 
+                    height: baseOffset.height
+                )
+            }
+            return baseOffset
+            
+        case .bottom:
+            // プレイヤー自身は調整なし
+            return baseOffset
+        }
     }
 }
 

@@ -50,6 +50,15 @@ struct LayoutConstants {
         static let randomOffsetRangeY: CGFloat = 30    // Y方向のランダムオフセット範囲
         static let additionalRotationRange: CGFloat = 15 // 手札角度への追加回転範囲
     }
+    
+    // MARK: - Player Count Based Adjustment (人数別位置調整)
+    struct PlayerCountAdjustment {
+        // 全人数：上部Botの下方向調整
+        static let topBotDownwardOffset: CGFloat = 50
+        
+        // 4〜5人対戦：左右Botの中央寄せ調整
+        static let sideBotCenterOffset: CGFloat = 50
+    }
 }
 
 // MARK: - Player Layout Constants (プレイヤーレイアウト定数)
