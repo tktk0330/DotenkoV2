@@ -37,15 +37,6 @@ struct GameMainView: View {
                 .onTapGesture {
                     viewModel.handleDeckTap()
                 }
-                
-                // Field with matchedGeometryEffect
-                ZStack {
-                    ForEach(viewModel.fieldCards, id: \.id) { card in
-                        CardView(card: card, size: 100)
-                            .matchedGeometryEffect(id: card.id, in: namespace)
-                    }
-                }
-                .position(x: geometry.size.width * 0.5, y: geometry.size.height * 0.5)
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)

@@ -83,7 +83,7 @@ struct CenterGameAreaView: View {
             Spacer()
             
             // 中央ゲームフィールド
-            GameFieldView()
+            GameFieldView(viewModel: viewModel, namespace: namespace)
             
             Spacer()
             
@@ -150,9 +150,12 @@ struct RightSidePlayersAreaView: View {
 // MARK: - Game Field View
 /// 中央ゲームフィールド表示View
 struct GameFieldView: View {
+    @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
+    
     var body: some View {
-        VStack {
-            // カード配置エリア（後で実際のゲーム要素に置き換え）
+        ZStack {
+            // バックグラウンド（カード配置エリア）
             Rectangle()
                 .fill(Appearance.Color.commonBlack.opacity(0.3))
                 .frame(
@@ -161,10 +164,16 @@ struct GameFieldView: View {
                 )
                 .cornerRadius(12)
                 .overlay(
-                    Text("カード配置エリア")
+                    Text(viewModel.fieldCards.isEmpty ? "カード配置エリア" : "")
                         .foregroundColor(Appearance.Color.commonWhite)
                         .font(.caption)
                 )
+            
+            // 実際のフィールドカード表示
+            ForEach(viewModel.fieldCards, id: \.id) { card in
+                CardView(card: card, size: 100)
+                    .matchedGeometryEffect(id: card.id, in: namespace)
+            }
         }
     }
 }
