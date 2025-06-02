@@ -20,64 +20,32 @@ struct GameMainView: View {
                 // メインゲーム画面レイアウト
                 gameMainLayout(geometry: geometry)
                 
-                // Deck（座標を直接指定）
-                DeckView(
-                    deckCards: viewModel.deckCards,
-                    onDeckTap: viewModel.handleDeckTap
-                )
-                    .position(x: geometry.size.width * 0.0, y: geometry.size.height * 0.65)
-                
                 // UI オーバーレイ（戻るボタンなど）
                 GameUIOverlayView(
                     onBackAction: { allViewNavigator.pop() },
                     onSettingsAction: viewModel.handleSettingsAction
                 )
                 
-                
-                // Deck
+                // Deck with matchedGeometryEffect
                 ZStack {
-                    ForEach(viewModel.deckCards, id: \.id) { card in
-                        CardView(card: card, size: 100)
+                    ForEach(viewModel.deckCards.prefix(5), id: \.id) { card in
+                        CardView(card: card, size: 80)
                             .matchedGeometryEffect(id: card.id, in: namespace)
                     }
-                    .position(x: geometry.size.width * 0.0, y: geometry.size.height * 0.65)
+                }
+                .position(x: geometry.size.width * 0.1, y: geometry.size.height * 0.65)
+                .onTapGesture {
+                    viewModel.handleDeckTap()
                 }
                 
-                // Field
+                // Field with matchedGeometryEffect
                 ZStack {
                     ForEach(viewModel.fieldCards, id: \.id) { card in
                         CardView(card: card, size: 100)
                             .matchedGeometryEffect(id: card.id, in: namespace)
                     }
-                    .position(x: geometry.size.width * 0.5, y: geometry.size.height * 0.5)
                 }
-                
-                // MyHand
-                ZStack {
-                    HStack(spacing: -50) {
-                        ForEach(viewModel.players[0].hand, id: \.id) { card in
-                            let isSelected = viewModel.players[0].selectedCards.contains(card)
-                            
-                            CardView(card: card, size: 100)
-                                .matchedGeometryEffect(id: card.id, in: namespace)
-                                .offset(y: isSelected ? -10 : 0)  // 選択時に少し上に移動
-                                .padding(.top, isSelected ? 10 : 0) // 選択時の見切れ防止
-                                .onTapGesture {
-                                    if let idx = viewModel.players[0].selectedCards.firstIndex(of: card) {
-                                        // 既存選択なら削除
-                                        viewModel.players[0].selectedCards.remove(at: idx)
-                                    } else {
-                                        // 新規選択なら末尾に追加（順序を保持）
-                                        viewModel.players[0].selectedCards.append(card)
-                                    }
-                                }
-                        }
-                        .position(x: geometry.size.width * 0.3, y: geometry.size.height * 0.70)
-                    }
-                }
-                
-                
-                
+                .position(x: geometry.size.width * 0.5, y: geometry.size.height * 0.5)
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)
@@ -99,17 +67,16 @@ struct GameMainView: View {
             
             // プレイヤーエリア
             GamePlayersAreaView(
-                topPlayers: viewModel.topPlayers,
-                leftPlayers: viewModel.leftPlayers,
-                rightPlayers: viewModel.rightPlayers,
-                currentPlayer: viewModel.currentPlayer,
+                players: viewModel.players,
+                maxPlayers: viewModel.maxPlayers,
                 onPassAction: {
                     viewModel.handlePassAction()
                 },
                 onPlayAction: {
                     viewModel.handlePlayAction()
                 },
-                viewModel: viewModel
+                viewModel: viewModel,
+                namespace: namespace
             )
         }
     }

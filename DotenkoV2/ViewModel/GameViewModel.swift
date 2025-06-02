@@ -27,12 +27,6 @@ class GameViewModel: ObservableObject {
     // フィールド情報
     @Published var fieldCards: [Card] = []
     
-    // プレイヤー配置情報
-    @Published var topPlayers: [Player] = []
-    @Published var leftPlayers: [Player] = []
-    @Published var rightPlayers: [Player] = []
-    @Published var currentPlayer: Player?
-    
     // カード選択状態
     @Published var selectedCardIndices: Set<Int> = []
     
@@ -52,7 +46,6 @@ class GameViewModel: ObservableObject {
     // MARK: - Game Initialization
     func initializeGame() {
         setupGameInfo()
-        setupPlayerPositions()
         setupDeck()
         gamePhase = .playing
     }
@@ -67,14 +60,6 @@ class GameViewModel: ObservableObject {
         
         // 初期ポット計算（プレイヤー数 × 基本レート）
         currentPot = maxPlayers * currentRate
-    }
-    
-    private func setupPlayerPositions() {
-        // プレイヤー配置を計算
-        topPlayers = getTopPlayers()
-        leftPlayers = getLeftPlayers()
-        rightPlayers = getRightPlayers()
-        currentPlayer = getCurrentPlayer()
     }
     
     private func setupDeck() {
@@ -100,12 +85,15 @@ class GameViewModel: ObservableObject {
         deckCards = cards.shuffled()
     }
     
-    // MARK: - Player Position Management
-    private func getCurrentPlayer() -> Player? {
+    // MARK: - Player Position Management (動的計算用)
+    
+    /// 現在のプレイヤー（人間プレイヤー）を取得
+    func getCurrentPlayer() -> Player? {
         return players.first { !$0.id.hasPrefix("bot-") }
     }
     
-    private func getTopPlayers() -> [Player] {
+    /// 上部プレイヤーを取得
+    func getTopPlayers() -> [Player] {
         let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
         
         switch maxPlayers {
@@ -122,7 +110,8 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    private func getLeftPlayers() -> [Player] {
+    /// 左側プレイヤーを取得
+    func getLeftPlayers() -> [Player] {
         let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
         
         switch maxPlayers {
@@ -135,7 +124,8 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    private func getRightPlayers() -> [Player] {
+    /// 右側プレイヤーを取得
+    func getRightPlayers() -> [Player] {
         let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
         
         switch maxPlayers {
@@ -159,6 +149,19 @@ class GameViewModel: ObservableObject {
         }
     }
     
+    /// プレイヤーのカード選択/選択解除を切り替える
+    func togglePlayerCardSelection(playerId: String, card: Card) {
+        if let playerIndex = players.firstIndex(where: { $0.id == playerId }) {
+            if let cardIndex = players[playerIndex].selectedCards.firstIndex(of: card) {
+                // 既に選択されている場合は選択解除
+                players[playerIndex].selectedCards.remove(at: cardIndex)
+            } else {
+                // 選択されていない場合は選択に追加
+                players[playerIndex].selectedCards.append(card)
+            }
+        }
+    }
+    
     /// 指定されたカードが選択されているかチェック
     func isCardSelected(at index: Int) -> Bool {
         return selectedCardIndices.contains(index)
@@ -167,11 +170,27 @@ class GameViewModel: ObservableObject {
     /// 全てのカード選択を解除
     func clearCardSelection() {
         selectedCardIndices.removeAll()
+        // プレイヤーごとの選択カードもクリア
+        for index in players.indices {
+            players[index].selectedCards.removeAll()
+        }
+    }
+    
+    /// プレイヤーの選択されたカードをクリア
+    func clearPlayerSelectedCards(playerId: String) {
+        if let playerIndex = players.firstIndex(where: { $0.id == playerId }) {
+            players[playerIndex].selectedCards.removeAll()
+        }
     }
     
     /// 選択されたカードの数を取得
     var selectedCardCount: Int {
         return selectedCardIndices.count
+    }
+    
+    /// 指定プレイヤーの選択されたカード数を取得
+    func getPlayerSelectedCardCount(playerId: String) -> Int {
+        return players.first(where: { $0.id == playerId })?.selectedCards.count ?? 0
     }
     
     // MARK: - Game Control Methods
@@ -214,15 +233,37 @@ class GameViewModel: ObservableObject {
     func handlePassAction() {
         // TODO: パス/引くロジックを実装
         print("パス/引くアクションが実行されました")
-        clearCardSelection()
-        print(players[0].hand)
+        
+        // 現在のプレイヤーの選択をクリア
+        if let currentPlayer = getCurrentPlayer() {
+            clearPlayerSelectedCards(playerId: currentPlayer.id)
+            print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
+        }
     }
     
     /// 出すアクションを処理
     func handlePlayAction() {
-        // TODO: 出すロジックを実装
-        print("出すアクションが実行されました - 選択されたカード数: \(selectedCardCount)")
-        clearCardSelection()
+        withAnimation(.easeOut) {
+            // TODO: 出すロジックを実装
+            if let currentPlayer = getCurrentPlayer() {
+                let selectedCount = getPlayerSelectedCardCount(playerId: currentPlayer.id)
+                print("出すアクションが実行されました - プレイヤー \(currentPlayer.name) の選択されたカード数: \(selectedCount)")
+                
+                // 選択されたカードをフィールドに移動
+                let selectedCards = currentPlayer.selectedCards
+                for card in selectedCards {
+                    if let handIndex = players[0].hand.firstIndex(of: card) {
+                        let movedCard = players[0].hand.remove(at: handIndex)
+                        var fieldCard = movedCard
+                        fieldCard.location = .field
+                        fieldCards.append(fieldCard)
+                    }
+                }
+                
+                // 選択をクリア
+                clearPlayerSelectedCards(playerId: currentPlayer.id)
+            }
+        }
     }
     
     /// デッキタップ時の処理
@@ -289,11 +330,11 @@ class GameViewModel: ObservableObject {
     
     /// 現在のプレイヤーの手札を取得
     func getCurrentPlayerHand() -> [Card] {
-        return currentPlayer?.hand ?? []
+        return getCurrentPlayer()?.hand ?? []
     }
     
     /// 現在のプレイヤーの選択されたカードを取得
     func getCurrentPlayerSelectedCards() -> [Card] {
-        return currentPlayer?.selectedCards ?? []
+        return getCurrentPlayer()?.selectedCards ?? []
     }
 } 

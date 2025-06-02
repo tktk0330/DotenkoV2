@@ -223,54 +223,164 @@ private struct HandCardsView: View {
     let position: PlayerPosition
     let config: PlayerLayoutConfig.HandConfiguration
     @ObservedObject var viewModel: GameViewModel
-    @Binding var cardAnimationStates: [Bool]
+    let namespace: Namespace.ID
     
     var body: some View {
-        ZStack {
-            ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
-                CardView(card: card, size: config.cardSize)
-                    .rotationEffect(.degrees(FanLayoutManager.cardRotation(for: index, position: position, totalCards: player.hand.count, config: config)))
-                    .offset(FanLayoutManager.cardOffset(for: index, position: position, totalCards: player.hand.count, config: config))
-                    .offset(y: cardSelectionOffset(for: index))
-                    .onTapGesture {
-                        handleCardTap(at: index)
-                    }
-                    .onAppear {
-                        if index < cardAnimationStates.count {
-                            cardAnimationStates[index] = viewModel.isCardSelected(at: index)
+        // 固定幅のコンテナ内で手札を中央配置
+        HStack {
+            Spacer()
+            
+            HStack(spacing: adaptiveSpacing) {
+                ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
+                    let isSelected = player.selectedCards.contains(card)
+                    
+                    CardView(card: card, size: adaptiveCardSize)
+                        .matchedGeometryEffect(id: card.id, in: namespace)
+                        .offset(y: cardSelectionOffset(for: card))
+                        .onTapGesture {
+                            handleCardTap(card: card)
                         }
-                    }
-                    .onChange(of: viewModel.selectedCardIndices) { _, _ in
-                        syncAnimationState(for: index)
-                    }
+                        .animation(.easeInOut(duration: PlayerIconConstants.Animation.duration), value: isSelected)
+                }
+            }
+            
+            Spacer()
+        }
+        .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
+    }
+    
+    // MARK: - Fixed Layout Settings
+    
+    /// 固定された手札エリア幅（カード数に関係なく固定）
+    private var fixedHandAreaWidth: CGFloat {
+        switch position {
+        case .bottom:
+            return 220
+        case .top:
+            return 160
+        case .left, .right:
+            return 100
+        }
+    }
+    
+    /// 固定された手札エリア高さ
+    private var fixedHandAreaHeight: CGFloat {
+        switch position {
+        case .bottom:
+            return 85
+        case .top:
+            return 45
+        case .left, .right:
+            return 45
+        }
+    }
+    
+    /// 1-10枚に最適化されたカードサイズ
+    private var adaptiveCardSize: CGFloat {
+        let handCount = max(player.hand.count, 1)
+        let baseSize = config.cardSize
+        
+        switch position {
+        case .bottom:
+            switch handCount {
+            case 1...3:
+                return baseSize
+            case 4...6:
+                return baseSize * 0.95
+            case 7...8:
+                return baseSize * 0.85
+            case 9...10:
+                return baseSize * 0.75
+            default:
+                return baseSize * 0.75
+            }
+        case .top:
+            switch handCount {
+            case 1...4:
+                return baseSize * 0.8
+            case 5...7:
+                return baseSize * 0.7
+            case 8...10:
+                return baseSize * 0.6
+            default:
+                return baseSize * 0.6
+            }
+        case .left, .right:
+            switch handCount {
+            case 1...4:
+                return baseSize * 0.7
+            case 5...7:
+                return baseSize * 0.6
+            case 8...10:
+                return baseSize * 0.5
+            default:
+                return baseSize * 0.5
             }
         }
-        .frame(width: config.handAreaSize.width, height: config.handAreaSize.height)
     }
     
-    private func cardSelectionOffset(for index: Int) -> CGFloat {
-        position == .bottom && index < cardAnimationStates.count && cardAnimationStates[index] ? PlayerIconConstants.Animation.cardSelectionOffset : 0
+    /// 1-10枚に最適化されたスペーシング
+    private var adaptiveSpacing: CGFloat {
+        let handCount = player.hand.count
+        
+        if handCount <= 1 {
+            return 0
+        }
+        
+        switch position {
+        case .bottom:
+            switch handCount {
+            case 2...3:
+                return -10
+            case 4...5:
+                return -15
+            case 6...7:
+                return -20
+            case 8...9:
+                return -25
+            case 10:
+                return -30
+            default:
+                return -30
+            }
+        case .top:
+            switch handCount {
+            case 2...4:
+                return -5
+            case 5...6:
+                return -8
+            case 7...8:
+                return -12
+            case 9...10:
+                return -15
+            default:
+                return -15
+            }
+        case .left, .right:
+            switch handCount {
+            case 2...4:
+                return -3
+            case 5...6:
+                return -5
+            case 7...8:
+                return -8
+            case 9...10:
+                return -10
+            default:
+                return -10
+            }
+        }
     }
     
-    private func handleCardTap(at index: Int) {
+    private func cardSelectionOffset(for card: Card) -> CGFloat {
+        let isSelected = player.selectedCards.contains(card)
+        return position == .bottom && isSelected ? PlayerIconConstants.Animation.cardSelectionOffset : 0
+    }
+    
+    private func handleCardTap(card: Card) {
         guard position == .bottom else { return }
         
-        viewModel.toggleCardSelection(at: index)
-        if index < cardAnimationStates.count {
-            withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
-                cardAnimationStates[index] = viewModel.isCardSelected(at: index)
-            }
-        }
-    }
-    
-    private func syncAnimationState(for index: Int) {
-        guard index < cardAnimationStates.count else { return }
-        let newState = viewModel.isCardSelected(at: index)
-        guard cardAnimationStates[index] != newState else { return }
-        
-        withAnimation(.easeInOut(duration: PlayerIconConstants.Animation.duration)) {
-            cardAnimationStates[index] = newState
-        }
+        viewModel.togglePlayerCardSelection(playerId: player.id, card: card)
     }
 }
 
@@ -279,8 +389,7 @@ struct PlayerIconView: View {
     let player: Player
     let position: PlayerPosition
     @ObservedObject var viewModel: GameViewModel
-    
-    @State private var cardAnimationStates: [Bool] = []
+    let namespace: Namespace.ID
     
     private var config: (icon: PlayerLayoutConfig.IconPosition, hand: PlayerLayoutConfig.HandConfiguration) {
         PlayerLayoutConfig.configuration(for: position)
@@ -288,24 +397,18 @@ struct PlayerIconView: View {
     
     var body: some View {
         ZStack {
+            // 手札を配置（アイコンの後ろに来るようにzIndex調整）
             HandCardsView(
                 player: player,
                 position: position,
                 config: config.hand,
                 viewModel: viewModel,
-                cardAnimationStates: $cardAnimationStates
+                namespace: namespace
             )
             .offset(config.hand.globalOffset)
-            .rotationEffect(.degrees(config.hand.globalRotation))
-            .onAppear {
-                // プレイヤーの手札数に応じてアニメーション状態を初期化
-                cardAnimationStates = Array(repeating: false, count: player.hand.count)
-            }
-            .onChange(of: player.hand.count) { _, newCount in
-                // 手札数が変更された場合にアニメーション状態を更新
-                cardAnimationStates = Array(repeating: false, count: newCount)
-            }
+            .zIndex(position == .bottom ? 1 : 0)
             
+            // プレイヤーアイコンとUI要素
             VStack(spacing: PlayerIconConstants.Spacing.nameVertical) {
                 PlayerIconContainer(player: player, position: position, config: config.icon)
                 
@@ -319,6 +422,7 @@ struct PlayerIconView: View {
                 )
             }
             .offset(config.icon.offset)
+            .zIndex(position == .bottom ? 2 : 1)
         }
     }
 }

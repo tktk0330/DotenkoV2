@@ -56,16 +56,16 @@ struct PlayerLayoutConfig {
     static let topPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
-            size: 50,
-            nameTextSize: 12
+            size: 45,
+            nameTextSize: 11
         ),
         hand: HandConfiguration(
             globalOffset: CGSize(width: 0, height: -30),
             globalRotation: 0,
             fanMaxAngle: 60,
-            fanRadius: 50,
-            cardSize: 60,
-            handAreaSize: CGSize(width: 120, height: 80)
+            fanRadius: 45,
+            cardSize: 45,
+            handAreaSize: CGSize(width: 160, height: 45)
         )
     )
     
@@ -73,16 +73,16 @@ struct PlayerLayoutConfig {
     static let leftPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
-            size: 50,
-            nameTextSize: 12
+            size: 45,
+            nameTextSize: 11
         ),
         hand: HandConfiguration(
             globalOffset: CGSize(width: -30, height: 0),
             globalRotation: 0,
             fanMaxAngle: 60,
-            fanRadius: 40,
-            cardSize: 60,
-            handAreaSize: CGSize(width: 100, height: 100)
+            fanRadius: 35,
+            cardSize: 40,
+            handAreaSize: CGSize(width: 100, height: 45)
         )
     )
     
@@ -90,33 +90,33 @@ struct PlayerLayoutConfig {
     static let rightPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
-            size: 50,
-            nameTextSize: 12
+            size: 45,
+            nameTextSize: 11
         ),
         hand: HandConfiguration(
             globalOffset: CGSize(width: 30, height: 0),
             globalRotation: 0,
             fanMaxAngle: 60,
-            fanRadius: 40,
-            cardSize: 60,
-            handAreaSize: CGSize(width: 100, height: 100)
+            fanRadius: 35,
+            cardSize: 40,
+            handAreaSize: CGSize(width: 100, height: 45)
         )
     )
     
     /// 下部プレイヤー（自分）の設定
     static let bottomPlayer = (
         icon: IconPosition(
-            offset: CGSize(width: 0, height: 50), // アイコンの位置設定
-            size: 80,
-            nameTextSize: 16
+            offset: CGSize(width: 0, height: 25),
+            size: 75,
+            nameTextSize: 15
         ),
         hand: HandConfiguration(
-            globalOffset: CGSize(width: 0, height: 30),
+            globalOffset: CGSize(width: 0, height: 5),
             globalRotation: 0,
             fanMaxAngle: 90,
-            fanRadius: 60,
-            cardSize: 120,
-            handAreaSize: CGSize(width: 120, height: 80)
+            fanRadius: 55,
+            cardSize: 70,
+            handAreaSize: CGSize(width: 220, height: 85)
         )
     )
     

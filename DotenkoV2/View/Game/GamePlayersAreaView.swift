@@ -3,35 +3,36 @@ import SwiftUI
 // MARK: - Game Players Area View
 /// ゲームプレイヤーエリア表示View
 struct GamePlayersAreaView: View {
-    let topPlayers: [Player]
-    let leftPlayers: [Player]
-    let rightPlayers: [Player]
-    let currentPlayer: Player?
+    let players: [Player]
+    let maxPlayers: Int
     let onPassAction: () -> Void
     let onPlayAction: () -> Void
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 // 上部プレイヤーエリア
-                TopPlayersAreaView(players: topPlayers, geometry: geometry, viewModel: viewModel)
+                TopPlayersAreaView(players: viewModel.getTopPlayers(), geometry: geometry, viewModel: viewModel, namespace: namespace)
                 
                 // 中央エリア（左右プレイヤー + ゲームフィールド）
                 CenterGameAreaView(
-                    leftPlayers: leftPlayers,
-                    rightPlayers: rightPlayers,
+                    leftPlayers: viewModel.getLeftPlayers(),
+                    rightPlayers: viewModel.getRightPlayers(),
                     geometry: geometry,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    namespace: namespace
                 )
                 
                 // 下部プレイヤーエリア（自分）
                 BottomPlayerAreaView(
-                    player: currentPlayer,
+                    player: viewModel.getCurrentPlayer(),
                     onPassAction: onPassAction,
                     onPlayAction: onPlayAction,
                     geometry: geometry,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    namespace: namespace
                 )
             }
         }
@@ -44,13 +45,14 @@ struct TopPlayersAreaView: View {
     let players: [Player]
     let geometry: GeometryProxy
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         VStack {
             if !players.isEmpty {
                 HStack {
                     ForEach(Array(players.enumerated()), id: \.offset) { index, player in
-                        PlayerIconView(player: player, position: .top, viewModel: viewModel)
+                        PlayerIconView(player: player, position: .top, viewModel: viewModel, namespace: namespace)
                         if index < players.count - 1 {
                             Spacer()
                         }
@@ -71,11 +73,12 @@ struct CenterGameAreaView: View {
     let rightPlayers: [Player]
     let geometry: GeometryProxy
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         HStack {
             // 左側プレイヤーエリア
-            LeftSidePlayersAreaView(players: leftPlayers, viewModel: viewModel)
+            LeftSidePlayersAreaView(players: leftPlayers, viewModel: viewModel, namespace: namespace)
             
             Spacer()
             
@@ -85,7 +88,7 @@ struct CenterGameAreaView: View {
             Spacer()
             
             // 右側プレイヤーエリア
-            RightSidePlayersAreaView(players: rightPlayers, viewModel: viewModel)
+            RightSidePlayersAreaView(players: rightPlayers, viewModel: viewModel, namespace: namespace)
         }
         .frame(height: geometry.size.height * GameLayoutConfig.centerAreaHeightRatio)
         .padding(.horizontal, GameLayoutConfig.centerAreaHorizontalPadding)
@@ -97,6 +100,7 @@ struct CenterGameAreaView: View {
 struct LeftSidePlayersAreaView: View {
     let players: [Player]
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         VStack(alignment: .center, spacing: 10) {
@@ -104,7 +108,7 @@ struct LeftSidePlayersAreaView: View {
             Spacer().frame(height: 20)
             
             ForEach(players, id: \.id) { player in
-                PlayerIconView(player: player, position: .left, viewModel: viewModel)
+                PlayerIconView(player: player, position: .left, viewModel: viewModel, namespace: namespace)
                 if players.count > 1 {
                     Spacer().frame(height: 20)
                 }
@@ -122,6 +126,7 @@ struct LeftSidePlayersAreaView: View {
 struct RightSidePlayersAreaView: View {
     let players: [Player]
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         VStack(alignment: .center, spacing: 10) {
@@ -129,7 +134,7 @@ struct RightSidePlayersAreaView: View {
             Spacer().frame(height: 20)
             
             ForEach(players, id: \.id) { player in
-                PlayerIconView(player: player, position: .right, viewModel: viewModel)
+                PlayerIconView(player: player, position: .right, viewModel: viewModel, namespace: namespace)
                 if players.count > 1 {
                     Spacer().frame(height: 20)
                 }
@@ -172,6 +177,7 @@ struct BottomPlayerAreaView: View {
     let onPlayAction: () -> Void
     let geometry: GeometryProxy
     @ObservedObject var viewModel: GameViewModel
+    let namespace: Namespace.ID
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -193,7 +199,7 @@ struct BottomPlayerAreaView: View {
                     .offset(x: 0, y: 50)
                     
                     // 中央：プレイヤーアイコン
-                    PlayerIconView(player: player, position: .bottom, viewModel: viewModel)
+                    PlayerIconView(player: player, position: .bottom, viewModel: viewModel, namespace: namespace)
                         .scaleEffect(1.0)
                     
                     // 右側：出すボタン
