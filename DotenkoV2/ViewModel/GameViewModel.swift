@@ -57,8 +57,13 @@ class GameViewModel: ObservableObject {
         setupGameInfo()
         setupPlayers()
         setupDeck()
-        dealInitialCards()
+        // 初期カード配布はアニメーション付きで実行
         gamePhase = .playing
+        
+        // 少し遅延してからカード配布開始
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.CardDealAnimation.initialDelay) {
+            self.dealInitialCardsWithAnimation()
+        }
     }
     
     private func setupGameInfo() {
@@ -110,23 +115,75 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    private func dealInitialCards() {
-        // 各プレイヤーに5枚ずつカードを配布
-        let cardsPerPlayer = 5
+    /// アニメーション付きでカードを配布
+    private func dealInitialCardsWithAnimation() {
+        let cardsPerPlayer = LayoutConstants.CardDealAnimation.initialCardsPerPlayer
+        let totalPlayers = players.count
+        var currentRound = 0 // 配布ラウンド（1枚目、2枚目...）
+        var currentPlayerIndex = 0 // 現在配布中のプレイヤー
         
-        for playerIndex in players.indices {
-            let playerCards = Array(deckCards.prefix(cardsPerPlayer))
-            players[playerIndex].hand = playerCards.map { card in
-                var handCard = card
-                handCard.location = .hand(playerIndex: playerIndex, cardIndex: 0)
-                return handCard
+        print("カード配布開始: \(totalPlayers)人のプレイヤーに\(cardsPerPlayer)枚ずつ配布")
+        
+        // カード配布のタイマー
+        Timer.scheduledTimer(withTimeInterval: LayoutConstants.CardDealAnimation.dealInterval, repeats: true) { timer in
+            
+            // 配布完了チェック
+            if currentRound >= cardsPerPlayer {
+                timer.invalidate()
+                print("カード配布完了")
+                
+                // 配布完了後、最初の場札を1枚めくる
+                DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.CardDealAnimation.fieldCardDelay) {
+                    self.dealInitialFieldCard()
+                }
+                return
             }
             
-            // 配布したカードをデッキから削除
-            if deckCards.count >= cardsPerPlayer {
-                deckCards.removeFirst(cardsPerPlayer)
+            // カードが残っているかチェック
+            guard !self.deckCards.isEmpty else {
+                timer.invalidate()
+                print("デッキが空になりました")
+                return
+            }
+            
+            // スプリングアニメーションでカード配布
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.2)) {
+                let card = self.deckCards.removeFirst()
+                var handCard = card
+                handCard.location = .hand(playerIndex: currentPlayerIndex, cardIndex: currentRound)
+                
+                self.players[currentPlayerIndex].hand.append(handCard)
+                
+                // デバッグ用ログ
+                print("カード配布: プレイヤー\(currentPlayerIndex + 1) - \(currentRound + 1)枚目 - \(handCard.card.rawValue)")
+            }
+            
+            // 次のプレイヤーに進む
+            currentPlayerIndex += 1
+            
+            // 全プレイヤーに配布完了したら次のラウンドへ
+            if currentPlayerIndex >= totalPlayers {
+                currentPlayerIndex = 0
+                currentRound += 1
+                print("--- \(currentRound)枚目配布完了 ---")
             }
         }
+    }
+    
+    /// 最初の場札を1枚めくる
+    private func dealInitialFieldCard() {
+        guard !deckCards.isEmpty else { return }
+        
+        // 場札もスプリングアニメーションで表示
+        withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
+            let firstFieldCard = deckCards.removeFirst()
+            var fieldCard = firstFieldCard
+            fieldCard.location = .field
+            
+            fieldCards.append(fieldCard)
+        }
+        
+        print("最初の場札: \(fieldCards.last?.card.rawValue ?? "なし")")
     }
     
     private func setupDeck() {

@@ -59,6 +59,22 @@ struct LayoutConstants {
         // 4〜5人対戦：左右Botの中央寄せ調整
         static let sideBotCenterOffset: CGFloat = 50
     }
+    
+    // MARK: - Card Deal Animation (カード配布アニメーション)
+    struct CardDealAnimation {
+        // カード配布開始までの遅延時間
+        static let initialDelay: Double = 0.8
+        // カード配布間隔
+        static let dealInterval: Double = 0.4
+        // カード配布アニメーション時間
+        static let dealDuration: Double = 0.6
+        // 場札配布前の遅延時間
+        static let fieldCardDelay: Double = 0.8
+        // 場札配布アニメーション時間
+        static let fieldCardDuration: Double = 0.8
+        // 初期配布カード枚数
+        static let initialCardsPerPlayer: Int = 2
+    }
 }
 
 // MARK: - Player Layout Constants (プレイヤーレイアウト定数)
