@@ -33,7 +33,7 @@ struct GameLayoutConfig {
     static let centerAreaHorizontalPadding: CGFloat = 30
     
     /// 下部プレイヤーの下パディング（広告エリアからの距離）
-    static let bottomPlayerBottomPadding: CGFloat = 10
+    static let bottomPlayerBottomPadding: CGFloat = 0
     
     // MARK: - Game Field (ゲームフィールド設定)
     /// 中央カード配置エリアの幅
@@ -185,7 +185,7 @@ struct PlayerLayoutConfig {
     // ⭐ プレイヤー自身のカードサイズ：現在 cardSize: 70（Botではないため変更不要）
     static let bottomPlayer = (
         icon: IconPosition(
-            offset: CGSize(width: 0, height: 25),
+            offset: CGSize(width: 0, height: 40),
             size: 75,
             nameTextSize: 15
         ),
