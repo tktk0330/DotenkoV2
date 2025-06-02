@@ -169,11 +169,42 @@ struct GameFieldView: View {
                         .font(.caption)
                 )
             
-            // 実際のフィールドカード表示
-            ForEach(viewModel.fieldCards, id: \.id) { card in
+            // 実際のフィールドカード表示（乱雑配置）
+            ForEach(Array(viewModel.fieldCards.enumerated()), id: \.element.id) { index, card in
                 CardView(card: card, size: 100)
                     .matchedGeometryEffect(id: card.id, in: namespace)
+                    .rotationEffect(.degrees(card.handRotation)) // 手札の角度を保持
+                    .zIndex(Double(index)) // 重なり順を設定
             }
+        }
+    }
+    
+    // フィールドカードの乱雑な配置用オフセットを計算
+    private func calculateFieldCardOffset(for index: Int) -> CGSize {
+        // 各カードに対して一意で再現可能なランダムオフセットを生成
+        let seed = index + 1
+        let random = seededRandom(seed: seed)
+        
+        // カードの重なりを作るための基本オフセット
+        let baseX = CGFloat(index) * LayoutConstants.FieldCard.baseStackOffsetX
+        let baseY = CGFloat(index) * LayoutConstants.FieldCard.baseStackOffsetY
+        
+        // 乱雑さを加えるランダムオフセット
+        let randomX = CGFloat(random() * Double(LayoutConstants.FieldCard.randomOffsetRangeX) - Double(LayoutConstants.FieldCard.randomOffsetRangeX / 2))
+        let randomY = CGFloat(random() * Double(LayoutConstants.FieldCard.randomOffsetRangeY) - Double(LayoutConstants.FieldCard.randomOffsetRangeY / 2))
+        
+        return CGSize(
+            width: baseX + randomX,
+            height: baseY + randomY
+        )
+    }
+    
+    // シード値に基づく再現可能な疑似乱数生成器
+    private func seededRandom(seed: Int) -> () -> Double {
+        var rng = seed
+        return {
+            rng = (rng &* 16807) % 2147483647
+            return Double(rng) / 2147483647.0
         }
     }
 }

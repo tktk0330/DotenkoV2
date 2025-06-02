@@ -317,14 +317,19 @@ class GameViewModel: ObservableObject {
                 let selectedCount = getPlayerSelectedCardCount(playerId: currentPlayer.id)
                 print("出すアクションが実行されました - プレイヤー \(currentPlayer.name) の選択されたカード数: \(selectedCount)")
                 
-                // 選択されたカードをフィールドに移動
+                // 選択されたカードをフィールドに移動（角度を保持）
                 let selectedCards = currentPlayer.selectedCards
                 for card in selectedCards {
                     if let handIndex = players[playerIndex].hand.firstIndex(of: card) {
-                        let movedCard = players[playerIndex].hand.remove(at: handIndex)
-                        var fieldCard = movedCard
-                        fieldCard.location = .field
-                        fieldCards.append(fieldCard)
+                        var movedCard = players[playerIndex].hand.remove(at: handIndex)
+                        
+                        // 手札の角度を保持してフィールドに移動
+                        movedCard.location = .field
+                        // 手札の角度に少しランダム性を追加して乱雑さを演出
+                        let randomVariation = Double.random(in: -LayoutConstants.FieldCard.additionalRotationRange...LayoutConstants.FieldCard.additionalRotationRange)
+                        movedCard.handRotation += randomVariation
+                        
+                        fieldCards.append(movedCard)
                     }
                 }
                 
@@ -406,5 +411,13 @@ class GameViewModel: ObservableObject {
     /// 現在のプレイヤーの選択されたカードを取得
     func getCurrentPlayerSelectedCards() -> [Card] {
         return getCurrentPlayer()?.selectedCards ?? []
+    }
+    
+    /// カードの手札角度を記録する
+    func updateCardHandRotation(playerId: String, cardId: UUID, rotation: Double) {
+        if let playerIndex = players.firstIndex(where: { $0.id == playerId }),
+           let cardIndex = players[playerIndex].hand.firstIndex(where: { $0.id == cardId }) {
+            players[playerIndex].hand[cardIndex].handRotation = rotation
+        }
     }
 } 

@@ -41,6 +41,15 @@ struct LayoutConstants {
         static let deckXRatio: CGFloat = 0.1
         static let deckYRatio: CGFloat = 0.65
     }
+    
+    // MARK: - Field Card Layout (フィールドカード配置)
+    struct FieldCard {
+        static let baseStackOffsetX: CGFloat = 25      // カードの基本重なり幅
+        static let baseStackOffsetY: CGFloat = 5       // カードの基本縦重なり
+        static let randomOffsetRangeX: CGFloat = 40    // X方向のランダムオフセット範囲
+        static let randomOffsetRangeY: CGFloat = 30    // Y方向のランダムオフセット範囲
+        static let additionalRotationRange: CGFloat = 15 // 手札角度への追加回転範囲
+    }
 }
 
 // MARK: - Player Layout Constants (プレイヤーレイアウト定数)

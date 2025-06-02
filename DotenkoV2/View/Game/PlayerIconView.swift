@@ -248,6 +248,14 @@ private struct HandCardsView: View {
                     .onTapGesture {
                         handleCardTap(card: card)
                     }
+                    .onAppear {
+                        // カードの角度をモデルに記録
+                        viewModel.updateCardHandRotation(playerId: player.id, cardId: card.id, rotation: cardAngle)
+                    }
+                    .onChange(of: cardAngle) { newAngle in
+                        // 角度が変更された際にも記録を更新
+                        viewModel.updateCardHandRotation(playerId: player.id, cardId: card.id, rotation: newAngle)
+                    }
                     .animation(.easeInOut(duration: PlayerIconConstants.Animation.duration), value: isSelected)
             }
         }

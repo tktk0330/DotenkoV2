@@ -9,6 +9,7 @@ struct Card: Identifiable, Equatable, Hashable{
     let id = UUID()
     let card: PlayCard
     var location: CardLocation
+    var handRotation: Double = 0.0 // 手札での回転角度を保存
     
     // Hashable conformance
     func hash(into hasher: inout Hasher) {
