@@ -13,7 +13,7 @@ struct GameActionButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: size * 0.35, weight: .bold))
                     .foregroundColor(Appearance.Color.commonWhite)

@@ -56,6 +56,22 @@ struct GameLayoutConfig {
 
 // MARK: - Player Layout Configuration
 /// プレイヤーアイコンと手札の配置設定
+/// 
+/// ⭐ 参加人数による自動調整について：
+/// PlayerIconView.swift の adaptiveCardSize と adaptiveSpacing で、
+/// viewModel.maxPlayers の値に応じてBotのカードサイズとスペーシングが自動調整されます
+/// プレイヤー自身（bottom）のカードは参加人数に関係なく固定サイズです
+/// 
+/// Botの調整倍率：
+/// - 2人：カードサイズ 1.2倍、スペーシング 0.8倍
+/// - 3人：カードサイズ 1.0倍、スペーシング 1.0倍（基準）
+/// - 4人：カードサイズ 0.85倍、スペーシング 1.2倍
+/// - 5人：カードサイズ 0.7倍、スペーシング 1.4倍
+/// - 6人以上：カードサイズ 0.6倍、スペーシング 1.6倍
+/// 
+/// プレイヤー自身（bottom）：
+/// - カードサイズ：常に config.cardSize（現在70）
+/// - スペーシング：手札数による固定値（-10〜-30）
 struct PlayerLayoutConfig {
     // MARK: - Icon Position Configuration
     struct IconPosition {
@@ -83,8 +99,13 @@ struct PlayerLayoutConfig {
         let fanMaxAngle: Double
         /// 扇形の半径
         let fanRadius: CGFloat
-        /// カードサイズ
+        
+        // ⭐ Botのカードサイズ統一ポイント：
+        // この値を変更することで、各位置のBotの基本カードサイズを統一できます
+        // 実際のサイズは、PlayerIconView.swift の adaptiveCardSize で手札数に応じて自動調整されます
+        /// カードサイズ（基本サイズ - 手札数によって動的調整される）
         let cardSize: CGFloat
+        
         /// 手札エリアのサイズ
         let handAreaSize: CGSize
         
@@ -107,6 +128,7 @@ struct PlayerLayoutConfig {
     
     // MARK: - Position-specific Configurations
     /// 上部プレイヤーの設定
+    // ⭐ Botカードサイズ統一：現在 cardSize: 45
     static let topPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
@@ -118,12 +140,13 @@ struct PlayerLayoutConfig {
             globalRotation: 0,
             fanMaxAngle: 60,
             fanRadius: 45,
-            cardSize: 45,
+            cardSize: 50, // ← Botのカードサイズ統一ポイント（上部プレイヤー）
             handAreaSize: CGSize(width: 160, height: 45)
         )
     )
     
     /// 左側プレイヤーの設定
+    // ⭐ Botカードサイズ統一：現在 cardSize: 40
     static let leftPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
@@ -135,12 +158,13 @@ struct PlayerLayoutConfig {
             globalRotation: 0,
             fanMaxAngle: 60,
             fanRadius: 35,
-            cardSize: 40,
+            cardSize: 50, // ← Botのカードサイズ統一ポイント（左側プレイヤー）
             handAreaSize: CGSize(width: 100, height: 45)
         )
     )
     
     /// 右側プレイヤーの設定
+    // ⭐ Botカードサイズ統一：現在 cardSize: 40
     static let rightPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 0),
@@ -152,12 +176,13 @@ struct PlayerLayoutConfig {
             globalRotation: 0,
             fanMaxAngle: 60,
             fanRadius: 35,
-            cardSize: 40,
+            cardSize: 50, // ← Botのカードサイズ統一ポイント（右側プレイヤー）
             handAreaSize: CGSize(width: 100, height: 45)
         )
     )
     
     /// 下部プレイヤー（自分）の設定
+    // ⭐ プレイヤー自身のカードサイズ：現在 cardSize: 70（Botではないため変更不要）
     static let bottomPlayer = (
         icon: IconPosition(
             offset: CGSize(width: 0, height: 25),
@@ -169,7 +194,7 @@ struct PlayerLayoutConfig {
             globalRotation: 0,
             fanMaxAngle: 90,
             fanRadius: 55,
-            cardSize: 70,
+            cardSize: 70, // ← プレイヤー自身のカードサイズ（統一対象外）
             handAreaSize: CGSize(width: 220, height: 85)
         )
     )

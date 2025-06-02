@@ -196,7 +196,7 @@ struct BottomPlayerAreaView: View {
                 .frame(height: geometry.size.height * GameLayoutConfig.bottomAreaHeightRatio)
             
             if let player = player {
-                HStack(spacing: 15) {
+                HStack(spacing: -20) {
                     // 左側：パス/引くボタン
                     GameActionButton(
                         icon: Appearance.Icon.arrowDownCircleFill,
@@ -205,7 +205,7 @@ struct BottomPlayerAreaView: View {
                         backgroundColor: Appearance.Color.passButtonBackground,
                         size: 75
                     )
-                    .offset(x: 0, y: 50)
+                    .offset(x: 20, y: 50)
                     
                     // 中央：プレイヤーアイコン
                     PlayerIconView(player: player, position: .bottom, viewModel: viewModel, namespace: namespace)
@@ -219,7 +219,7 @@ struct BottomPlayerAreaView: View {
                         backgroundColor: Appearance.Color.playButtonBackground,
                         size: 75
                     )
-                    .offset(x: 0, y: 50)
+                    .offset(x: -20, y: 50)
                 }
                 .zIndex(1001)
                 .offset(y: -CGFloat(Constant.BANNER_HEIGHT) - GameLayoutConfig.bottomPlayerBottomPadding)

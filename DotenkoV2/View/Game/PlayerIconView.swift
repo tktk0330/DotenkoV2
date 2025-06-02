@@ -275,51 +275,46 @@ private struct HandCardsView: View {
         }
     }
     
-    /// 1-10枚に最適化されたカードサイズ
+    /// カードサイズ（参加人数による自動調整）
+    // ⭐ 参加人数によるカードサイズ調整：
+    // Botのカードは参加人数が多いほど小さくして、画面レイアウトに収まるように調整します
+    // プレイヤー自身（bottom）のカードは参加人数に関係なく固定サイズです
+    // viewModel.maxPlayers の値に応じて基本サイズを倍率調整します
     private var adaptiveCardSize: CGFloat {
-        let handCount = max(player.hand.count, 1)
-        let baseSize = config.cardSize
+        let baseSize = config.cardSize // ← この値がGameLayoutConfig.swiftから取得される基本カードサイズ
         
-        switch position {
-        case .bottom:
-            switch handCount {
-            case 1...3:
-                return baseSize
-            case 4...6:
-                return baseSize * 0.95
-            case 7...8:
-                return baseSize * 0.85
-            case 9...10:
-                return baseSize * 0.75
-            default:
-                return baseSize * 0.75
-            }
-        case .top:
-            switch handCount {
-            case 1...4:
-                return baseSize * 0.8
-            case 5...7:
-                return baseSize * 0.7
-            case 8...10:
-                return baseSize * 0.6
-            default:
-                return baseSize * 0.6
-            }
-        case .left, .right:
-            switch handCount {
-            case 1...4:
-                return baseSize * 0.7
-            case 5...7:
-                return baseSize * 0.6
-            case 8...10:
-                return baseSize * 0.5
-            default:
-                return baseSize * 0.5
-            }
+        // プレイヤー自身（bottom）は参加人数に関係なく固定サイズ
+        if position == .bottom {
+            return baseSize
         }
+        
+        // Botプレイヤーのみ参加人数による調整を適用
+        let playerCount = viewModel.maxPlayers // ← 参加人数を取得
+        
+        // 参加人数による調整倍率を計算
+        let sizeMultiplier: CGFloat = {
+            switch playerCount {
+            case 2:
+                return 1.2  // 2人：20%拡大
+            case 3:
+                return 1.0  // 3人：基本サイズ
+            case 4:
+                return 0.85 // 4人：15%縮小
+            case 5:
+                return 0.7  // 5人：30%縮小
+            default:
+                return 0.6  // 6人以上：40%縮小
+            }
+        }()
+        
+        // 基本サイズに倍率を適用（Botのみ）
+        return baseSize * sizeMultiplier
     }
     
-    /// 1-10枚に最適化されたスペーシング
+    /// スペーシング（参加人数による自動調整）
+    // ⭐ 参加人数によるスペーシング調整：
+    // Botプレイヤーは参加人数が多いほどスペーシングを調整して、画面レイアウトに適切に配置します
+    // プレイヤー自身（bottom）のスペーシングは参加人数に関係なく固定値です
     private var adaptiveSpacing: CGFloat {
         let handCount = player.hand.count
         
@@ -327,8 +322,8 @@ private struct HandCardsView: View {
             return 0
         }
         
-        switch position {
-        case .bottom:
+        // プレイヤー自身（bottom）は参加人数に関係なく固定スペーシング
+        if position == .bottom {
             switch handCount {
             case 2...3:
                 return -10
@@ -343,32 +338,56 @@ private struct HandCardsView: View {
             default:
                 return -30
             }
+        }
+        
+        // Botプレイヤーのみ参加人数による調整を適用
+        let playerCount = viewModel.maxPlayers // ← 参加人数を取得
+        
+        // 参加人数による基本スペーシング調整
+        let spacingMultiplier: CGFloat = {
+            switch playerCount {
+            case 2:
+                return 0.8  // 2人：スペーシング縮小
+            case 3:
+                return 1.0  // 3人：基本スペーシング
+            case 4:
+                return 1.2  // 4人：スペーシング拡大
+            case 5:
+                return 1.4  // 5人：スペーシング大幅拡大
+            default:
+                return 1.6  // 6人以上：最大スペーシング拡大
+            }
+        }()
+        
+        switch position {
         case .top:
             switch handCount {
             case 2...4:
-                return -5
+                return -5 * spacingMultiplier
             case 5...6:
-                return -8
+                return -8 * spacingMultiplier
             case 7...8:
-                return -12
+                return -12 * spacingMultiplier
             case 9...10:
-                return -15
+                return -15 * spacingMultiplier
             default:
-                return -15
+                return -15 * spacingMultiplier
             }
         case .left, .right:
             switch handCount {
             case 2...4:
-                return -3
+                return -3 * spacingMultiplier
             case 5...6:
-                return -5
+                return -5 * spacingMultiplier
             case 7...8:
-                return -8
+                return -8 * spacingMultiplier
             case 9...10:
-                return -10
+                return -10 * spacingMultiplier
             default:
-                return -10
+                return -10 * spacingMultiplier
             }
+        default:
+            return 0
         }
     }
     
