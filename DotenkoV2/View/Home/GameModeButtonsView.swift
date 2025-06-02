@@ -51,7 +51,7 @@ struct GameModeButtonsView: View {
                     title: "友人戦",
                     backgroundImage: Appearance.Image.GameMode.friendPlayButton,
                     action: { 
-                        allViewNavigator.push(MatchingView(maxPlayers: selectedMaxPlayers, gameType: GameType.vsFriend)) 
+                        allViewNavigator.push(MatchingView(maxPlayers: selectedMaxPlayers, gameType: GameType.online))
                     }
                 )
             }

@@ -8,7 +8,7 @@ class UserViewModel: ObservableObject {
     @Published var error: Error?
     
     // ユーザーを作成または更新
-    func createOrUpdateUser(name: String) async {
+    func createOrUpdateUser(name: String) {
         do {
             let user = User(
                 name: name,
@@ -17,10 +17,10 @@ class UserViewModel: ObservableObject {
             
             if let userId = currentUser?.id {
                 // 既存ユーザーの更新
-                try await db.collection("users").document(userId).setData(from: user)
+                try db.collection("users").document(userId).setData(from: user)
             } else {
                 // 新規ユーザーの作成
-                let docRef = try await db.collection("users").addDocument(from: user)
+                let docRef = try db.collection("users").addDocument(from: user)
                 var newUser = user
                 newUser.id = docRef.documentID
                 DispatchQueue.main.async {
@@ -50,11 +50,11 @@ class UserViewModel: ObservableObject {
     }
     
     // 最終ログイン時刻の更新
-    func updateLastLoginTime() async {
+    func updateLastLoginTime() {
         guard let userId = currentUser?.id else { return }
         
         do {
-            try await db.collection("users").document(userId).updateData([
+            try db.collection("users").document(userId).updateData([
                 "lastLoginAt": Date()
             ])
         } catch {

@@ -28,7 +28,7 @@ class FireBaseManager {
                 name: "Anonymous User",
                 lastLoginAt: Date()
             )
-            try await db.collection("users").document(authUser.uid).setData(from: newUser)
+            try db.collection("users").document(authUser.uid).setData(from: newUser)
             var createdUser = newUser
             createdUser.id = authUser.uid
             return createdUser

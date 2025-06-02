@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
 
+// MARK: - Game Main View
+/// ゲームメイン画面View
 struct GameMainView: View {
     @EnvironmentObject private var allViewNavigator: NavigationAllViewStateManager
     @StateObject private var viewModel: GameViewModel
@@ -26,26 +28,26 @@ struct GameMainView: View {
                     onSettingsAction: viewModel.handleSettingsAction
                 )
                 
-                // Deck with matchedGeometryEffect
-                ZStack {
-                    ForEach(viewModel.deckCards.prefix(5), id: \.id) { card in
-                        CardView(card: card, size: 80)
-                            .matchedGeometryEffect(id: card.id, in: namespace)
-                    }
-                }
-                .position(x: geometry.size.width * 0.1, y: geometry.size.height * 0.65)
-                .onTapGesture {
-                    viewModel.handleDeckTap()
-                }
+                // デッキ表示
+                DeckView(
+                    deckCards: viewModel.deckCards, 
+                    namespace: namespace,
+                    viewModel: viewModel
+                )
+                    .position(
+                        x: geometry.size.width * GameLayoutConfig.deckPositionXRatio,
+                        y: geometry.size.height * GameLayoutConfig.deckPositionYRatio
+                    )
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)
     }
-    
-    // MARK: - Main Layout Components
-    
+}
+
+// MARK: - Private Methods
+private extension GameMainView {
     /// メインゲーム画面のレイアウト
-    private func gameMainLayout(geometry: GeometryProxy) -> some View {
+    func gameMainLayout(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             // ヘッダーエリア（ゲーム情報表示）
             GameHeaderView(
@@ -60,31 +62,11 @@ struct GameMainView: View {
             GamePlayersAreaView(
                 players: viewModel.players,
                 maxPlayers: viewModel.maxPlayers,
-                onPassAction: {
-                    viewModel.handlePassAction()
-                },
-                onPlayAction: {
-                    viewModel.handlePlayAction()
-                },
+                onPassAction: viewModel.handlePassAction,
+                onPlayAction: viewModel.handlePlayAction,
                 viewModel: viewModel,
                 namespace: namespace
             )
         }
     }
-}
-
-// MARK: - Player Position Enum
-enum PlayerPosition {
-    case top
-    case bottom
-    case left
-    case right
-}
-
-// MARK: - Game Phase Enum
-/// ゲームフェーズ
-enum GamePhase {
-    case waiting    // 待機中
-    case playing    // プレイ中
-    case finished   // 終了
 }

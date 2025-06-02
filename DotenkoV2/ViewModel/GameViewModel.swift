@@ -38,7 +38,16 @@ class GameViewModel: ObservableObject {
         self.players = players
         self.maxPlayers = maxPlayers
         self.gameType = gameType
-        self.gameRuleInfo = GameRuleModel()
+        
+        // 一時的にデフォルト値で初期化
+        self.gameRuleInfo = GameRuleModel(
+            roundCount: "5",
+            jokerCount: "2", 
+            gameRate: "10",
+            maxScore: "1000",
+            upRate: "3",
+            deckCycle: "3"
+        )
         
         initializeGame()
     }
@@ -46,12 +55,19 @@ class GameViewModel: ObservableObject {
     // MARK: - Game Initialization
     func initializeGame() {
         setupGameInfo()
+        setupPlayers()
         setupDeck()
+        dealInitialCards()
         gamePhase = .playing
     }
     
     private func setupGameInfo() {
-        // ユーザー設定からゲーム情報を取得
+        // ユーザー設定からゲーム情報を取得（デフォルト値で初期化）
+        totalRounds = 10
+        currentRate = 10
+        upRate = 3
+        
+        // ユーザープロフィールから設定を取得
         if case .success(let profile) = userProfileRepository.getOrCreateProfile() {
             totalRounds = Int(profile.rmRoundCount) ?? 10
             currentRate = Int(profile.rmGameRate) ?? 10
@@ -60,6 +76,57 @@ class GameViewModel: ObservableObject {
         
         // 初期ポット計算（プレイヤー数 × 基本レート）
         currentPot = maxPlayers * currentRate
+    }
+    
+    private func setupPlayers() {
+        // プレイヤーが不足している場合は補完
+        if players.isEmpty {
+            // デフォルトの現在プレイヤーを追加
+            let defaultPlayer = Player(
+                id: "current-player",
+                side: 0,
+                name: "あなた",
+                icon_url: nil,
+                dtnk: false
+            )
+            players.append(defaultPlayer)
+        }
+        
+        // ボットプレイヤーを追加（maxPlayersに達するまで）
+        let botList = BotPlayerList()
+        let availableBots = botList.getBotPlayer().shuffled()
+        
+        let neededBots = maxPlayers - players.count
+        for i in 0..<min(neededBots, availableBots.count) {
+            let bot = availableBots[i]
+            let botPlayer = Player(
+                id: bot.id,
+                side: players.count,
+                name: bot.name,
+                icon_url: bot.icon_url,
+                dtnk: false
+            )
+            players.append(botPlayer)
+        }
+    }
+    
+    private func dealInitialCards() {
+        // 各プレイヤーに5枚ずつカードを配布
+        let cardsPerPlayer = 5
+        
+        for playerIndex in players.indices {
+            let playerCards = Array(deckCards.prefix(cardsPerPlayer))
+            players[playerIndex].hand = playerCards.map { card in
+                var handCard = card
+                handCard.location = .hand(playerIndex: playerIndex, cardIndex: 0)
+                return handCard
+            }
+            
+            // 配布したカードをデッキから削除
+            if deckCards.count >= cardsPerPlayer {
+                deckCards.removeFirst(cardsPerPlayer)
+            }
+        }
     }
     
     private func setupDeck() {
@@ -245,15 +312,16 @@ class GameViewModel: ObservableObject {
     func handlePlayAction() {
         withAnimation(.easeOut) {
             // TODO: 出すロジックを実装
-            if let currentPlayer = getCurrentPlayer() {
+            if let currentPlayer = getCurrentPlayer(),
+               let playerIndex = players.firstIndex(where: { $0.id == currentPlayer.id }) {
                 let selectedCount = getPlayerSelectedCardCount(playerId: currentPlayer.id)
                 print("出すアクションが実行されました - プレイヤー \(currentPlayer.name) の選択されたカード数: \(selectedCount)")
                 
                 // 選択されたカードをフィールドに移動
                 let selectedCards = currentPlayer.selectedCards
                 for card in selectedCards {
-                    if let handIndex = players[0].hand.firstIndex(of: card) {
-                        let movedCard = players[0].hand.remove(at: handIndex)
+                    if let handIndex = players[playerIndex].hand.firstIndex(of: card) {
+                        let movedCard = players[playerIndex].hand.remove(at: handIndex)
                         var fieldCard = movedCard
                         fieldCard.location = .field
                         fieldCards.append(fieldCard)
@@ -273,9 +341,11 @@ class GameViewModel: ObservableObject {
             print("デッキがタップされました - カードを引く処理")
             
             // デッキからカードを引く処理（仮の処理）
-            if !deckCards.isEmpty {
+            if !deckCards.isEmpty,
+               let currentPlayer = getCurrentPlayer(),
+               let playerIndex = players.firstIndex(where: { $0.id == currentPlayer.id }) {
                 let drawnCard = deckCards.removeFirst()
-                players[0].hand.append(drawnCard)
+                players[playerIndex].hand.append(drawnCard)
                 print("引いたカード: \(drawnCard.card.rawValue)")
             }
         }
