@@ -89,6 +89,17 @@ struct PlayerLayoutConstants {
         static let botFan: Double = 60
         static let playerFan: Double = 90
         static let rotation: Double = 0
+        
+        // 扇形配置用の角度設定
+        static let playerCardSpacing: Double = 30.0      // 自分の手札のカード間隔角度
+        static let playerCardTilt: Double = 10.0         // 自分の手札のカード傾き角度
+        static let botCardSpacing: Double = 10.0         // Botの手札のカード間隔角度
+    }
+    
+    // MARK: - Fan Layout Values (扇形配置値)
+    struct FanLayout {
+        static let playerCurveCoefficient: Double = 0.15   // 自分の手札の放物線係数（端のカードほど下に）
+        static let botCurveCoefficient: Double = 0.10      // Botの手札の放物線係数（中央が上に凸）
     }
     
     // MARK: - Hand Area Sizes (手札エリアサイズ)

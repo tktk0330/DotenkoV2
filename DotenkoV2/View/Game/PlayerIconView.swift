@@ -226,7 +226,43 @@ private struct HandCardsView: View {
     let namespace: Namespace.ID
     
     var body: some View {
-        // 固定幅のコンテナ内で手札を中央配置
+        if position == .bottom {
+            // 自分の手札：扇形配置
+            fanLayoutHandCards
+        } else {
+            // Bot手札：従来の横並び配置
+            horizontalLayoutHandCards
+        }
+    }
+    
+    // MARK: - Fan Layout (扇形配置)
+    /// 自分の手札を扇形に配置
+    private var fanLayoutHandCards: some View {
+        ZStack {
+            ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
+                let isSelected = player.selectedCards.contains(card)
+                let total = player.hand.count
+                let cardPosition = calculateFanPosition(index: index, total: total)
+                let cardAngle = calculateFanAngle(index: index, total: total)
+                
+                CardView(card: card, size: adaptiveCardSize)
+                    .matchedGeometryEffect(id: card.id, in: namespace)
+                    .rotationEffect(.degrees(cardAngle))
+                    .offset(cardPosition)
+                    .offset(y: cardSelectionOffset(for: card))
+                    .onTapGesture {
+                        handleCardTap(card: card)
+                    }
+                    .animation(.easeInOut(duration: PlayerIconConstants.Animation.duration), value: isSelected)
+                    .zIndex(isSelected ? 1000 : Double(index))
+            }
+        }
+        .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
+    }
+    
+    // MARK: - Horizontal Layout (横並び配置)
+    /// Bot手札を横並びに配置
+    private var horizontalLayoutHandCards: some View {
         HStack {
             Spacer()
             
@@ -247,6 +283,39 @@ private struct HandCardsView: View {
             Spacer()
         }
         .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
+    }
+    
+    // MARK: - Fan Layout Calculations
+    
+    /// 扇形配置での位置を計算
+    private func calculateFanPosition(index: Int, total: Int) -> CGSize {
+        guard total > 0 else { return .zero }
+        
+        let cardSpacingDegrees = PlayerLayoutConstants.Angle.playerCardSpacing // 定数を使用
+        let curveCoefficient = PlayerLayoutConstants.FanLayout.playerCurveCoefficient // 定数を使用
+        
+        // 中心を基準にしたインデックス計算
+        let centerOffset = Double(index) - Double(total - 1) / 2
+        
+        // X座標：角度に基づく横方向の位置
+        let x = CGFloat(cardSpacingDegrees * centerOffset)
+        
+        // Y座標：放物線的な配置（中央が下に凸）
+        let y = CGFloat(pow(centerOffset, 2) * cardSpacingDegrees * curveCoefficient)
+        
+        return CGSize(width: x, height: y)
+    }
+    
+    /// 扇形配置での角度を計算
+    private func calculateFanAngle(index: Int, total: Int) -> Double {
+        guard total > 0 else { return 0 }
+        
+        let cardTiltDegrees = PlayerLayoutConstants.Angle.playerCardTilt // 定数を使用
+        
+        // 中心を基準にしたインデックス計算
+        let centerOffset = Double(index) - Double(total - 1) / 2
+        
+        return cardTiltDegrees * centerOffset
     }
     
     // MARK: - Fixed Layout Settings
