@@ -215,6 +215,7 @@ class GameViewModel: ObservableObject {
         // TODO: パス/引くロジックを実装
         print("パス/引くアクションが実行されました")
         clearCardSelection()
+        print(players[0].hand)
     }
     
     /// 出すアクションを処理
@@ -226,13 +227,16 @@ class GameViewModel: ObservableObject {
     
     /// デッキタップ時の処理
     func handleDeckTap() {
-        // TODO: カードを引く処理を実装
-        print("デッキがタップされました - カードを引く処理")
-        
-        // デッキからカードを引く処理（仮の処理）
-        if !deckCards.isEmpty {
-            let drawnCard = deckCards.removeFirst()
-            print("引いたカード: \(drawnCard.card.rawValue)")
+        withAnimation(.easeOut) {
+            // TODO: カードを引く処理を実装
+            print("デッキがタップされました - カードを引く処理")
+            
+            // デッキからカードを引く処理（仮の処理）
+            if !deckCards.isEmpty {
+                let drawnCard = deckCards.removeFirst()
+                players[0].hand.append(drawnCard)
+                print("引いたカード: \(drawnCard.card.rawValue)")
+            }
         }
     }
     
