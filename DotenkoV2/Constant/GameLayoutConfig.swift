@@ -62,7 +62,7 @@ struct PlayerLayoutConstants {
     // MARK: - Card Sizes (カードサイズ)
     struct CardSize {
         static let bot: CGFloat = 50
-        static let player: CGFloat = 70
+        static let player: CGFloat = 120
     }
     
     // MARK: - Offset Values (オフセット値)
@@ -93,13 +93,14 @@ struct PlayerLayoutConstants {
         // 扇形配置用の角度設定
         static let playerCardSpacing: Double = 30.0      // 自分の手札のカード間隔角度
         static let playerCardTilt: Double = 10.0         // 自分の手札のカード傾き角度
-        static let botCardSpacing: Double = 10.0         // Botの手札のカード間隔角度
+        static let botCardSpacing: Double = 15.0         // Botの手札のカード間隔角度
+        static let botCardTilt: Double = 6.0             // Botの手札のカード傾き角度
     }
     
     // MARK: - Fan Layout Values (扇形配置値)
     struct FanLayout {
         static let playerCurveCoefficient: Double = 0.15   // 自分の手札の放物線係数（端のカードほど下に）
-        static let botCurveCoefficient: Double = 0.10      // Botの手札の放物線係数（中央が上に凸）
+        static let botCurveCoefficient: Double = 0.08      // Botの手札の放物線係数（控えめな扇形）
     }
     
     // MARK: - Hand Area Sizes (手札エリアサイズ)

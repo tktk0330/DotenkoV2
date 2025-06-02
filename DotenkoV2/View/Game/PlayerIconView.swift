@@ -226,17 +226,12 @@ private struct HandCardsView: View {
     let namespace: Namespace.ID
     
     var body: some View {
-        if position == .bottom {
-            // 自分の手札：扇形配置
-            fanLayoutHandCards
-        } else {
-            // Bot手札：従来の横並び配置
-            horizontalLayoutHandCards
-        }
+        // すべてのプレイヤーに扇形配置を適用
+        fanLayoutHandCards
     }
     
     // MARK: - Fan Layout (扇形配置)
-    /// 自分の手札を扇形に配置
+    /// 手札を扇形に配置（全プレイヤー対応）
     private var fanLayoutHandCards: some View {
         ZStack {
             ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
@@ -254,45 +249,31 @@ private struct HandCardsView: View {
                         handleCardTap(card: card)
                     }
                     .animation(.easeInOut(duration: PlayerIconConstants.Animation.duration), value: isSelected)
-                    .zIndex(isSelected ? 1000 : Double(index))
             }
-        }
-        .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
-    }
-    
-    // MARK: - Horizontal Layout (横並び配置)
-    /// Bot手札を横並びに配置
-    private var horizontalLayoutHandCards: some View {
-        HStack {
-            Spacer()
-            
-            HStack(spacing: adaptiveSpacing) {
-                ForEach(Array(player.hand.enumerated()), id: \.element.id) { index, card in
-                    let isSelected = player.selectedCards.contains(card)
-                    
-                    CardView(card: card, size: adaptiveCardSize)
-                        .matchedGeometryEffect(id: card.id, in: namespace)
-                        .offset(y: cardSelectionOffset(for: card))
-                        .onTapGesture {
-                            handleCardTap(card: card)
-                        }
-                        .animation(.easeInOut(duration: PlayerIconConstants.Animation.duration), value: isSelected)
-                }
-            }
-            
-            Spacer()
         }
         .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
     }
     
     // MARK: - Fan Layout Calculations
     
-    /// 扇形配置での位置を計算
+    /// 扇形配置での位置を計算（位置別対応）
     private func calculateFanPosition(index: Int, total: Int) -> CGSize {
         guard total > 0 else { return .zero }
         
-        let cardSpacingDegrees = PlayerLayoutConstants.Angle.playerCardSpacing // 定数を使用
-        let curveCoefficient = PlayerLayoutConstants.FanLayout.playerCurveCoefficient // 定数を使用
+        // 位置に応じて設定値を変更
+        let cardSpacingDegrees: Double
+        let curveCoefficient: Double
+        
+        switch position {
+        case .bottom:
+            // 自分の手札：より大きな間隔
+            cardSpacingDegrees = PlayerLayoutConstants.Angle.playerCardSpacing
+            curveCoefficient = PlayerLayoutConstants.FanLayout.playerCurveCoefficient
+        case .top, .left, .right:
+            // Bot手札：コンパクトな間隔
+            cardSpacingDegrees = PlayerLayoutConstants.Angle.botCardSpacing
+            curveCoefficient = PlayerLayoutConstants.FanLayout.botCurveCoefficient
+        }
         
         // 中心を基準にしたインデックス計算
         let centerOffset = Double(index) - Double(total - 1) / 2
@@ -300,17 +281,27 @@ private struct HandCardsView: View {
         // X座標：角度に基づく横方向の位置
         let x = CGFloat(cardSpacingDegrees * centerOffset)
         
-        // Y座標：放物線的な配置（中央が下に凸）
+        // Y座標：放物線的な配置
         let y = CGFloat(pow(centerOffset, 2) * cardSpacingDegrees * curveCoefficient)
         
         return CGSize(width: x, height: y)
     }
     
-    /// 扇形配置での角度を計算
+    /// 扇形配置での角度を計算（位置別対応）
     private func calculateFanAngle(index: Int, total: Int) -> Double {
         guard total > 0 else { return 0 }
         
-        let cardTiltDegrees = PlayerLayoutConstants.Angle.playerCardTilt // 定数を使用
+        // 位置に応じて傾き角度を調整
+        let cardTiltDegrees: Double
+        
+        switch position {
+        case .bottom:
+            // 自分の手札：より大きな傾き
+            cardTiltDegrees = PlayerLayoutConstants.Angle.playerCardTilt
+        case .top, .left, .right:
+            // Bot手札：控えめな傾き
+            cardTiltDegrees = PlayerLayoutConstants.Angle.botCardTilt
+        }
         
         // 中心を基準にしたインデックス計算
         let centerOffset = Double(index) - Double(total - 1) / 2
