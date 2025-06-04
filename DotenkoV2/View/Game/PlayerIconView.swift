@@ -139,11 +139,12 @@ private struct PlayerIconContainer: View {
     let player: Player
     let position: PlayerPosition
     let config: PlayerLayoutConfig.IconPosition
+    @ObservedObject var viewModel: GameViewModel
     
     var body: some View {
         PlayerImageView(player: player, size: config.size)
             .frame(width: config.size, height: config.size)
-            .background(Appearance.Color.commonBlack.opacity(0.3))
+            .background(backgroundForTurn)
             .clipShape(Circle())
             .overlay(borderOverlay)
             .overlay(handCountBadgeOverlay, alignment: .top)
@@ -155,15 +156,48 @@ private struct PlayerIconContainer: View {
             )
     }
     
+    /// ターン状態に応じた背景色
+    @ViewBuilder
+    private var backgroundForTurn: some View {
+        let isCurrentTurn = viewModel.isPlayerTurn(playerId: player.id)
+        
+        if isCurrentTurn {
+            // 現在のターンの場合：明るい背景
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.playerGold.opacity(0.6),
+                            Appearance.Color.playerDarkGold.opacity(0.4)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .animation(.easeInOut(duration: 0.3), value: isCurrentTurn)
+        } else {
+            // 通常時：暗い背景
+            Circle()
+                .fill(Appearance.Color.commonBlack.opacity(0.3))
+                .animation(.easeInOut(duration: 0.3), value: isCurrentTurn)
+        }
+    }
+    
     @ViewBuilder
     private var borderOverlay: some View {
+        let isCurrentTurn = viewModel.isPlayerTurn(playerId: player.id)
+        
         if position == .bottom {
             Circle()
                 .stroke(goldGradient, lineWidth: PlayerIconConstants.Decoration.playerBorderWidth)
                 .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 6, x: 0, y: 3)
         } else {
             Circle()
-                .stroke(Appearance.Color.commonWhite, lineWidth: PlayerIconConstants.Decoration.botBorderWidth)
+                .stroke(
+                    isCurrentTurn ? Appearance.Color.playerGold : Appearance.Color.commonWhite,
+                    lineWidth: isCurrentTurn ? 3 : PlayerIconConstants.Decoration.botBorderWidth
+                )
+                .animation(.easeInOut(duration: 0.3), value: isCurrentTurn)
         }
     }
     
@@ -602,7 +636,7 @@ struct PlayerIconView: View {
             
             // プレイヤーアイコンとUI要素
             VStack(spacing: PlayerIconConstants.Spacing.nameVertical) {
-                PlayerIconContainer(player: player, position: position, config: config.icon)
+                PlayerIconContainer(player: player, position: position, config: config.icon, viewModel: viewModel)
                 
                 if position != .bottom {
                     PlayerNameView(playerName: player.name, config: config.icon)

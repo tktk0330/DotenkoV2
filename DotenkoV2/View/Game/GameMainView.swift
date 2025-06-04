@@ -38,9 +38,54 @@ struct GameMainView: View {
                         x: geometry.size.width * GameLayoutConfig.deckPositionXRatio,
                         y: geometry.size.height * GameLayoutConfig.deckPositionYRatio
                     )
+                
+                // カウントダウンオーバーレイ
+                if viewModel.showCountdown {
+                    CountdownOverlayView(countdownValue: viewModel.countdownValue)
+                }
             }
         }
         .ignoresSafeArea(.all, edges: .bottom)
+    }
+}
+
+// MARK: - Countdown Overlay View
+/// カウントダウン表示オーバーレイ
+struct CountdownOverlayView: View {
+    let countdownValue: Int
+    
+    var body: some View {
+        ZStack {
+            // 半透明背景
+            Color.black.opacity(0.6)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                Text("ゲーム開始まで")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+                
+                // カウントダウン数字
+                Text("\(countdownValue)")
+                    .font(.system(size: 80, weight: .bold))
+                    .foregroundColor(Appearance.Color.playerGold)
+                    .scaleEffect(countdownValue > 0 ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.3), value: countdownValue)
+                
+                Text("最初のカードが出るまで待機...")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            .padding(40)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.black.opacity(0.8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Appearance.Color.playerGold, lineWidth: 2)
+                    )
+            )
+        }
     }
 }
 

@@ -22,6 +22,15 @@ class GameViewModel: ObservableObject {
     @Published var upRate: Int = 3
     @Published var currentPot: Int = 0
     
+    // カウントダウン情報
+    @Published var countdownValue: Int = 5
+    @Published var isCountdownActive: Bool = false
+    @Published var showCountdown: Bool = false
+    
+    // ターン管理情報
+    @Published var currentTurnPlayerIndex: Int = 0
+    @Published var isWaitingForFirstCard: Bool = false
+    
     // デッキ情報
     @Published var deckCards: [Card] = []
     // フィールド情報
@@ -32,6 +41,7 @@ class GameViewModel: ObservableObject {
     
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
+    private var countdownTimer: Timer?
     
     // MARK: - Initialization
     init(players: [Player] = [], maxPlayers: Int = 5, gameType: GameType = .vsBot) {
@@ -132,9 +142,9 @@ class GameViewModel: ObservableObject {
                 timer.invalidate()
                 print("カード配布完了")
                 
-                // 配布完了後、最初の場札を1枚めくる
+                // 配布完了後、5秒カウントダウンを開始
                 DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.CardDealAnimation.fieldCardDelay) {
-                    self.dealInitialFieldCard()
+                    self.startCountdown()
                 }
                 return
             }
@@ -355,44 +365,101 @@ class GameViewModel: ObservableObject {
     
     /// パス/引くアクションを処理
     func handlePassAction() {
-        // TODO: パス/引くロジックを実装
-        print("パス/引くアクションが実行されました")
+        guard let currentPlayer = getCurrentPlayer() else { return }
+        
+        // アクション実行権限チェック
+        if !canPlayerPerformAction(playerId: currentPlayer.id) {
+            print("パス/引くアクション拒否: プレイヤー \(currentPlayer.name) のターンではありません")
+            return
+        }
+        
+        print("パス/引くアクションが実行されました - プレイヤー \(currentPlayer.name)")
         
         // 現在のプレイヤーの選択をクリア
-        if let currentPlayer = getCurrentPlayer() {
-            clearPlayerSelectedCards(playerId: currentPlayer.id)
-            print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
-        }
+        clearPlayerSelectedCards(playerId: currentPlayer.id)
+        
+        // 次のターンに進む
+        nextTurn()
+        
+        print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
     }
     
     /// 出すアクションを処理
     func handlePlayAction() {
+        guard let currentPlayer = getCurrentPlayer() else { return }
+        
+        // 早い者勝ちの場合（カウントダウン中）
+        if isWaitingForFirstCard {
+            handleFirstCardPlay(player: currentPlayer)
+            return
+        }
+        
+        // 通常のターン制の場合
+        if !canPlayerPerformAction(playerId: currentPlayer.id) {
+            print("出すアクション拒否: プレイヤー \(currentPlayer.name) のターンではありません")
+            return
+        }
+        
+        handleNormalCardPlay(player: currentPlayer)
+    }
+    
+    /// 最初のカード出し処理（早い者勝ち）
+    private func handleFirstCardPlay(player: Player) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+        
+        let selectedCount = getPlayerSelectedCardCount(playerId: player.id)
+        print("最初のカード出し - プレイヤー \(player.name) の選択されたカード数: \(selectedCount)")
+        
+        // カウントダウンをキャンセル
+        cancelCountdown()
+        
+        // 選択されたカードをフィールドに移動
+        moveSelectedCardsToField(playerIndex: playerIndex, player: player)
+        
+        // このプレイヤーからターン開始
+        startTurnFromPlayer(playerId: player.id)
+        
+        // 次のターンに進む
+        nextTurn()
+    }
+    
+    /// 通常のカード出し処理（ターン制）
+    private func handleNormalCardPlay(player: Player) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+        
+        let selectedCount = getPlayerSelectedCardCount(playerId: player.id)
+        print("出すアクションが実行されました - プレイヤー \(player.name) の選択されたカード数: \(selectedCount)")
+        
+        // TODO: カード出し判定ロジックを実装
+        // 現在は仮で全て通す
+        
+        // 選択されたカードをフィールドに移動
+        moveSelectedCardsToField(playerIndex: playerIndex, player: player)
+        
+        // 次のターンに進む
+        nextTurn()
+    }
+    
+    /// 選択されたカードをフィールドに移動する共通処理
+    private func moveSelectedCardsToField(playerIndex: Int, player: Player) {
         withAnimation(.easeOut) {
-            // TODO: 出すロジックを実装
-            if let currentPlayer = getCurrentPlayer(),
-               let playerIndex = players.firstIndex(where: { $0.id == currentPlayer.id }) {
-                let selectedCount = getPlayerSelectedCardCount(playerId: currentPlayer.id)
-                print("出すアクションが実行されました - プレイヤー \(currentPlayer.name) の選択されたカード数: \(selectedCount)")
-                
-                // 選択されたカードをフィールドに移動（角度を保持）
-                let selectedCards = currentPlayer.selectedCards
-                for card in selectedCards {
-                    if let handIndex = players[playerIndex].hand.firstIndex(of: card) {
-                        var movedCard = players[playerIndex].hand.remove(at: handIndex)
-                        
-                        // 手札の角度を保持してフィールドに移動
-                        movedCard.location = .field
-                        // 手札の角度に少しランダム性を追加して乱雑さを演出
-                        let randomVariation = Double.random(in: -LayoutConstants.FieldCard.additionalRotationRange...LayoutConstants.FieldCard.additionalRotationRange)
-                        movedCard.handRotation += randomVariation
-                        
-                        fieldCards.append(movedCard)
-                    }
+            let selectedCards = player.selectedCards
+            for card in selectedCards {
+                if let handIndex = players[playerIndex].hand.firstIndex(of: card) {
+                    var movedCard = players[playerIndex].hand.remove(at: handIndex)
+                    
+                    // 手札の角度を保持してフィールドに移動
+                    movedCard.location = .field
+                    // 手札の角度に少しランダム性を追加して乱雑さを演出
+                    let randomVariation = Double.random(in: -LayoutConstants.FieldCard.additionalRotationRange...LayoutConstants.FieldCard.additionalRotationRange)
+                    movedCard.handRotation += randomVariation
+                    
+                    fieldCards.append(movedCard)
                 }
-                
-                // 選択をクリア
-                clearPlayerSelectedCards(playerId: currentPlayer.id)
             }
+            
+            // 選択をクリア
+            clearPlayerSelectedCards(playerId: player.id)
         }
     }
     
@@ -476,5 +543,117 @@ class GameViewModel: ObservableObject {
            let cardIndex = players[playerIndex].hand.firstIndex(where: { $0.id == cardId }) {
             players[playerIndex].hand[cardIndex].handRotation = rotation
         }
+    }
+    
+    // MARK: - Countdown System
+    /// 5秒カウントダウンを開始
+    func startCountdown() {
+        countdownValue = 5
+        isCountdownActive = true
+        showCountdown = true
+        isWaitingForFirstCard = true
+        
+        print("5秒カウントダウン開始")
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+            
+            self.countdownValue -= 1
+            print("カウントダウン: \(self.countdownValue)")
+            
+            if self.countdownValue <= 0 {
+                timer.invalidate()
+                self.finishCountdown()
+            }
+        }
+    }
+    
+    /// カウントダウン終了処理
+    private func finishCountdown() {
+        isCountdownActive = false
+        showCountdown = false
+        isWaitingForFirstCard = false
+        
+        print("カウントダウン終了 - 最初の場札をめくります")
+        
+        // 最初の場札を1枚めくる
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.dealInitialFieldCard()
+            
+            // 場札配布後、ターンシステムを開始
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.resetTurn() // プレイヤー1からターン開始
+                print("ターンシステム開始 - \(self.getCurrentTurnPlayer()?.name ?? "不明") のターンです")
+            }
+        }
+    }
+    
+    /// カウントダウンをキャンセル（早い者勝ちでカードが出された場合）
+    func cancelCountdown() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        isCountdownActive = false
+        showCountdown = false
+        isWaitingForFirstCard = false
+        
+        print("カウントダウンキャンセル - 早い者勝ちでゲーム開始")
+    }
+    
+    // MARK: - Turn Management System
+    /// 次のプレイヤーのターンに進む
+    func nextTurn() {
+        currentTurnPlayerIndex = (currentTurnPlayerIndex + 1) % players.count
+        print("ターン変更: プレイヤー\(currentTurnPlayerIndex + 1) (\(getCurrentTurnPlayer()?.name ?? "不明")) のターン")
+    }
+    
+    /// 現在のターンのプレイヤーを取得
+    func getCurrentTurnPlayer() -> Player? {
+        guard currentTurnPlayerIndex < players.count else { return nil }
+        return players[currentTurnPlayerIndex]
+    }
+    
+    /// 指定されたプレイヤーが現在のターンかチェック
+    func isPlayerTurn(playerId: String) -> Bool {
+        guard let currentPlayer = getCurrentTurnPlayer() else { return false }
+        return currentPlayer.id == playerId
+    }
+    
+    /// 最初にカードを出したプレイヤーからターンを開始
+    func startTurnFromPlayer(playerId: String) {
+        if let playerIndex = players.firstIndex(where: { $0.id == playerId }) {
+            currentTurnPlayerIndex = playerIndex
+            print("ターン開始: プレイヤー\(currentTurnPlayerIndex + 1) (\(getCurrentTurnPlayer()?.name ?? "不明")) から開始")
+        }
+    }
+    
+    /// ターンをリセット（ラウンド開始時など）
+    func resetTurn() {
+        currentTurnPlayerIndex = 0
+        print("ターンリセット: プレイヤー1から開始")
+    }
+    
+    /// 現在のターンプレイヤーのインデックスを取得
+    func getCurrentTurnPlayerIndex() -> Int {
+        return currentTurnPlayerIndex
+    }
+    
+    // MARK: - Player Action Validation
+    /// プレイヤーがアクションを実行できるかチェック
+    func canPlayerPerformAction(playerId: String) -> Bool {
+        // カウントダウン中や待機中は操作不可
+        if isCountdownActive || isWaitingForFirstCard {
+            return false
+        }
+        
+        // 現在のターンのプレイヤーのみアクション可能
+        return isPlayerTurn(playerId: playerId)
+    }
+    
+    /// 早い者勝ちでカードを出せるかチェック（カウントダウン中のみ）
+    func canPlayerPlayFirstCard(playerId: String) -> Bool {
+        return isWaitingForFirstCard && !fieldCards.isEmpty == false
     }
 } 
