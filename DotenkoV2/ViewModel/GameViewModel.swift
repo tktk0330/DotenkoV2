@@ -378,10 +378,64 @@ class GameViewModel: ObservableObject {
         // 現在のプレイヤーの選択をクリア
         clearPlayerSelectedCards(playerId: currentPlayer.id)
         
+        // デッキからカードを引く
+        drawCardFromDeck(playerId: currentPlayer.id)
+        
         // 次のターンに進む
         nextTurn()
         
         print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
+    }
+    
+    /// デッキからカードを引く
+    private func drawCardFromDeck(playerId: String) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
+        
+        // デッキが空の場合は山札を再構築
+        if deckCards.isEmpty {
+            reshuffleDeck()
+        }
+        
+        // デッキからカードを引く
+        if !deckCards.isEmpty {
+            withAnimation(.easeOut(duration: 0.3)) {
+                let drawnCard = deckCards.removeFirst()
+                var handCard = drawnCard
+                handCard.location = .hand(playerIndex: playerIndex, cardIndex: players[playerIndex].hand.count)
+                
+                players[playerIndex].hand.append(handCard)
+                print("プレイヤー \(players[playerIndex].name) がカードを引きました: \(handCard.card.rawValue)")
+            }
+        } else {
+            print("⚠️ デッキが空のため、カードを引けませんでした")
+        }
+    }
+    
+    /// 山札を再構築（場の一番上を残してシャッフル）
+    private func reshuffleDeck() {
+        guard fieldCards.count > 1 else {
+            print("⚠️ 場のカードが不足しているため、山札を再構築できません")
+            return
+        }
+        
+        print("山札が空になりました。場のカードをシャッフルして山札を再構築します")
+        
+        // 場の一番上のカード以外を山札に戻す
+        let cardsToReshuffle = Array(fieldCards.dropLast())
+        fieldCards = Array(fieldCards.suffix(1)) // 最後の1枚のみ残す
+        
+        // カードの位置をデッキに変更してシャッフル
+        var reshuffledCards = cardsToReshuffle.map { card in
+            var deckCard = card
+            deckCard.location = .deck
+            deckCard.handRotation = 0 // 角度をリセット
+            return deckCard
+        }
+        
+        reshuffledCards.shuffle()
+        deckCards = reshuffledCards
+        
+        print("山札を再構築しました。新しい山札枚数: \(deckCards.count)")
     }
     
     /// 出すアクションを処理
@@ -430,14 +484,33 @@ class GameViewModel: ObservableObject {
         let selectedCount = getPlayerSelectedCardCount(playerId: player.id)
         print("出すアクションが実行されました - プレイヤー \(player.name) の選択されたカード数: \(selectedCount)")
         
-        // TODO: カード出し判定ロジックを実装
-        // 現在は仮で全て通す
+        // カード出し判定
+        let validation = canPlaySelectedCards(playerId: player.id)
+        
+        if !validation.canPlay {
+            // 出せない場合はエラーメッセージを表示
+            showCardPlayError(message: validation.reason)
+            print("カード出し拒否: \(validation.reason)")
+            return
+        }
+        
+        print("カード出し成功: \(validation.reason)")
         
         // 選択されたカードをフィールドに移動
         moveSelectedCardsToField(playerIndex: playerIndex, player: player)
         
         // 次のターンに進む
         nextTurn()
+    }
+    
+    /// カード出しエラーメッセージを表示
+    private func showCardPlayError(message: String) {
+        // TODO: アラート表示機能を実装
+        // 現在は仮でコンソール出力のみ
+        print("⚠️ カード出しエラー: \(message)")
+        
+        // 将来的にはアラート表示やUI通知を実装
+        // 例: showAlert = true, alertMessage = message
     }
     
     /// 選択されたカードをフィールドに移動する共通処理
@@ -655,5 +728,187 @@ class GameViewModel: ObservableObject {
     /// 早い者勝ちでカードを出せるかチェック（カウントダウン中のみ）
     func canPlayerPlayFirstCard(playerId: String) -> Bool {
         return isWaitingForFirstCard && !fieldCards.isEmpty == false
+    }
+    
+    // MARK: - Card Play Validation System
+    
+    /// 選択されたカードが出せるかチェック
+    func canPlaySelectedCards(playerId: String) -> (canPlay: Bool, reason: String) {
+        guard let player = players.first(where: { $0.id == playerId }) else {
+            return (false, "プレイヤーが見つかりません")
+        }
+        
+        let selectedCards = player.selectedCards
+        
+        // カードが選択されているかチェック
+        if selectedCards.isEmpty {
+            return (false, "カードが選択されていません")
+        }
+        
+        // 場にカードがあるかチェック
+        guard let fieldCard = fieldCards.last else {
+            return (false, "場にカードがありません")
+        }
+        
+        // カード出しルールの検証
+        return validateCardPlayRules(selectedCards: selectedCards, fieldCard: fieldCard)
+    }
+    
+    /// カード出しルールの検証
+    private func validateCardPlayRules(selectedCards: [Card], fieldCard: Card) -> (canPlay: Bool, reason: String) {
+        let fieldCardValue = fieldCard.card.handValue().first ?? 0
+        let fieldCardSuit = fieldCard.card.suit()
+        
+        print("🔍 カード出し判定開始")
+        print("   場のカード: \(fieldCard.card.rawValue) (数字:\(fieldCardValue), スート:\(fieldCardSuit.rawValue))")
+        print("   選択カード: \(selectedCards.map { "\($0.card.rawValue)" }.joined(separator: ", "))")
+        
+        // ルール1: 同じ数字（1枚）
+        if selectedCards.count == 1 {
+            let selectedCard = selectedCards[0]
+            print("   ルール1チェック: 1枚のカード")
+            
+            // ジョーカーの場合は常に出せる
+            if selectedCard.card.suit() == .joker {
+                print("   ✅ ジョーカーのため出せます")
+                return (true, "ジョーカーは任意のカードとして出せます")
+            }
+            
+            // 同じ数字チェック
+            if selectedCard.card.handValue().contains(fieldCardValue) {
+                print("   ✅ 同じ数字のため出せます")
+                return (true, "同じ数字のカードです")
+            }
+            
+            // 同じスートチェック
+            if selectedCard.card.suit() == fieldCardSuit {
+                print("   ✅ 同じスートのため出せます")
+                return (true, "同じスートのカードです")
+            }
+            
+            print("   ❌ ルール1: 条件に合いません")
+        }
+        
+        // 複数枚の場合のルールチェック
+        if selectedCards.count > 1 {
+            print("   複数枚のカードチェック")
+            
+            // ルール2: 同じ数字で複数（スート関係なし）
+            let allSameNumber = selectedCards.allSatisfy { card in
+                card.card.suit() == .joker || card.card.handValue().contains(fieldCardValue)
+            }
+            
+            print("   ルール2チェック: 全て同じ数字? \(allSameNumber)")
+            if allSameNumber {
+                print("   ✅ 全て同じ数字のため出せます")
+                return (true, "全て同じ数字のカードです")
+            }
+            
+            // ルール4: 同じスートで複数（場と同じスートが最初に選択必須 + 全て同じ数字）
+            let firstCard = selectedCards[0]
+            print("   ルール4チェック: 最初のカード \(firstCard.card.rawValue)")
+            
+            // 最初のカードが場と同じスートまたはジョーカー
+            if firstCard.card.suit() == fieldCardSuit || firstCard.card.suit() == .joker {
+                print("   ルール4: 最初のカードが場と同じスートまたはジョーカー")
+                
+                // 全てのカードが同じ数字かチェック（ジョーカー除く）
+                let nonJokerCards = selectedCards.filter { $0.card.suit() != .joker }
+                print("   ルール4: ジョーカー以外のカード \(nonJokerCards.map { $0.card.rawValue })")
+                
+                if !nonJokerCards.isEmpty {
+                    // ジョーカー以外のカードが全て同じ数字かチェック
+                    let firstNonJokerValue = nonJokerCards[0].card.handValue().first ?? 0
+                    let allSameNumberInSuit = nonJokerCards.allSatisfy { card in
+                        card.card.handValue().contains(firstNonJokerValue)
+                    }
+                    
+                    print("   ルール4: 最初の数字 \(firstNonJokerValue), 全て同じ数字? \(allSameNumberInSuit)")
+                    
+                    if allSameNumberInSuit {
+                        print("   ✅ 場と同じスートから始まる同じ数字のため出せます")
+                        return (true, "場と同じスートから始まる同じ数字のカードです")
+                    }
+                }
+            } else {
+                print("   ルール4: 最初のカードが場と異なるスート")
+            }
+            
+            // ルール5: 合計が同じ（ジョーカー対応）
+            print("   ルール5チェック: 合計値判定")
+            let totalValidation = validateTotalSum(selectedCards: selectedCards, targetSum: fieldCardValue)
+            if totalValidation.canPlay {
+                print("   ✅ 合計値が一致するため出せます")
+                return totalValidation
+            }
+        }
+        
+        print("   ❌ どのルールにも該当しません")
+        return (false, "出せるカードの組み合わせではありません")
+    }
+    
+    /// 合計値の検証（ジョーカー対応）
+    private func validateTotalSum(selectedCards: [Card], targetSum: Int) -> (canPlay: Bool, reason: String) {
+        // ジョーカーと通常カードを分離
+        let jokers = selectedCards.filter { $0.card.suit() == .joker }
+        let normalCards = selectedCards.filter { $0.card.suit() != .joker }
+        
+        // 通常カードの合計値
+        let normalSum = normalCards.reduce(0) { sum, card in
+            sum + (card.card.handValue().first ?? 0)
+        }
+        
+        // ジョーカーがない場合
+        if jokers.isEmpty {
+            if normalSum == targetSum {
+                return (true, "合計値が一致します")
+            }
+            return (false, "合計値が一致しません")
+        }
+        
+        // ジョーカーがある場合の全パターンチェック
+        return checkJokerCombinations(jokers: jokers, normalSum: normalSum, targetSum: targetSum)
+    }
+    
+    /// ジョーカーの組み合わせをチェック
+    private func checkJokerCombinations(jokers: [Card], normalSum: Int, targetSum: Int) -> (canPlay: Bool, reason: String) {
+        let jokerCount = jokers.count
+        
+        // ジョーカーの可能な値の組み合わせを生成（-1, 0, 1）
+        func generateJokerCombinations(count: Int) -> [[Int]] {
+            if count == 0 { return [[]] }
+            if count == 1 { return [[-1], [0], [1]] }
+            
+            let subCombinations = generateJokerCombinations(count: count - 1)
+            var combinations: [[Int]] = []
+            
+            for value in [-1, 0, 1] {
+                for subCombination in subCombinations {
+                    combinations.append([value] + subCombination)
+                }
+            }
+            
+            return combinations
+        }
+        
+        let combinations = generateJokerCombinations(count: jokerCount)
+        
+        for combination in combinations {
+            let jokerSum = combination.reduce(0, +)
+            let totalSum = normalSum + jokerSum
+            
+            if totalSum == targetSum {
+                let jokerDescription = combination.map { "\($0)" }.joined(separator: ", ")
+                return (true, "ジョーカーを[\(jokerDescription)]として計算すると合計値が一致します")
+            }
+        }
+        
+        return (false, "ジョーカーを含めても合計値が一致しません")
+    }
+    
+    /// カード出し判定結果の表示用メッセージを取得
+    func getCardPlayValidationMessage(playerId: String) -> String {
+        let validation = canPlaySelectedCards(playerId: playerId)
+        return validation.reason
     }
 } 

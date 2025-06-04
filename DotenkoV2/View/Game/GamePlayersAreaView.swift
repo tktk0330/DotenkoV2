@@ -234,7 +234,8 @@ struct BottomPlayerAreaView: View {
                         label: "パス",
                         action: onPassAction,
                         backgroundColor: Appearance.Color.passButtonBackground,
-                        size: 75
+                        size: 75,
+                        isEnabled: canPlayerPerformActions
                     )
                     .offset(x: 20, y: 50)
                     
@@ -248,7 +249,8 @@ struct BottomPlayerAreaView: View {
                         label: "出す",
                         action: onPlayAction,
                         backgroundColor: Appearance.Color.playButtonBackground,
-                        size: 75
+                        size: 75,
+                        isEnabled: canPlayCards
                     )
                     .offset(x: -20, y: 50)
                 }
@@ -256,5 +258,32 @@ struct BottomPlayerAreaView: View {
                 .offset(y: -CGFloat(Constant.BANNER_HEIGHT) - GameLayoutConfig.bottomPlayerBottomPadding)
             }
         }
+    }
+    
+    // MARK: - Computed Properties
+    
+    /// プレイヤーがアクションを実行できるかチェック
+    private var canPlayerPerformActions: Bool {
+        guard let player = player else { return false }
+        return viewModel.canPlayerPerformAction(playerId: player.id)
+    }
+    
+    /// カードを出せるかチェック
+    private var canPlayCards: Bool {
+        guard let player = player else { return false }
+        
+        // アクション実行権限がない場合は無効
+        if !canPlayerPerformActions {
+            return false
+        }
+        
+        // カードが選択されていない場合は無効
+        if player.selectedCards.isEmpty {
+            return false
+        }
+        
+        // カード出し判定
+        let validation = viewModel.canPlaySelectedCards(playerId: player.id)
+        return validation.canPlay
     }
 } 
