@@ -56,6 +56,12 @@ enum Appearance {
         /// プレイボタンの背景色 - 緑色
         static let playButtonBackground = SwiftUI.Color(red: 0.2, green: 0.6, blue: 0.2)
         
+        // どてんこ宣言ボタン色
+        /// どてんこボタンの背景色 - 鮮やかな紫色
+        static let dotenkoButtonBackground = SwiftUI.Color(red: 0.6, green: 0.2, blue: 0.8)
+        /// どてんこボタンのアクセント色 - 明るい紫色
+        static let dotenkoButtonAccent = SwiftUI.Color(red: 0.8, green: 0.4, blue: 1.0)
+        
         // GameHeader専用色
         /// エメラルドグリーン - レート表示に使用
         static let emeraldGreen = SwiftUI.Color(red: 0.0, green: 0.8, blue: 0.4)

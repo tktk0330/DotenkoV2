@@ -240,8 +240,11 @@ struct BottomPlayerAreaView: View {
                     .offset(x: 20, y: 50)
                     
                     // 中央：プレイヤーアイコン
-                    PlayerIconView(player: player, position: .bottom, viewModel: viewModel, namespace: namespace)
-                        .scaleEffect(1.0)
+                    VStack(spacing: 10) {
+                        // プレイヤーアイコン
+                        PlayerIconView(player: player, position: .bottom, viewModel: viewModel, namespace: namespace)
+                            .scaleEffect(1.0)
+                    }
                     
                     // 右側：出すボタン
                     GameActionButton(
@@ -257,6 +260,25 @@ struct BottomPlayerAreaView: View {
                 .zIndex(1001)
                 .offset(y: -CGFloat(Constant.BANNER_HEIGHT) - GameLayoutConfig.bottomPlayerBottomPadding)
             }
+        }
+        .overlay(
+            // どてんこ宣言ボタン（完全独立オーバーレイ）
+            dotenkoButtonOverlay,
+            alignment: .bottomTrailing
+        )
+    }
+    
+    // MARK: - Dotenko Button Overlay
+    @ViewBuilder
+    private var dotenkoButtonOverlay: some View {
+        if let player = player {
+            DotenkoDeclarationButton(
+                action: { handleDotenkoDeclaration(for: player) },
+                isEnabled: viewModel.shouldShowDotenkoButton()
+            )
+            .padding(.trailing, 20)
+            .padding(.bottom, 120)
+            .zIndex(2001)
         }
     }
     
@@ -285,5 +307,11 @@ struct BottomPlayerAreaView: View {
         // カード出し判定
         let validation = viewModel.canPlaySelectedCards(playerId: player.id)
         return validation.canPlay
+    }
+    
+    /// どてんこ宣言処理
+    private func handleDotenkoDeclaration(for player: Player) {
+        print("どてんこ宣言ボタンが押されました - プレイヤー: \(player.name)")
+        viewModel.handleDotenkoDeclaration(playerId: player.id)
     }
 } 

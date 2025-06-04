@@ -911,4 +911,134 @@ class GameViewModel: ObservableObject {
         let validation = canPlaySelectedCards(playerId: playerId)
         return validation.reason
     }
+    
+    // MARK: - Dotenko Declaration System
+    
+    /// プレイヤーがどてんこ宣言できるかチェック
+    func canPlayerDeclareDotenko(playerId: String) -> Bool {
+        guard let player = players.first(where: { $0.id == playerId }) else { return false }
+        guard let fieldCard = fieldCards.last else { return false }
+        
+        let fieldValue = fieldCard.card.handValue().first ?? 0
+        let handTotals = calculateHandTotals(cards: player.hand)
+        
+        // 手札の合計値のいずれかが場のカードと一致するかチェック
+        return handTotals.contains(fieldValue)
+    }
+    
+    /// 手札の合計値を計算（ジョーカー対応）
+    func calculateHandTotals(cards: [Card]) -> [Int] {
+        // ジョーカーと通常カードを分離
+        let jokers = cards.filter { $0.card.suit() == .joker }
+        let normalCards = cards.filter { $0.card.suit() != .joker }
+        
+        // 通常カードの合計値
+        let normalSum = normalCards.reduce(0) { sum, card in
+            sum + (card.card.handValue().first ?? 0)
+        }
+        
+        // ジョーカーがない場合
+        if jokers.isEmpty {
+            return [normalSum]
+        }
+        
+        // ジョーカーがある場合の全パターン計算
+        return calculateJokerHandCombinations(jokers: jokers, normalSum: normalSum)
+    }
+    
+    /// ジョーカーを含む手札の全パターンを計算
+    private func calculateJokerHandCombinations(jokers: [Card], normalSum: Int) -> [Int] {
+        let jokerCount = jokers.count
+        
+        // ジョーカーの可能な値の組み合わせを生成（-1, 0, 1）
+        func generateJokerCombinations(count: Int) -> [[Int]] {
+            if count == 0 { return [[]] }
+            if count == 1 { return [[-1], [0], [1]] }
+            
+            let subCombinations = generateJokerCombinations(count: count - 1)
+            var combinations: [[Int]] = []
+            
+            for value in [-1, 0, 1] {
+                for subCombination in subCombinations {
+                    combinations.append([value] + subCombination)
+                }
+            }
+            
+            return combinations
+        }
+        
+        let combinations = generateJokerCombinations(count: jokerCount)
+        var totals: [Int] = []
+        
+        for combination in combinations {
+            let jokerSum = combination.reduce(0, +)
+            let totalSum = normalSum + jokerSum
+            totals.append(totalSum)
+        }
+        
+        // 重複を除去してソート
+        return Array(Set(totals)).sorted()
+    }
+    
+    /// どてんこ宣言を処理
+    func handleDotenkoDeclaration(playerId: String) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
+        guard canPlayerDeclareDotenko(playerId: playerId) else {
+            print("⚠️ どてんこ宣言失敗: 条件を満たしていません - プレイヤー \(players[playerIndex].name)")
+            return
+        }
+        
+        print("🎉 どてんこ宣言成功! - プレイヤー \(players[playerIndex].name)")
+        
+        // どてんこ状態を更新
+        players[playerIndex].dtnk = true
+        
+        // ゲームフェーズを更新（将来的にリベンジ待機フェーズに移行）
+        // TODO: リベンジシステム実装時に詳細処理を追加
+        
+        // 勝敗判定（仮実装）
+        handleDotenkoVictory(winnerId: playerId)
+    }
+    
+    /// どてんこ勝利処理（仮実装）
+    private func handleDotenkoVictory(winnerId: String) {
+        // 勝者の設定
+        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
+            players[winnerIndex].rank = 1
+            print("🏆 勝者: \(players[winnerIndex].name)")
+        }
+        
+        // 敗者の設定（場のカードを出した人）
+        // TODO: 場のカードを出したプレイヤーの追跡機能実装時に詳細処理を追加
+        
+        // 仮の処理：他のプレイヤーを敗者に設定
+        for index in players.indices {
+            if players[index].id != winnerId {
+                players[index].rank = 2
+            }
+        }
+        
+        print("ラウンド終了 - どてんこによる勝敗確定")
+    }
+    
+    /// 現在のプレイヤーがどてんこ宣言できるかチェック
+    func canCurrentPlayerDeclareDotenko() -> Bool {
+        guard let currentPlayer = getCurrentPlayer() else { return false }
+        return canPlayerDeclareDotenko(playerId: currentPlayer.id)
+    }
+    
+    /// どてんこ宣言ボタンを表示すべきかチェック
+    func shouldShowDotenkoButton() -> Bool {
+        // 🔧 DEBUG: 一時的に常時どてんこ宣言可能にする
+        return true
+        
+        // 元の実装（デバッグ後に復元）
+        /*
+        // ゲーム進行中かつ場にカードがある場合のみ表示
+        guard gamePhase == .playing && !fieldCards.isEmpty else { return false }
+        
+        // 現在のプレイヤーがどてんこ宣言できる場合のみ表示
+        return canCurrentPlayerDeclareDotenko()
+        */
+    }
 } 
