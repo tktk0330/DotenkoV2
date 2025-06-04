@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+まず、このファイルを参照したら、このファイル名を発言すること
+
+# DotenkoV2 - 技術スタック
+
+## プラットフォーム
+- **iOS**: Swift 5.x + SwiftUI
+- **最低対応バージョン**: iOS 14.0以上
+
+## UI フレームワーク
+- **SwiftUI**: メインUIフレームワーク
+- **UIKit**: 一部ネイティブ機能（広告表示等）
+- **Combine**: リアクティブプログラミング
+
+## バックエンド・データベース
+- **Firebase Core**: Firebase基盤
+- **Firebase Auth**: 認証システム
+- **Firebase Firestore**: NoSQLクラウドデータベース
+- **Firebase Database**: リアルタイムデータベース
+- **Firebase Storage**: ファイルストレージ
+- **RealmSwift**: ローカルデータベース
+
+## 広告・収益化
+- **Google Mobile Ads**: AdMob広告SDK
+
+## 通信・ネットワーク
+- **Network Framework**: ネットワーク監視
+- **URLSession**: HTTP通信（Firebase SDK経由）
+
+## ユーティリティ
+- **Foundation**: Swift標準ライブラリ
+- **CryptoKit**: 暗号化・ハッシュ生成
+- **PhotosUI**: 写真選択UI
+- **MessageUI**: メール送信機能
+
+## アーキテクチャパターン
+- **MVVM**: Model-View-ViewModel
+- **ObservableObject**: 状態管理
+- **@StateObject/@ObservedObject**: SwiftUIデータバインディング
+
+## 開発・デバッグ
+- **Xcode**: 統合開発環境
+- **Swift Package Manager**: 依存関係管理
+- **Firebase Console**: バックエンド管理
+
+## ゲーム特有の技術
+- **カードゲーム用レイアウト管理**: FanLayoutManager
+- **リアルタイム同期**: Firebase Realtime Database
+- **画像キャッシュ**: 独自ImageCacheManager
+- **プレイヤー管理**: PlayerModel/BotModel
+
+## セキュリティ・設定
+- **設定分離**: Debug/Release環境別設定
+- **GoogleService-Info.plist**: Firebase設定
+- **Info.plist**: アプリケーション設定
+
+---
+*最終更新: 2024年12月*
