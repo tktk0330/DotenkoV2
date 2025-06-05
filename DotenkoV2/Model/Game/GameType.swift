@@ -18,7 +18,10 @@ enum PlayerPosition {
 // MARK: - Game Phase Enum
 /// ゲームフェーズ
 enum GamePhase {
-    case waiting    // 待機中
-    case playing    // プレイ中
-    case finished   // 終了
+    case waiting        // 待機中
+    case playing        // プレイ中
+    case dotenkoWaiting // どてんこ宣言待機中
+    case revengeWaiting // リベンジ宣言待機中
+    case challengeZone  // チャレンジゾーン
+    case finished       // 終了
 }

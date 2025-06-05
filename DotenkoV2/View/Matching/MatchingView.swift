@@ -216,7 +216,7 @@ class MatchingViewModel: ObservableObject {
             if case .success(let profile) = userProfileRepository.getOrCreateProfile() {
                 print(profile.rmIconUrl)
                 let currentPlayer = Player(
-                    id: profile.id.stringValue,
+                    id: "player",
                     side: 0,
                     name: profile.rmUserName,
                     icon_url: profile.rmIconUrl,
@@ -225,7 +225,7 @@ class MatchingViewModel: ObservableObject {
                 players = [currentPlayer]
             } else {
                 // Fallback to default if profile fetch fails
-                players = [Player(id: "current", side: 0, name: "あなた", icon_url: nil, dtnk: false)]
+                players = [Player(id: "player", side: 0, name: "あなた", icon_url: nil, dtnk: false)]
             }
             
             // Add bots with delay

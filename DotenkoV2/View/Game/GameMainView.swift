@@ -17,35 +17,48 @@ struct GameMainView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // メインゲーム画面レイアウト
-                gameMainLayout(geometry: geometry)
-                
-                // UI オーバーレイ（戻るボタンなど）
-                GameUIOverlayView(
-                    onBackAction: { allViewNavigator.pop() },
-                    onSettingsAction: viewModel.handleSettingsAction
-                )
-                
-                // デッキ表示
-                DeckView(
-                    deckCards: viewModel.deckCards, 
-                    namespace: namespace,
-                    viewModel: viewModel
-                )
-                    .position(
-                        x: geometry.size.width * GameLayoutConfig.deckPositionXRatio,
-                        y: geometry.size.height * GameLayoutConfig.deckPositionYRatio
+        ZStack {
+            // メインゲーム画面
+            GeometryReader { geometry in
+                ZStack {
+                    // デッキ表示（最初に配置）
+                    DeckView(
+                        deckCards: viewModel.deckCards, 
+                        namespace: namespace,
+                        viewModel: viewModel
                     )
-                
-                // カウントダウンオーバーレイ
-                if viewModel.showCountdown {
-                    CountdownOverlayView(countdownValue: viewModel.countdownValue)
+                        .position(
+                            x: geometry.size.width * GameLayoutConfig.deckPositionXRatio,
+                            y: geometry.size.height * GameLayoutConfig.deckPositionYRatio
+                        )
+                    
+                    // メインゲーム画面レイアウト
+                    gameMainLayout(geometry: geometry)
+                    
+                    // UI オーバーレイ（戻るボタンなど）
+                    GameUIOverlayView(
+                        onBackAction: { allViewNavigator.pop() },
+                        onSettingsAction: viewModel.handleSettingsAction
+                    )
+                    
+                    // カウントダウンオーバーレイ
+                    if viewModel.showCountdown {
+                        CountdownOverlayView(countdownValue: viewModel.countdownValue)
+                    }
                 }
             }
+            .ignoresSafeArea(.all, edges: .bottom)
+            
+            // アナウンス表示（最上位レベル）
+            if viewModel.showAnnouncement {
+                GameAnnouncementView(
+                    title: viewModel.announcementText,
+                    subtitle: viewModel.announcementSubText,
+                    isVisible: viewModel.showAnnouncement
+                )
+                .allowsHitTesting(false)
+            }
         }
-        .ignoresSafeArea(.all, edges: .bottom)
     }
 }
 
