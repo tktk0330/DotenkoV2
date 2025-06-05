@@ -64,6 +64,12 @@ class GameViewModel: ObservableObject {
     @Published var announcementSubText: String = ""
     @Published var isAnnouncementBlocking: Bool = false
     
+    // 中間結果画面システム
+    @Published var showInterimResult: Bool = false
+    @Published var isWaitingForOthers: Bool = false
+    @Published var lastRoundScore: Int = 0
+    @Published var playersReadyCount: Int = 0
+    
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
     private var countdownTimer: Timer?
@@ -2059,6 +2065,9 @@ class GameViewModel: ObservableObject {
         
         // スコアをプレイヤーに適用
         applyScoreToPlayers()
+        
+        // 直接中間結果画面に遷移
+        finishScoreCalculation()
     }
     
     /// プレイヤーにスコアを適用
@@ -2077,21 +2086,14 @@ class GameViewModel: ObservableObject {
             }
             // 中間順位は変動なし
         }
-        
-        finishScoreCalculation()
     }
     
     /// スコア計算完了処理
     private func finishScoreCalculation() {
         // 次のラウンドまたはゲーム終了判定
         if currentRound < totalRounds {
-            // 次のラウンドへ
-            showAnnouncementMessage(
-                title: "ラウンド \(currentRound) 終了",
-                subtitle: "次のラウンドに進みます"
-            ) {
-                self.prepareNextRound()
-            }
+            // 直接中間結果画面を表示
+            prepareNextRound()
         } else {
             // ゲーム終了
             showAnnouncementMessage(
@@ -2105,6 +2107,53 @@ class GameViewModel: ObservableObject {
     
     /// 次のラウンド準備
     private func prepareNextRound() {
+        // 中間結果画面を表示
+        lastRoundScore = roundScore
+        showInterimResult = true
+        playersReadyCount = 0
+        isWaitingForOthers = false
+        
+        print("📊 中間結果画面表示 - ラウンド \(currentRound) 終了")
+        
+        // BOTプレイヤーは自動的にOKを押す（3秒後）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.handleBotPlayersOK()
+        }
+    }
+    
+    /// 中間結果画面のOKボタン処理
+    func handleInterimResultOK() {
+        playersReadyCount += 1
+        print("✅ プレイヤーOK - 現在の準備完了数: \(playersReadyCount)/\(players.count)")
+        
+        // 全プレイヤーが準備完了したかチェック
+        if playersReadyCount >= players.count {
+            proceedToNextRound()
+        } else {
+            isWaitingForOthers = true
+        }
+    }
+    
+    /// BOTプレイヤーの自動OK処理
+    private func handleBotPlayersOK() {
+        let botCount = players.count - 1 // 人間プレイヤー以外
+        playersReadyCount += botCount
+        
+        print("🤖 BOTプレイヤー自動OK - 準備完了数: \(playersReadyCount)/\(players.count)")
+        
+        // 人間プレイヤーがまだOKしていない場合は待機状態に
+        if playersReadyCount < players.count {
+            isWaitingForOthers = false // 人間プレイヤーの操作を待つ
+        } else {
+            proceedToNextRound()
+        }
+    }
+    
+    /// 次のラウンドに進む
+    private func proceedToNextRound() {
+        showInterimResult = false
+        isWaitingForOthers = false
+        
         // ゲーム状態をリセット
         currentRound += 1
         gamePhase = .waiting
@@ -2134,6 +2183,8 @@ class GameViewModel: ObservableObject {
         challengeParticipants.removeAll()
         isChallengeZone = false
         isRevengeWaiting = false
+        
+        print("🎮 次のラウンド開始 - ラウンド \(currentRound)")
         
         // 新しいラウンド開始
         initializeGame()
