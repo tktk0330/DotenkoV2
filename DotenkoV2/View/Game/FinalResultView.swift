@@ -19,9 +19,16 @@ struct FinalResultView: View {
     
     // MARK: - Background
     private var backgroundView: some View {
-        Appearance.Color.finalResultBackground
-            .opacity(FinalResultConstants.Colors.backgroundOpacity)
-            .ignoresSafeArea()
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Appearance.Color.casinoBackgroundTop,
+                Appearance.Color.casinoBackgroundBottom,
+                Appearance.Color.finalResultBackground
+            ]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
     }
     
     // MARK: - Content
@@ -59,15 +66,37 @@ struct FinalResultView: View {
 private struct FinalResultTitleView: View {
     var body: some View {
         VStack(spacing: FinalResultConstants.Layout.titleSpacing) {
-            Text("最終結果")
-                .font(.system(size: FinalResultConstants.Typography.titleSize, weight: .bold))
-                .foregroundColor(.white)
-                .shadow(color: Appearance.Color.finalResultShadow.opacity(0.3), radius: 2, x: 0, y: 1)
+            Text("FINAL RESULTS")
+                .font(.system(size: FinalResultConstants.Typography.casinoTitleSize, weight: .black))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.rankGold,
+                            Appearance.Color.casinoGoldGlow,
+                            Appearance.Color.rankGold
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .shadow(color: Appearance.Color.casinoGoldGlow, radius: 8, x: 0, y: 0)
+                .shadow(color: Appearance.Color.finalResultShadow.opacity(0.5), radius: 4, x: 0, y: 2)
             
             Rectangle()
-                .fill(Appearance.Color.finalResultDivider.opacity(FinalResultConstants.Colors.dividerOpacity))
-                .frame(height: FinalResultConstants.Dimensions.dividerHeight)
-                .frame(maxWidth: FinalResultConstants.Dimensions.dividerMaxWidth)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.rankGold,
+                            Appearance.Color.casinoGoldGlow,
+                            Appearance.Color.rankGold
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: FinalResultConstants.Dimensions.dividerHeight * 2)
+                .frame(maxWidth: FinalResultConstants.Dimensions.dividerMaxWidth + 50)
+                .shadow(color: Appearance.Color.casinoGoldGlow, radius: 6, x: 0, y: 0)
         }
     }
 }
@@ -168,11 +197,38 @@ struct FinalPlayerRankCard: View {
     }
     
     private var rankNumberView: some View {
-        Text("\(rank)")
-            .font(.system(size: RankCardConstants.Typography.rankSize, weight: .black))
-            .foregroundColor(rankColor)
-            .shadow(color: Appearance.Color.finalResultShadow, radius: 2, x: 0, y: 1)
-            .frame(width: RankCardConstants.Dimensions.rankWidth, alignment: .center)
+        ZStack {
+            // 背景円
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            rankColor.opacity(0.3),
+                            rankColor.opacity(0.1)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: RankCardConstants.Dimensions.rankWidth + 8, height: RankCardConstants.Dimensions.rankWidth + 8)
+                .shadow(color: rankColor.opacity(0.5), radius: 4, x: 0, y: 2)
+            
+            Text("\(rank)")
+                .font(.system(size: RankCardConstants.Typography.rankSize, weight: .black))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            rankColor,
+                            rankColor.opacity(0.8)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: rank == 1 ? Appearance.Color.casinoGoldGlow : rankColor, radius: rank == 1 ? 4 : 2, x: 0, y: 0)
+                .shadow(color: Appearance.Color.finalResultShadow, radius: 2, x: 0, y: 1)
+        }
+        .frame(width: RankCardConstants.Dimensions.rankWidth, alignment: .center)
     }
     
     private var playerIconView: some View {
@@ -209,12 +265,35 @@ struct FinalPlayerRankCard: View {
     private var playerScoreView: some View {
         HStack {
             Spacer()
-            Text("\(player.score)")
-                .font(.system(size: RankCardConstants.Typography.scoreSize, weight: .black))
-                .foregroundColor(rankColor)
-                .shadow(color: Appearance.Color.finalResultShadow, radius: 2, x: 0, y: 1)
-            Spacer()
+            
+            // カジノ風スコア表示
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("\(formatScore(player.score))")
+                    .font(.system(size: rank == 1 ? RankCardConstants.Typography.casinoScoreSize : RankCardConstants.Typography.scoreSize, weight: .black))
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                rankColor,
+                                rankColor.opacity(0.8),
+                                rankColor
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: rank == 1 ? Appearance.Color.casinoGoldGlow : rankColor, radius: rank == 1 ? 6 : 3, x: 0, y: 0)
+                    .shadow(color: Appearance.Color.finalResultShadow, radius: 3, x: 0, y: 2)
+                    .scaleEffect(rank == 1 ? 1.1 : 1.0)
+            }
+            .padding(.trailing, RankCardConstants.Layout.scoreRightPadding)
         }
+    }
+    
+    // スコアをカンマ区切りでフォーマット
+    private func formatScore(_ score: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: score)) ?? "\(score)"
     }
     
     // MARK: - Background
@@ -223,17 +302,25 @@ struct FinalPlayerRankCard: View {
             .fill(cardBackgroundGradient)
             .overlay(cardBorderOverlay)
             .shadow(
-                color: rankColor.opacity(RankCardConstants.Colors.shadowOpacity),
-                radius: RankCardConstants.Dimensions.shadowRadius,
+                color: rank == 1 ? Appearance.Color.casinoGoldGlow.opacity(0.4) : rankColor.opacity(RankCardConstants.Colors.shadowOpacity),
+                radius: rank == 1 ? 12 : RankCardConstants.Dimensions.shadowRadius,
                 x: 0,
                 y: RankCardConstants.Dimensions.shadowOffset
+            )
+            .shadow(
+                color: Appearance.Color.finalResultShadow.opacity(0.3),
+                radius: 6,
+                x: 0,
+                y: 4
             )
     }
     
     private var cardBackgroundGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [
+                Appearance.Color.finalResultShadow.opacity(0.8),
                 rankColor.opacity(RankCardConstants.Colors.backgroundOpacity),
+                Appearance.Color.finalResultShadow.opacity(0.6),
                 rankColor.opacity(RankCardConstants.Colors.backgroundSecondaryOpacity)
             ]),
             startPoint: .topLeading,
