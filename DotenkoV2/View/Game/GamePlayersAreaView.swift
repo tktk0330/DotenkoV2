@@ -291,6 +291,7 @@ struct BottomPlayerAreaView: View {
             burstOverlay,
             alignment: .center
         )
+
     }
     
     // MARK: - Dotenko Button Overlay
@@ -438,6 +439,8 @@ struct BottomPlayerAreaView: View {
             .zIndex(1500)
         }
     }
+    
+
     
     // MARK: - Computed Properties
     

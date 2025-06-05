@@ -58,6 +58,22 @@ struct GameMainView: View {
                 )
                 .allowsHitTesting(false)
             }
+            
+            // スコア確定画面
+            if viewModel.showScoreResult, let scoreData = viewModel.scoreResultData {
+                ScoreResultView(
+                    winner: scoreData.winner,
+                    loser: scoreData.loser,
+                    deckBottomCard: scoreData.deckBottomCard,
+                    consecutiveCards: scoreData.consecutiveCards,
+                    winnerHand: scoreData.winnerHand,
+                    baseRate: scoreData.baseRate,
+                    upRate: scoreData.upRate,
+                    finalMultiplier: scoreData.finalMultiplier,
+                    totalScore: scoreData.totalScore,
+                    onOKAction: viewModel.onScoreResultOK
+                )
+            }
         }
     }
 }
@@ -112,7 +128,8 @@ private extension GameMainView {
                 currentRound: viewModel.currentRound,
                 totalRounds: viewModel.totalRounds,
                 upRate: viewModel.upRate,
-                currentRate: viewModel.currentRate
+                currentRate: viewModel.currentRate,
+                viewModel: viewModel
             )
             .frame(height: geometry.size.height * GameLayoutConfig.headerAreaHeightRatio)
             
