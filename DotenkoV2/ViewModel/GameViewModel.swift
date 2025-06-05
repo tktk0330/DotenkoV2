@@ -140,6 +140,12 @@ class GameViewModel: ObservableObject {
         
         // 初期ポット計算（プレイヤー数 × 基本レート）
         currentPot = maxPlayers * currentRate
+        
+        // スコア計算システムの初期化
+        currentUpRate = 1
+        consecutiveCardCount = 0
+        lastPlayedCardValue = nil
+        roundScore = 0
     }
     
     private func setupPlayers() {
@@ -244,6 +250,11 @@ class GameViewModel: ObservableObject {
         }
         
         print("最初の場札: \(fieldCards.last?.card.rawValue ?? "なし")")
+        
+        // ゲーム開始時の上昇レート判定
+        if let firstCard = fieldCards.last {
+            checkGameStartUpRate(card: firstCard)
+        }
         
         // しょてんこ判定を実行
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -619,6 +630,9 @@ class GameViewModel: ObservableObject {
                     movedCard.handRotation += randomVariation
                     
                     fieldCards.append(movedCard)
+                    
+                    // 上昇レート管理（最後に出されたカードで判定）
+                    updateUpRateForCardPlay(card: movedCard)
                 }
             }
             
@@ -1151,8 +1165,8 @@ class GameViewModel: ObservableObject {
         gamePhase = .finished
         print("🎮 ラウンド終了 - どてんこによる勝敗確定")
         
-        // TODO: スコア計算とラウンド結果表示
-        // TODO: 次のラウンドまたはゲーム終了の判定
+        // スコア計算を開始
+        startScoreCalculation()
     }
     
     /// 現在のプレイヤーがどてんこ宣言できるかチェック
@@ -1605,6 +1619,9 @@ class GameViewModel: ObservableObject {
                 
                 if let winnerId = self.dotenkoWinnerId {
                     self.handleDotenkoVictory(winnerId: winnerId)
+                } else {
+                    // 勝者がいない場合は直接スコア計算
+                    self.startScoreCalculation()
                 }
                 
                 print("🎮 ゲーム終了 - どてんこ勝利確定")
@@ -1615,6 +1632,9 @@ class GameViewModel: ObservableObject {
             
             if let winnerId = dotenkoWinnerId {
                 handleDotenkoVictory(winnerId: winnerId)
+            } else {
+                // 勝者がいない場合は直接スコア計算
+                startScoreCalculation()
             }
             
             print("🎮 ゲーム終了 - どてんこ勝利確定")
@@ -1731,7 +1751,8 @@ class GameViewModel: ObservableObject {
             self.gamePhase = .finished
             print("🎮 ラウンド終了 - バーストによる勝敗確定（チャレンジゾーンスキップ）")
             
-            // TODO: スコア計算とラウンド結果表示
+            // スコア計算を開始
+            self.startScoreCalculation()
         }
     }
     
@@ -1810,5 +1831,404 @@ class GameViewModel: ObservableObject {
         announcementText = ""
         announcementSubText = ""
         print("📢 アナウンス表示終了")
+    }
+    
+    // MARK: - Score Calculation System
+    
+    /// スコア計算エンジン
+    @Published var currentUpRate: Int = 1 // 現在の上昇レート倍率
+    @Published var consecutiveCardCount: Int = 0 // 連続同じ数字カウント
+    @Published var lastPlayedCardValue: Int? = nil // 最後に出されたカードの数字
+
+    @Published var roundScore: Int = 0 // ラウンドスコア
+    
+    /// スコア確定画面表示用
+    @Published var showScoreResult: Bool = false
+    @Published var scoreResultData: ScoreResultData? = nil
+    @Published var consecutiveSpecialCards: [Card] = [] // 連続特殊カード
+    
+    /// ラウンド終了時のスコア計算を開始
+    func startScoreCalculation() {
+        guard gamePhase == .finished else { return }
+        
+        print("💰 スコア計算開始")
+        
+        // デッキの裏確認演出を開始
+        showAnnouncementMessage(
+            title: "スコア計算",
+            subtitle: "デッキの裏を確認します"
+        ) {
+            self.revealDeckBottom()
+        }
+    }
+    
+    /// デッキの裏（山札の一番下）を確認
+    private func revealDeckBottom() {
+        guard !deckCards.isEmpty else {
+            // デッキが空の場合は場のカードから確認
+            revealFromFieldCards()
+            return
+        }
+        
+        let bottomCard = deckCards.last!
+        print("🔍 デッキの裏確認: \(bottomCard.card.rawValue)")
+        
+        // 特殊カード判定と演出
+        processSpecialCardEffect(card: bottomCard) {
+            self.calculateFinalScore(bottomCard: bottomCard)
+        }
+    }
+    
+    /// 場のカードからデッキの裏を確認（デッキが空の場合）
+    private func revealFromFieldCards() {
+        guard !fieldCards.isEmpty else {
+            print("⚠️ デッキも場も空のため、スコア計算をスキップします")
+            finishScoreCalculation()
+            return
+        }
+        
+        let bottomCard = fieldCards.first!
+        print("🔍 場のカードから裏確認: \(bottomCard.card.rawValue)")
+        
+        // 特殊カード判定と演出
+        processSpecialCardEffect(card: bottomCard) {
+            self.calculateFinalScore(bottomCard: bottomCard)
+        }
+    }
+    
+    /// 特殊カード効果の処理と演出
+    private func processSpecialCardEffect(card: Card, completion: @escaping () -> Void) {
+        let cardValue = card.card.handValue().first ?? 0
+        let rateValues = card.card.rateValue()
+        
+        // 特殊カード判定
+        if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
+            // 1、2、ジョーカー：50倍演出
+            showSpecialCardEffect(
+                title: "特殊カード発生！",
+                subtitle: "\(card.card.rawValue) - 50倍",
+                effectType: .multiplier50
+            ) {
+                self.currentUpRate *= 50
+                self.checkConsecutiveSpecialCards(from: card, completion: completion)
+            }
+        } else if card.card == .diamond3 {
+            // ダイヤ3：30倍演出
+            showSpecialCardEffect(
+                title: "ダイヤ3発生！",
+                subtitle: "30倍ボーナス",
+                effectType: .diamond3
+            ) {
+                self.currentUpRate *= 30
+                completion()
+            }
+        } else if card.card == .spade3 || card.card == .club3 {
+            // 黒3：勝敗逆転演出
+            showSpecialCardEffect(
+                title: "黒3発生！",
+                subtitle: "勝敗逆転",
+                effectType: .black3Reverse
+            ) {
+                self.reverseWinLose()
+                completion()
+            }
+        } else if card.card == .heart3 {
+            // ハート3：通常の3倍
+            showSpecialCardEffect(
+                title: "ハート3",
+                subtitle: "3倍",
+                effectType: .heart3
+            ) {
+                self.currentUpRate *= 3
+                completion()
+            }
+        } else {
+            // 通常カード
+            completion()
+        }
+    }
+    
+    /// 連続特殊カード確認（1、2、ジョーカーの場合）
+    private func checkConsecutiveSpecialCards(from currentCard: Card, completion: @escaping () -> Void) {
+        // デッキから次のカードを確認
+        var cardsToCheck = deckCards
+        if let currentIndex = cardsToCheck.firstIndex(where: { $0.id == currentCard.id }) {
+            cardsToCheck.remove(at: currentIndex)
+        }
+        
+        guard !cardsToCheck.isEmpty else {
+            completion()
+            return
+        }
+        
+        let nextCard = cardsToCheck.last!
+        let nextCardValue = nextCard.card.handValue().first ?? 0
+        
+        // 連続特殊カード判定
+        if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
+            // 連続特殊カードリストに追加
+            consecutiveSpecialCards.append(nextCard)
+            
+            showAnnouncementMessage(
+                title: "連続特殊カード！",
+                subtitle: "\(nextCard.card.rawValue) - さらに50倍"
+            ) {
+                self.currentUpRate *= 50
+                self.checkConsecutiveSpecialCards(from: nextCard, completion: completion)
+            }
+        } else {
+            completion()
+        }
+    }
+    
+    /// 勝敗逆転処理（黒3効果）
+    private func reverseWinLose() {
+        print("🔄 勝敗逆転処理開始")
+        
+        // 現在の勝者と敗者を入れ替え
+        var winners: [Int] = []
+        var losers: [Int] = []
+        
+        for (index, player) in players.enumerated() {
+            if player.rank == 1 {
+                winners.append(index)
+            } else if player.rank == players.count {
+                losers.append(index)
+            }
+        }
+        
+        // 勝者を敗者に、敗者を勝者に変更
+        for winnerIndex in winners {
+            players[winnerIndex].rank = players.count // 敗者に
+        }
+        
+        for loserIndex in losers {
+            players[loserIndex].rank = 1 // 勝者に
+        }
+        
+        print("🔄 勝敗逆転完了")
+    }
+    
+    /// 最終スコア計算
+    private func calculateFinalScore(bottomCard: Card) {
+        let baseRate = Int(gameRuleInfo.gameRate) ?? 1
+        let bottomCardValue = bottomCard.card.handValue().first ?? 1
+        
+        // 基本計算式：初期レート × 上昇レート × デッキの裏の数字
+        roundScore = baseRate * currentUpRate * bottomCardValue
+        
+        // スコア上限チェック
+        if let maxScoreString = gameRuleInfo.maxScore,
+           maxScoreString != "♾️",
+           let maxScore = Int(maxScoreString) {
+            roundScore = min(roundScore, maxScore)
+        }
+        
+        print("💰 最終スコア計算完了")
+        print("   基本レート: \(baseRate)")
+        print("   上昇レート: \(currentUpRate)")
+        print("   デッキの裏: \(bottomCardValue)")
+        print("   ラウンドスコア: \(roundScore)")
+        
+        // 勝者・敗者を特定
+        let winner = players.first { $0.rank == 1 }
+        let loser = players.first { $0.rank == players.count }
+        let winnerHand = winner?.hand ?? []
+        
+        // スコア確定画面データを作成
+        scoreResultData = ScoreResultData(
+            winner: winner,
+            loser: loser,
+            deckBottomCard: bottomCard,
+            consecutiveCards: consecutiveSpecialCards,
+            winnerHand: winnerHand,
+            baseRate: baseRate,
+            upRate: currentUpRate,
+            finalMultiplier: bottomCardValue,
+            totalScore: roundScore
+        )
+        
+        // スコア確定画面を表示
+        showScoreResult = true
+    }
+    
+    /// スコア確定画面のOKボタン処理
+    func onScoreResultOK() {
+        showScoreResult = false
+        scoreResultData = nil
+        
+        // スコアをプレイヤーに適用
+        applyScoreToPlayers()
+    }
+    
+    /// プレイヤーにスコアを適用
+    private func applyScoreToPlayers() {
+        for index in players.indices {
+            let player = players[index]
+            
+            if player.rank == 1 {
+                // 勝者：スコアを獲得
+                players[index].score += roundScore
+                print("🏆 \(player.name) がスコア獲得: +\(roundScore)")
+            } else if player.rank == players.count {
+                // 敗者：スコアを失う
+                players[index].score -= roundScore
+                print("💀 \(player.name) がスコア失失: -\(roundScore)")
+            }
+            // 中間順位は変動なし
+        }
+        
+        finishScoreCalculation()
+    }
+    
+    /// スコア計算完了処理
+    private func finishScoreCalculation() {
+        // 次のラウンドまたはゲーム終了判定
+        if currentRound < totalRounds {
+            // 次のラウンドへ
+            showAnnouncementMessage(
+                title: "ラウンド \(currentRound) 終了",
+                subtitle: "次のラウンドに進みます"
+            ) {
+                self.prepareNextRound()
+            }
+        } else {
+            // ゲーム終了
+            showAnnouncementMessage(
+                title: "ゲーム終了",
+                subtitle: "最終結果を表示します"
+            ) {
+                self.showFinalResults()
+            }
+        }
+    }
+    
+    /// 次のラウンド準備
+    private func prepareNextRound() {
+        // ゲーム状態をリセット
+        currentRound += 1
+        gamePhase = .waiting
+        
+        // プレイヤー状態をリセット
+        for index in players.indices {
+            players[index].hand.removeAll()
+            players[index].selectedCards.removeAll()
+            players[index].dtnk = false
+            players[index].rank = 0
+        }
+        
+        // カード状態をリセット
+        fieldCards.removeAll()
+        deckCards.removeAll()
+        
+        // スコア計算状態をリセット
+        currentUpRate = 1
+        consecutiveCardCount = 0
+        lastPlayedCardValue = nil
+        roundScore = 0
+        consecutiveSpecialCards.removeAll()
+        
+        // リベンジ・チャレンジ状態をリセット
+        dotenkoWinnerId = nil
+        revengeEligiblePlayers.removeAll()
+        challengeParticipants.removeAll()
+        isChallengeZone = false
+        isRevengeWaiting = false
+        
+        // 新しいラウンド開始
+        initializeGame()
+    }
+    
+    /// 最終結果表示
+    private func showFinalResults() {
+        // TODO: 最終結果画面への遷移
+        print("🎮 ゲーム完全終了 - 最終結果表示")
+    }
+    
+    /// ゲーム中の上昇レート管理
+    func updateUpRateForCardPlay(card: Card) {
+        let cardValue = card.card.handValue().first ?? 0
+        
+        // 連続同じ数字判定
+        if let lastValue = lastPlayedCardValue, lastValue == cardValue {
+            consecutiveCardCount += 1
+        } else {
+            consecutiveCardCount = 1
+            lastPlayedCardValue = cardValue
+        }
+        
+        // 上昇レート条件チェック
+        if let upRateString = gameRuleInfo.upRate,
+           upRateString != "なし",
+           let upRateThreshold = Int(upRateString) {
+            
+            if consecutiveCardCount >= upRateThreshold {
+                currentUpRate *= 2
+                consecutiveCardCount = 0 // リセット
+                
+                print("📈 上昇レート発生! 現在の倍率: \(currentUpRate)")
+                
+                // 上昇レート演出
+                showAnnouncementMessage(
+                    title: "レートアップ！",
+                    subtitle: "倍率 ×\(currentUpRate)"
+                )
+            }
+        }
+    }
+    
+    /// 特殊カード演出の種類
+    enum SpecialCardEffectType {
+        case multiplier50
+        case diamond3
+        case black3Reverse
+        case heart3
+    }
+    
+    /// 特殊カード演出を表示
+    private func showSpecialCardEffect(title: String, subtitle: String, effectType: SpecialCardEffectType, completion: @escaping () -> Void) {
+        // TODO: 特殊カード演出の実装
+        // 現在は簡単なアナウンスで代用
+        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+    }
+    
+    /// ゲーム開始時の上昇レート判定（1、2、ジョーカー）
+    private func checkGameStartUpRate(card: Card) {
+        let cardValue = card.card.handValue().first ?? 0
+        
+        if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
+            currentUpRate *= 50
+            print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
+            
+            // 上昇レート演出
+            showAnnouncementMessage(
+                title: "ゲーム開始ボーナス！",
+                subtitle: "倍率 ×\(currentUpRate)"
+            )
+            
+            // 連続確認
+            checkConsecutiveGameStartCards(from: card)
+        }
+    }
+    
+    /// ゲーム開始時の連続特殊カード確認
+    private func checkConsecutiveGameStartCards(from currentCard: Card) {
+        // デッキから次のカードを確認
+        guard !deckCards.isEmpty else { return }
+        
+        let nextCard = deckCards.last!
+        let nextCardValue = nextCard.card.handValue().first ?? 0
+        
+        // 連続特殊カード判定
+        if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
+            currentUpRate *= 50
+            
+            showAnnouncementMessage(
+                title: "連続ボーナス！",
+                subtitle: "\(nextCard.card.rawValue) - 倍率 ×\(currentUpRate)"
+            ) {
+                self.checkConsecutiveGameStartCards(from: nextCard)
+            }
+        }
     }
 } 

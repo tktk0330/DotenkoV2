@@ -7,6 +7,7 @@ struct GameHeaderView: View {
     let totalRounds: Int
     let upRate: Int
     let currentRate: Int
+    @ObservedObject var viewModel: GameViewModel
     
     var body: some View {
         HStack(spacing: GameLayoutConfig.headerItemSpacing) {
@@ -23,7 +24,7 @@ struct GameHeaderView: View {
             Spacer()
             
             // 中央：UP（メイン表示）
-            UpRateDisplayView(upRate: upRate)
+            UpRateDisplayView(upRate: viewModel.currentUpRate)
             
             Spacer()
             
