@@ -70,6 +70,9 @@ class GameViewModel: ObservableObject {
     @Published var lastRoundScore: Int = 0
     @Published var playersReadyCount: Int = 0
     
+    // 最終結果画面システム
+    @Published var showFinalResult: Bool = false
+    
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
     private var countdownTimer: Timer?
@@ -774,6 +777,11 @@ class GameViewModel: ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.resetTurn() // プレイヤー1からターン開始
                 print("ターンシステム開始 - \(self.getCurrentTurnPlayer()?.name ?? "不明") のターンです")
+                
+                // 最初のプレイヤーがBOTの場合は自動処理を開始
+                if let currentPlayer = self.getCurrentTurnPlayer(), currentPlayer.id != "player" {
+                    self.startBotTurn(player: currentPlayer)
+                }
             }
         }
     }
@@ -794,6 +802,11 @@ class GameViewModel: ObservableObject {
     func nextTurn() {
         currentTurnPlayerIndex = (currentTurnPlayerIndex + 1) % players.count
         print("ターン変更: プレイヤー\(currentTurnPlayerIndex + 1) (\(getCurrentTurnPlayer()?.name ?? "不明")) のターン")
+        
+        // BOTのターンの場合は自動処理を開始
+        if let currentPlayer = getCurrentTurnPlayer(), currentPlayer.id != "player" {
+            startBotTurn(player: currentPlayer)
+        }
     }
     
     /// 現在のターンのプレイヤーを取得
@@ -1222,24 +1235,7 @@ class GameViewModel: ObservableObject {
     
     /// BOTプレイヤーのどてんこ宣言チェック（リアルタイム）
     func checkBotDotenkoDeclarations() {
-        guard gamePhase == .playing else { return }
-        
-        // アナウンス中は処理しない
-        if isAnnouncementBlocking {
-            return
-        }
-        
-        // BOTプレイヤーのみをチェック
-        let botPlayers = players.filter { $0.id != "player" }
-        
-        for bot in botPlayers {
-            if canPlayerDeclareDotenko(playerId: bot.id) && !bot.dtnk {
-                // BOTは見逃しなしで即座に宣言
-                print("🤖 BOT \(bot.name) がどてんこ宣言!")
-                handleDotenkoDeclaration(playerId: bot.id)
-                return // 最初に宣言したBOTで処理終了
-            }
-        }
+        checkBotRealtimeDotenkoDeclarations()
     }
     
     /// 場のカードが変更された時の処理（どてんこチェック用）
@@ -1396,9 +1392,13 @@ class GameViewModel: ObservableObject {
         
         for bot in botPlayers {
             if canPlayerDeclareRevenge(playerId: bot.id) {
-                // BOTは見逃しなしで即座にリベンジ宣言
-                print("🤖 BOT \(bot.name) がリベンジ宣言!")
-                handleRevengeDeclaration(playerId: bot.id)
+                // BOTは見逃しなしで即座にリベンジ宣言（少し遅延を入れて人間らしく）
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0.5...2.0)) {
+                    if self.canPlayerDeclareRevenge(playerId: bot.id) {
+                        print("🤖 BOT \(bot.name) がリベンジ宣言!")
+                        self.handleRevengeDeclaration(playerId: bot.id)
+                    }
+                }
                 return // 最初に宣言したBOTで処理終了
             }
         }
@@ -2060,13 +2060,14 @@ class GameViewModel: ObservableObject {
     
     /// スコア確定画面のOKボタン処理
     func onScoreResultOK() {
+        print("✅ スコア確定画面 - OKボタンタップ")
         showScoreResult = false
         scoreResultData = nil
         
         // スコアをプレイヤーに適用
         applyScoreToPlayers()
         
-        // 直接中間結果画面に遷移
+        // 次の画面に遷移
         finishScoreCalculation()
     }
     
@@ -2095,13 +2096,9 @@ class GameViewModel: ObservableObject {
             // 直接中間結果画面を表示
             prepareNextRound()
         } else {
-            // ゲーム終了
-            showAnnouncementMessage(
-                title: "ゲーム終了",
-                subtitle: "最終結果を表示します"
-            ) {
-                self.showFinalResults()
-            }
+            // ゲーム終了 - 直接最終結果画面を表示
+            print("🎮 全ラウンド終了 - 最終結果画面を表示")
+            showFinalResults()
         }
     }
     
@@ -2192,8 +2189,19 @@ class GameViewModel: ObservableObject {
     
     /// 最終結果表示
     private func showFinalResults() {
-        // TODO: 最終結果画面への遷移
         print("🎮 ゲーム完全終了 - 最終結果表示")
+        showFinalResult = true
+    }
+    
+    /// 最終結果画面のOKボタン処理
+    func handleFinalResultOK() {
+        print("✅ 最終結果画面 - ホームに戻る")
+        showFinalResult = false
+        
+        // ナビゲーションでホーム画面に戻る
+        DispatchQueue.main.async {
+            NavigationAllViewStateManager.shared.popToRoot()
+        }
     }
     
     /// ゲーム中の上昇レート管理
@@ -2279,6 +2287,200 @@ class GameViewModel: ObservableObject {
                 subtitle: "\(nextCard.card.rawValue) - 倍率 ×\(currentUpRate)"
             ) {
                 self.checkConsecutiveGameStartCards(from: nextCard)
+            }
+        }
+    }
+    
+    // MARK: - BOT思考システム
+    
+    /// BOTのターンを開始
+    func startBotTurn(player: Player) {
+        guard player.id != "player" else { return }
+        
+        print("🤖 BOTターン開始: \(player.name)")
+        
+        // 思考時間をランダムに設定（0.5-3秒）
+        let thinkingTime = Double.random(in: 0.5...3.0)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + thinkingTime) {
+            self.performBotAction(player: player)
+        }
+    }
+    
+    /// BOTの行動を実行
+    private func performBotAction(player: Player) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+        
+        // 1. どてんこ宣言チェック（最優先）
+        if canPlayerDeclareDotenko(playerId: player.id) {
+            print("🤖 BOT \(player.name) がどてんこ宣言!")
+            handleDotenkoDeclaration(playerId: player.id)
+            return
+        }
+        
+        // 2. カード出し判定
+        let playableCards = getBotPlayableCards(player: player)
+        if !playableCards.isEmpty {
+            // 最適なカードを選択
+            let bestCards = selectBestCards(from: playableCards, player: player)
+            
+            // カードを選択状態にする
+            players[playerIndex].selectedCards = bestCards
+            
+            print("🤖 BOT \(player.name) がカードを出します: \(bestCards.map { $0.card.rawValue })")
+            
+            // カード出し実行
+            executeBotCardPlay(player: player)
+            return
+        }
+        
+        // 3. デッキから引くかパス
+        executeBotDrawOrPass(player: player)
+    }
+    
+    /// BOTが出せるカードの組み合わせを取得
+    private func getBotPlayableCards(player: Player) -> [[Card]] {
+        guard let fieldCard = fieldCards.last else { return [] }
+        
+        var playableCardSets: [[Card]] = []
+        let hand = player.hand
+        
+        // 1枚出しの判定
+        for card in hand {
+            let testCards = [card]
+            if validateCardPlayRules(selectedCards: testCards, fieldCard: fieldCard).canPlay {
+                playableCardSets.append(testCards)
+            }
+        }
+        
+        // 2枚組み合わせの判定
+        for i in 0..<hand.count {
+            for j in (i+1)..<hand.count {
+                let testCards = [hand[i], hand[j]]
+                if validateCardPlayRules(selectedCards: testCards, fieldCard: fieldCard).canPlay {
+                    playableCardSets.append(testCards)
+                }
+            }
+        }
+        
+        return playableCardSets
+    }
+    
+    /// 最適なカードを選択
+    private func selectBestCards(from playableCardSets: [[Card]], player: Player) -> [Card] {
+        guard !playableCardSets.isEmpty else { return [] }
+        
+        // カードの優先度を計算
+        var bestCards = playableCardSets[0]
+        var bestPriority = calculateBotCardPriority(cards: bestCards)
+        
+        for cardSet in playableCardSets {
+            let priority = calculateBotCardPriority(cards: cardSet)
+            if priority > bestPriority {
+                bestPriority = priority
+                bestCards = cardSet
+            }
+        }
+        
+        return bestCards
+    }
+    
+    /// BOTのカード優先度を計算
+    private func calculateBotCardPriority(cards: [Card]) -> Int {
+        guard let fieldCard = fieldCards.last else { return 0 }
+        
+        var priority = 0
+        let fieldValue = fieldCard.card.handValue().first ?? 0
+        let fieldSuit = fieldCard.card.suit()
+        
+        for card in cards {
+            // 基本優先度
+            priority += 10
+            
+            // 同じ数字は高優先度
+            if card.card.handValue().contains(fieldValue) {
+                priority += 100
+            }
+            
+            // 同じスートは中優先度
+            if card.card.suit() == fieldSuit {
+                priority += 50
+            }
+            
+            // ジョーカーは温存したいので低優先度
+            if card.card.suit() == .joker {
+                priority -= 10
+            }
+            
+            // 高い数字は出したい
+            if let cardValue = card.card.handValue().first {
+                priority += cardValue
+            }
+        }
+        
+        // 複数枚出しは少し優先度を下げる
+        if cards.count > 1 {
+            priority -= 5
+        }
+        
+        return priority
+    }
+    
+    /// BOTのカード出しを実行
+    private func executeBotCardPlay(player: Player) {
+        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+        
+        // 選択されたカードをフィールドに移動
+        moveSelectedCardsToField(playerIndex: playerIndex, player: player)
+        
+        // 次のターンに進む
+        nextTurn()
+    }
+    
+    /// BOTのデッキ引きまたはパス
+    private func executeBotDrawOrPass(player: Player) {
+        // 70%の確率でデッキから引く、30%でパス
+        let shouldDraw = Double.random(in: 0...1) < 0.7
+        
+        if shouldDraw && !deckCards.isEmpty && player.hand.count < 7 {
+            print("🤖 BOT \(player.name) がデッキからカードを引きます")
+            drawCardFromDeck(playerId: player.id)
+        } else {
+            print("🤖 BOT \(player.name) がパスします")
+            
+            // バースト判定
+            if player.hand.count >= 7 {
+                handleBurstEvent(playerId: player.id)
+                return
+            }
+        }
+        
+        // 次のターンに進む
+        nextTurn()
+    }
+    
+    /// BOTのリアルタイムどてんこ宣言チェック
+    func checkBotRealtimeDotenkoDeclarations() {
+        guard gamePhase == .playing else { return }
+        
+        // アナウンス中は処理しない
+        if isAnnouncementBlocking {
+            return
+        }
+        
+        // BOTプレイヤーのみをチェック
+        let botPlayers = players.filter { $0.id != "player" }
+        
+        for bot in botPlayers {
+            if canPlayerDeclareDotenko(playerId: bot.id) && !bot.dtnk {
+                // BOTは見逃しなしで即座に宣言（少し遅延を入れて人間らしく）
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0.1...2.0)) {
+                    if self.canPlayerDeclareDotenko(playerId: bot.id) && !bot.dtnk {
+                        print("🤖 BOT \(bot.name) がリアルタイムどてんこ宣言!")
+                        self.handleDotenkoDeclaration(playerId: bot.id)
+                    }
+                }
+                return // 最初に宣言したBOTで処理終了
             }
         }
     }

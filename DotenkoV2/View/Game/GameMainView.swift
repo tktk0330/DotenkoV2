@@ -79,6 +79,14 @@ struct GameMainView: View {
             if viewModel.showInterimResult {
                 InterimResultView(viewModel: viewModel)
             }
+            
+            // 最終結果画面
+            if viewModel.showFinalResult {
+                FinalResultView(
+                    viewModel: viewModel,
+                    onOKAction: viewModel.handleFinalResultOK
+                )
+            }
         }
     }
 }
