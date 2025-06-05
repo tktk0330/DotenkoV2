@@ -75,6 +75,37 @@ struct LayoutConstants {
         // 初期配布カード枚数
         static let initialCardsPerPlayer: Int = 2
     }
+    
+    // MARK: - Announcement Animation (アナウンスアニメーション)
+    struct AnnouncementAnimation {
+        // アニメーション開始遅延時間（初期化用）
+        static let startDelay: Double = 0.1
+        
+        // フェーズ1: 右から中央への移動時間（高速化）
+        static let enteringDuration: Double = 0.8
+        
+        // フェーズ2: 中央での停止時間
+        static let stayingDuration: Double = 1.5
+        
+        // フェーズ3: 中央から左への移動時間（高速化）
+        static let exitingDuration: Double = 1.2
+        
+        // 総アニメーション時間（自動計算）
+        static let totalDuration: Double = startDelay + enteringDuration + stayingDuration + exitingDuration
+        
+        // スパークルアニメーション開始タイミング（中央停止時）
+        static let sparkleStartDelay: Double = startDelay + enteringDuration + 0.1
+        
+        // グローアニメーション開始タイミング（中央停止時）
+        static let glowStartDelay: Double = startDelay + enteringDuration + 0.2
+        
+        // グローアニメーションの継続時間
+        static let glowDuration: Double = 0.6
+        
+        // 画面外への追加オフセット値
+        static let screenOffsetMargin: CGFloat = 200  // 右端外側への余裕
+        static let textWidthMargin: CGFloat = 400     // テキスト幅を考慮した左端外側への余裕
+    }
 }
 
 // MARK: - Player Layout Constants (プレイヤーレイアウト定数)

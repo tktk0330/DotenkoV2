@@ -1769,7 +1769,11 @@ class GameViewModel: ObservableObject {
     
     // MARK: - Announcement System
     
-    /// アナウンスを表示（右から流れて中央で1秒停止して左に流れる）
+    /// アナウンスを表示（右から流れて中央で停止して左に完全に流れ切る）
+    /// - Parameters:
+    ///   - title: メインタイトルテキスト
+    ///   - subtitle: サブタイトルテキスト（オプション）
+    ///   - completion: アニメーション完了後のコールバック
     func showAnnouncementMessage(title: String, subtitle: String = "", completion: (() -> Void)? = nil) {
         announcementText = title
         announcementSubText = subtitle
@@ -1783,8 +1787,14 @@ class GameViewModel: ObservableObject {
         // アナウンス表示開始
         showAnnouncement = true
         
-        // 総アニメーション時間: 右から中央(1秒) + 中央停止(1秒) + 中央から左(1秒) = 3秒
-        let totalDuration: Double = 3.0
+        // 総アニメーション時間を定数から取得
+        // 構成: 開始遅延(0.1秒) + 右→中央(0.8秒) + 中央停止(1.5秒) + 中央→左(1.2秒) = 3.6秒
+        let totalDuration = LayoutConstants.AnnouncementAnimation.totalDuration
+        
+        print("   総アニメーション時間: \(totalDuration)秒")
+        print("   - 右→中央: \(LayoutConstants.AnnouncementAnimation.enteringDuration)秒")
+        print("   - 中央停止: \(LayoutConstants.AnnouncementAnimation.stayingDuration)秒")
+        print("   - 中央→左: \(LayoutConstants.AnnouncementAnimation.exitingDuration)秒")
         
         // アニメーション完了後に処理再開とコールバック実行
         DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {

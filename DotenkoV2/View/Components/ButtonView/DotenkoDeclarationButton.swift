@@ -876,18 +876,25 @@ struct GameAnnouncementView: View {
     
     // MARK: - Animation Properties
     
+    /// アニメーションフェーズに応じたX軸オフセットを計算
+    /// - Parameter geometry: 画面サイズ情報
+    /// - Returns: X軸オフセット値
     private func offsetX(for geometry: GeometryProxy) -> CGFloat {
         let screenWidth = geometry.size.width
         
         switch animationPhase {
         case .hidden:
-            return screenWidth // 画面右端の外側
+            // 画面右端の外側（定数で定義された余裕を持って）
+            return screenWidth + LayoutConstants.AnnouncementAnimation.screenOffsetMargin
         case .entering:
-            return 0 // 画面中央
+            // 画面中央
+            return 0
         case .staying:
-            return 0 // 画面中央で停止
+            // 画面中央で停止
+            return 0
         case .exiting:
-            return -screenWidth // 画面左端の外側
+            // 画面左端の外側（テキスト幅を考慮して完全に流れ切る）
+            return -screenWidth - LayoutConstants.AnnouncementAnimation.textWidthMargin
         }
     }
     
@@ -902,40 +909,46 @@ struct GameAnnouncementView: View {
     
     // MARK: - Animation Control
     
+    /// アナウンスアニメーションを開始（3フェーズ構成）
+    /// フェーズ1: 右から中央へ高速移動 → フェーズ2: 中央で停止 → フェーズ3: 中央から左へ高速移動
     private func startAnimation() {
         // 初期状態: 画面右端の外側
         animationPhase = .hidden
         
-        // フェーズ1: 右から中央へ移動（1秒）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeOut(duration: 1.0)) {
-                animationPhase = .entering
+        // フェーズ1: 右から中央へ移動（高速化: 0.8秒）
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.startDelay) {
+            withAnimation(.easeOut(duration: LayoutConstants.AnnouncementAnimation.enteringDuration)) {
+                self.animationPhase = .entering
             }
         }
         
-        // フェーズ2: 中央で停止（1秒間）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            animationPhase = .staying
+        // フェーズ2: 中央で停止（1.5秒間）
+        let stayingStartTime = LayoutConstants.AnnouncementAnimation.startDelay + LayoutConstants.AnnouncementAnimation.enteringDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + stayingStartTime) {
+            self.animationPhase = .staying
         }
         
-        // フェーズ3: 中央から左へ移動（1秒）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
-            withAnimation(.easeIn(duration: 1.0)) {
-                animationPhase = .exiting
+        // フェーズ3: 中央から左へ完全に流れ切る（高速化: 1.2秒）
+        let exitingStartTime = stayingStartTime + LayoutConstants.AnnouncementAnimation.stayingDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + exitingStartTime) {
+            withAnimation(.easeIn(duration: LayoutConstants.AnnouncementAnimation.exitingDuration)) {
+                self.animationPhase = .exiting
             }
         }
     }
     
+    /// 継続的なアニメーション効果を開始（スパークル・グロー効果）
+    /// 中央停止フェーズで視覚的インパクトを最大化
     private func startContinuousAnimations() {
-        // スパークルアニメーション開始
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            sparkleAnimation = true
+        // スパークルアニメーション開始（中央停止時に開始）
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.sparkleStartDelay) {
+            self.sparkleAnimation = true
         }
         
-        // グローアニメーション開始
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
-                glowAnimation = true
+        // グローアニメーション開始（中央停止時に開始）
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.glowStartDelay) {
+            withAnimation(.easeInOut(duration: LayoutConstants.AnnouncementAnimation.glowDuration).repeatForever(autoreverses: true)) {
+                self.glowAnimation = true
             }
         }
     }
