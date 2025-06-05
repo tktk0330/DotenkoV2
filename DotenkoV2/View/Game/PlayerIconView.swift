@@ -4,62 +4,13 @@ import SwiftUI
 private struct PlayerImageView: View {
     let player: Player
     let size: CGFloat
-    @StateObject private var imageLoader = ImageLoader()
     
     var body: some View {
-        Group {
-            if let imageUrl = player.icon_url, !imageUrl.isEmpty {
-                if player.id.hasPrefix("bot-") {
-                    localImageView(imageUrl: imageUrl)
-                } else if imageUrl.hasPrefix("http") {
-                    remoteImageView(imageUrl: imageUrl)
-                } else {
-                    localImageView(imageUrl: imageUrl)
-                }
-            } else {
-                defaultImageView
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func localImageView(imageUrl: String) -> some View {
-        if let image = UIImage(named: imageUrl) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
-            defaultImageView
-        }
-    }
-    
-    @ViewBuilder
-    private func remoteImageView(imageUrl: String) -> some View {
-        if let uiImage = imageLoader.image {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-        } else if imageLoader.isLoading {
-            ProgressView()
-                .onAppear {
-                    imageLoader.loadImage(from: imageUrl)
-                }
-        } else {
-            defaultImageView
-                .onAppear {
-                    if imageLoader.image == nil && !imageLoader.isLoading {
-                        imageLoader.loadImage(from: imageUrl)
-                    }
-                }
-        }
-    }
-    
-    private var defaultImageView: some View {
-        Image(systemName: Appearance.Icon.personFill)
-            .resizable()
-            .scaledToFit()
-            .padding(8)
-            .foregroundColor(Appearance.Color.commonWhite)
+        CachedImageView(
+            imageUrl: player.icon_url,
+            size: size,
+            isBot: player.id.hasPrefix("bot-")
+        )
     }
 }
 

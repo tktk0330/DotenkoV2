@@ -39,6 +39,9 @@ class UserProfileViewModel: ObservableObject {
             username = profile.rmUserName
             if !profile.rmIconUrl.isEmpty {
                 loadImageFromUrl(profile.rmIconUrl)
+                // 画像をキャッシュにプリロード
+                let imageLoader = ImageLoader()
+                imageLoader.preloadImage(from: profile.rmIconUrl)
             }
         case .failure(let error):
             updateState = .error("プロフィールの読み込みに失敗しました: \(error.localizedDescription)")

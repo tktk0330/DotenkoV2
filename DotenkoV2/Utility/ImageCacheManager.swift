@@ -37,6 +37,7 @@ class ImageCacheManager {
         
         // メモリキャッシュから確認
         if let memoryImage = memoryCache.object(forKey: cacheKey as NSString) {
+            print("✅ メモリキャッシュから画像を取得: \(urlString)")
             return memoryImage
         }
         
@@ -48,6 +49,7 @@ class ImageCacheManager {
             return nil
         }
         
+        print("✅ ディスクキャッシュから画像を取得: \(urlString)")
         // メモリキャッシュにも保存
         memoryCache.setObject(image, forKey: cacheKey as NSString)
         return image
@@ -59,6 +61,7 @@ class ImageCacheManager {
         
         // メモリキャッシュに保存
         memoryCache.setObject(image, forKey: cacheKey as NSString)
+        print("💾 画像をメモリキャッシュに保存: \(urlString)")
         
         // ディスクキャッシュに保存
         DispatchQueue.global(qos: .background).async { [weak self] in
@@ -67,6 +70,7 @@ class ImageCacheManager {
             
             let fileURL = self.cacheDirectory.appendingPathComponent(cacheKey)
             try? data.write(to: fileURL)
+            print("💾 画像をディスクキャッシュに保存: \(urlString)")
             
             // キャッシュサイズをチェック
             self.manageCacheSize()
@@ -206,6 +210,15 @@ class ImageLoader: ObservableObject {
             .store(in: &cancellables)
     }
     
+    // 初期化時にキャッシュから画像を読み込む
+    func loadImageFromCache(from urlString: String) {
+        if let cachedImage = cacheManager.cachedImage(for: urlString) {
+            DispatchQueue.main.async {
+                self.image = cachedImage
+            }
+        }
+    }
+    
     // 画像をプリロード（表示せずにキャッシュのみ）
     func preloadImage(from urlString: String) {
         guard cacheManager.cachedImage(for: urlString) == nil,
@@ -222,5 +235,77 @@ class ImageLoader: ObservableObject {
                 }
             )
             .store(in: &cancellables)
+    }
+}
+
+// MARK: - Cached Image View Component
+struct CachedImageView: View {
+    let imageUrl: String?
+    let size: CGFloat
+    let isBot: Bool
+    
+    @StateObject private var imageLoader = ImageLoader()
+    
+    var body: some View {
+        Group {
+            if let imageUrl = imageUrl, !imageUrl.isEmpty {
+                if isBot {
+                    // Botの場合はローカル画像
+                    localImageView(imageUrl: imageUrl)
+                } else if imageUrl.hasPrefix("http") {
+                    // ユーザーの場合はリモート画像（キャッシュ付き）
+                    cachedRemoteImageView(imageUrl: imageUrl)
+                } else {
+                    // その他の場合はローカル画像
+                    localImageView(imageUrl: imageUrl)
+                }
+            } else {
+                defaultImageView
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+    
+    @ViewBuilder
+    private func localImageView(imageUrl: String) -> some View {
+        if let image = UIImage(named: imageUrl) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+//            print("⚠️ ローカル画像が見つかりません: \(imageUrl)")
+            defaultImageView
+        }
+    }
+    
+    @ViewBuilder
+    private func cachedRemoteImageView(imageUrl: String) -> some View {
+        if let uiImage = imageLoader.image {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+        } else if imageLoader.isLoading {
+            ProgressView()
+                .scaleEffect(0.8)
+        } else {
+            defaultImageView
+                .onAppear {
+                    // まずキャッシュから読み込みを試行
+                    imageLoader.loadImageFromCache(from: imageUrl)
+                    // キャッシュにない場合はネットワークから取得
+                    if imageLoader.image == nil {
+                        imageLoader.loadImage(from: imageUrl)
+                    }
+                }
+        }
+    }
+    
+    private var defaultImageView: some View {
+        Image(systemName: Appearance.Icon.personFill)
+            .resizable()
+            .scaledToFit()
+            .padding(8)
+            .foregroundColor(Appearance.Color.commonWhite)
     }
 } 
