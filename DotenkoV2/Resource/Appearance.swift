@@ -74,6 +74,26 @@ enum Appearance {
         /// UP表示の明るい茶色背景
         static let upDisplayLightBrown = SwiftUI.Color(red: 0.4, green: 0.2, blue: 0.0)
         
+        // FinalResult専用色
+        /// 1位ゴールド色
+        static let rankGold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// 2位シルバー色
+        static let rankSilver = SwiftUI.Color(red: 0.75, green: 0.75, blue: 0.75)
+        /// 3位ブロンズ色
+        static let rankBronze = SwiftUI.Color(red: 0.8, green: 0.5, blue: 0.2)
+        /// 4位以下グレー色
+        static let rankGray = SwiftUI.Color(red: 0.5, green: 0.5, blue: 0.5)
+        /// 背景の黒色（透明度付き）
+        static let finalResultBackground = SwiftUI.Color.black
+        /// タイトル区切り線の金色
+        static let finalResultDivider = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// ホームボタンの金色グラデーション
+        static let homeButtonGold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// ホームボタンの暗い金色
+        static let homeButtonDarkGold = SwiftUI.Color(red: 0.8, green: 0.6, blue: 0.0)
+        /// 影の色
+        static let finalResultShadow = SwiftUI.Color.black
+        
         // 背景色グラデーション
         /// メイン背景グラデーション - カジノ風の深緑グラデーション
         static let mainBackgroundGradient = [

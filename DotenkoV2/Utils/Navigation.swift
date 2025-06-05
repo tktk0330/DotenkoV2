@@ -87,7 +87,7 @@ class NavigationAllViewStateManager: ObservableObject {
     }
     
     func popToRoot() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(.easeInOut(duration: 0)) {
             currentView = nil
             viewStack.removeAll()
         }
