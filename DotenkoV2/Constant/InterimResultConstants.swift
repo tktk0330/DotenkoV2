@@ -9,7 +9,7 @@ struct InterimResultConstants {
         /// タイトル上部パディング
         static let titleTopPadding: CGFloat = 40
         /// カード開始パディング
-        static let cardStartPadding: CGFloat = 10
+        static let cardStartPadding: CGFloat = 30
         /// ボタン上部パディング
         static let buttonTopPadding: CGFloat = 20
         /// 水平パディング
@@ -53,10 +53,10 @@ struct InterimResultConstants {
         /// プレイヤー数別カード間スペーシング
         static func spacing(for playerCount: Int) -> CGFloat {
             switch playerCount {
-            case 2: return 12
-            case 3: return 8
-            case 4: return 5
-            case 5: return 3
+            case 2: return 25
+            case 3: return 20
+            case 4: return 15
+            case 5: return 10
             default: return 5
             }
         }
@@ -74,7 +74,7 @@ struct InterimResultConstants {
     // MARK: - Colors
     struct Colors {
         /// 背景透明度
-        static let backgroundOpacity: Double = 0.95
+        static let backgroundOpacity: Double = 0.7
         /// 緑ボタン透明度（上）
         static let greenButtonTopOpacity: Double = 0.9
         /// 緑ボタン透明度（下）

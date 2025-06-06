@@ -21,7 +21,7 @@ struct InterimResultView: View {
     
     // MARK: - Background
     private var backgroundView: some View {
-        Color.black.opacity(InterimResultConstants.Colors.backgroundOpacity)
+        Color.black.opacity(0.95)
             .ignoresSafeArea()
     }
     

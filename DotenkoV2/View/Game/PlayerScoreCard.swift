@@ -132,33 +132,13 @@ struct PlayerScoreCard: View {
     // MARK: - Background
     private var casinoCardBackground: some View {
         RoundedRectangle(cornerRadius: PlayerScoreCardConstants.Dimensions.cardCornerRadius)
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.black.opacity(PlayerScoreCardConstants.Colors.blackOpacity1),
-                        Color(Appearance.Color.mossGreen).opacity(PlayerScoreCardConstants.Colors.mossGreenOpacity1),
-                        Color.black.opacity(PlayerScoreCardConstants.Colors.blackOpacity2),
-                        Color(Appearance.Color.mossGreen).opacity(PlayerScoreCardConstants.Colors.mossGreenOpacity2)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .fill(Color.black.opacity(0.8))
             .overlay(
                 RoundedRectangle(cornerRadius: PlayerScoreCardConstants.Dimensions.cardCornerRadius)
                     .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                isCurrentPlayer ? 
-                                Color(Appearance.Color.playerGold).opacity(PlayerScoreCardConstants.Colors.playerGoldBorderOpacity) : 
-                                Color(Appearance.Color.casinoGoldGlow).opacity(PlayerScoreCardConstants.Colors.casinoGoldBorderOpacity),
-                                isCurrentPlayer ? 
-                                Color(Appearance.Color.casinoGoldGlow).opacity(PlayerScoreCardConstants.Colors.casinoGoldBorder2Opacity) : 
-                                Color.white.opacity(PlayerScoreCardConstants.Colors.whiteBorderOpacity)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
+                        isCurrentPlayer ? 
+                        Color(Appearance.Color.playerGold).opacity(0.8) : 
+                        Color.white.opacity(0.3),
                         lineWidth: isCurrentPlayer ? 
                         PlayerScoreCardConstants.Dimensions.playerBorderWidth : 
                         PlayerScoreCardConstants.Dimensions.otherBorderWidth
@@ -166,8 +146,8 @@ struct PlayerScoreCard: View {
             )
             .shadow(
                 color: isCurrentPlayer ? 
-                Color(Appearance.Color.playerGold).opacity(PlayerScoreCardConstants.Colors.playerGoldShadowOpacity) : 
-                Color.black.opacity(PlayerScoreCardConstants.Colors.blackShadowOpacity),
+                Color(Appearance.Color.playerGold).opacity(0.3) : 
+                Color.black.opacity(0.4),
                 radius: PlayerScoreCardConstants.Dimensions.shadowRadius,
                 x: 0,
                 y: PlayerScoreCardConstants.Dimensions.shadowOffset
