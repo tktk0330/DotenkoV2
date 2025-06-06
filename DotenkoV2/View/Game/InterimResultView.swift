@@ -106,13 +106,26 @@ private struct InterimResultTitleView: View {
     let roundNumber: Int
     @State private var titleScale: CGFloat = 0.5
     @State private var titleOpacity: Double = 0.0
+    @State private var glowIntensity: Double = 0.0
     
     var body: some View {
         VStack(spacing: InterimResultConstants.Spacing.titleSpacing) {
-            Text("ラウンド \(roundNumber)")
+            Text("ROUND \(roundNumber) RESULTS")
                 .font(.system(size: InterimResultConstants.Typography.titleSize, weight: .black))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(Appearance.Color.casinoGoldGlow),
+                            Color.yellow.opacity(0.9),
+                            Color(Appearance.Color.casinoGoldGlow)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: Color(Appearance.Color.casinoGoldGlow).opacity(glowIntensity), radius: 8, x: 0, y: 0)
+                .shadow(color: Color(Appearance.Color.casinoGoldGlow).opacity(glowIntensity * 0.7), radius: 15, x: 0, y: 0)
+                .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 2)
                 .scaleEffect(titleScale)
                 .opacity(titleOpacity)
                 .onAppear {
@@ -123,6 +136,11 @@ private struct InterimResultTitleView: View {
                     )) {
                         titleScale = 1.0
                         titleOpacity = 1.0
+                    }
+                    
+                    // グロー効果のパルスアニメーション
+                    withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                        glowIntensity = 0.8
                     }
                 }
         }
@@ -136,9 +154,12 @@ private struct InterimResultPlayerCardsView: View {
     let cardHeight: CGFloat
     let cardSpacing: CGFloat
     
+    @State private var sortedPlayers: [Player] = []
+    @State private var shouldSortByRank: Bool = false
+    
     var body: some View {
         VStack(spacing: cardSpacing) {
-            ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
+            ForEach(Array(displayPlayers.enumerated()), id: \.element.id) { index, player in
                 PlayerScoreCard(
                     player: player,
                     scoreChange: getScoreChange(player),
@@ -157,6 +178,36 @@ private struct InterimResultPlayerCardsView: View {
                 )
             }
         }
+        .animation(
+            .spring(
+                response: InterimResultConstants.Animation.sortSpringResponse,
+                dampingFraction: InterimResultConstants.Animation.sortSpringDampingFraction,
+                blendDuration: InterimResultConstants.Animation.sortSpringBlendDuration
+            ),
+            value: shouldSortByRank
+        )
+        .onAppear {
+            sortedPlayers = players
+            startRankSortAnimation()
+        }
+    }
+    
+    private var displayPlayers: [Player] {
+        shouldSortByRank ? sortedPlayers.sorted { $0.rank < $1.rank } : sortedPlayers
+    }
+    
+    private func startRankSortAnimation() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + InterimResultConstants.Animation.rankSortDelay) {
+            withAnimation(
+                .spring(
+                    response: InterimResultConstants.Animation.sortSpringResponse,
+                    dampingFraction: InterimResultConstants.Animation.sortSpringDampingFraction,
+                    blendDuration: InterimResultConstants.Animation.sortSpringBlendDuration
+                )
+            ) {
+                shouldSortByRank = true
+            }
+        }
     }
 }
 
@@ -165,12 +216,33 @@ private struct InterimResultActionButtonView: View {
     let isWaitingForOthers: Bool
     let onOKTapped: () -> Void
     
+    @State private var buttonOpacity: Double = 0.0
+    @State private var buttonScale: CGFloat = 0.8
+    
     var body: some View {
         VStack(spacing: InterimResultConstants.Spacing.buttonSpacing) {
             if isWaitingForOthers {
                 waitingView
             } else {
                 okButton
+                    .opacity(buttonOpacity)
+                    .scaleEffect(buttonScale)
+                    .onAppear {
+                        startButtonAnimation()
+                    }
+            }
+        }
+    }
+    
+    private func startButtonAnimation() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + InterimResultConstants.Animation.rankSortDelay + 0.5) {
+            withAnimation(.spring(
+                response: InterimResultConstants.Animation.springResponse,
+                dampingFraction: InterimResultConstants.Animation.springDampingFraction,
+                blendDuration: InterimResultConstants.Animation.springBlendDuration
+            )) {
+                buttonOpacity = 1.0
+                buttonScale = 1.0
             }
         }
     }
@@ -217,10 +289,4 @@ private struct InterimResultActionButtonView: View {
             )
             .shadow(color: .black.opacity(InterimResultConstants.Colors.shadowOpacity), radius: 4, x: 0, y: 2)
     }
-}
-
-
-
-#Preview {
-    InterimResultView(viewModel: GameViewModel())
 }

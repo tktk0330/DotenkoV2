@@ -97,9 +97,19 @@ struct InterimResultConstants {
         static let scoreCountDelay: Double = 0.8
         /// スコア変動表示遅延
         static let scoreChangeDelay: Double = 0.3
+        /// 順位ソートアニメーション遅延
+        static let rankSortDelay: Double = 2.5
+        /// 順位ソートアニメーション時間
+        static let rankSortDuration: Double = 1.0
+        /// 順位ソート間隔
+        static let rankSortInterval: Double = 0.1
         /// スプリングアニメーション設定
         static let springResponse: Double = 0.8
         static let springDampingFraction: Double = 0.7
         static let springBlendDuration: Double = 0.3
+        /// 順位ソート用スプリング設定
+        static let sortSpringResponse: Double = 1.0
+        static let sortSpringDampingFraction: Double = 0.8
+        static let sortSpringBlendDuration: Double = 0.4
     }
 } 
