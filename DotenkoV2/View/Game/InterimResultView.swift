@@ -30,8 +30,8 @@ struct InterimResultView: View {
         VStack(spacing: 0) {
             titleView
             playerCardsView(geometry: geometry)
-            actionButtonView
             Spacer()
+            actionButtonView
         }
     }
     
@@ -62,7 +62,8 @@ struct InterimResultView: View {
             isWaitingForOthers: viewModel.isWaitingForOthers,
             onOKTapped: handleOKButtonTapped
         )
-        .padding(.top, InterimResultConstants.Layout.buttonTopPadding)
+        .padding(.bottom, InterimResultConstants.Layout.buttonBottomPadding)
+        .padding(.horizontal, InterimResultConstants.Layout.horizontalPadding)
     }
     
     // MARK: - Helper Methods
@@ -70,10 +71,11 @@ struct InterimResultView: View {
         let titleHeight = InterimResultConstants.Layout.titleTopPadding + 
                          InterimResultConstants.Typography.titleSize + 
                          InterimResultConstants.Spacing.titleSpacing
+        let buttonHeight = InterimResultConstants.Dimensions.buttonHeight + 
+                          InterimResultConstants.Layout.buttonBottomPadding
         let reservedHeight = titleHeight + 
                            InterimResultConstants.Layout.cardStartPadding + 
-                           InterimResultConstants.Layout.buttonTopPadding + 
-                           InterimResultConstants.Dimensions.buttonHeight + 
+                           buttonHeight + 
                            InterimResultConstants.Layout.bottomReservedHeight
         
         let availableHeight = screenHeight - reservedHeight
@@ -272,7 +274,6 @@ private struct InterimResultActionButtonView: View {
             .frame(height: InterimResultConstants.Dimensions.buttonHeight)
             .background(buttonBackground)
         }
-        .padding(.horizontal, 30)
     }
     
     private var buttonBackground: some View {

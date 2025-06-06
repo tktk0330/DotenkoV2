@@ -10,8 +10,8 @@ struct InterimResultConstants {
         static let titleTopPadding: CGFloat = 40
         /// カード開始パディング
         static let cardStartPadding: CGFloat = 30
-        /// ボタン上部パディング
-        static let buttonTopPadding: CGFloat = 20
+        /// ボタン下部パディング（固定位置用・広告分含む）
+        static let buttonBottomPadding: CGFloat = 110
         /// 水平パディング
         static let horizontalPadding: CGFloat = 20
         /// 下部予約高さ
