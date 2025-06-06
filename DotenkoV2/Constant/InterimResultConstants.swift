@@ -82,4 +82,24 @@ struct InterimResultConstants {
         /// シャドウ透明度
         static let shadowOpacity: Double = 0.4
     }
+    
+    // MARK: - Animation Constants
+    struct Animation {
+        /// カード表示アニメーション遅延（基本）
+        static let cardBaseDelay: Double = 0.1
+        /// カード表示アニメーション間隔
+        static let cardDelayInterval: Double = 0.15
+        /// カード表示アニメーション時間
+        static let cardDuration: Double = 0.6
+        /// スコアカウントアニメーション時間
+        static let scoreCountDuration: Double = 1.2
+        /// スコアカウントアニメーション遅延
+        static let scoreCountDelay: Double = 0.8
+        /// スコア変動表示遅延
+        static let scoreChangeDelay: Double = 0.3
+        /// スプリングアニメーション設定
+        static let springResponse: Double = 0.8
+        static let springDampingFraction: Double = 0.7
+        static let springBlendDuration: Double = 0.3
+    }
 } 

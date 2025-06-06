@@ -104,6 +104,8 @@ struct InterimResultView: View {
 // MARK: - Title Component
 private struct InterimResultTitleView: View {
     let roundNumber: Int
+    @State private var titleScale: CGFloat = 0.5
+    @State private var titleOpacity: Double = 0.0
     
     var body: some View {
         VStack(spacing: InterimResultConstants.Spacing.titleSpacing) {
@@ -111,6 +113,18 @@ private struct InterimResultTitleView: View {
                 .font(.system(size: InterimResultConstants.Typography.titleSize, weight: .black))
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                .scaleEffect(titleScale)
+                .opacity(titleOpacity)
+                .onAppear {
+                    withAnimation(.spring(
+                        response: InterimResultConstants.Animation.springResponse,
+                        dampingFraction: InterimResultConstants.Animation.springDampingFraction,
+                        blendDuration: InterimResultConstants.Animation.springBlendDuration
+                    )) {
+                        titleScale = 1.0
+                        titleOpacity = 1.0
+                    }
+                }
         }
     }
 }
@@ -124,12 +138,22 @@ private struct InterimResultPlayerCardsView: View {
     
     var body: some View {
         VStack(spacing: cardSpacing) {
-            ForEach(players, id: \.id) { player in
+            ForEach(Array(players.enumerated()), id: \.element.id) { index, player in
                 PlayerScoreCard(
                     player: player,
                     scoreChange: getScoreChange(player),
                     isCurrentPlayer: player.id == "player",
                     cardHeight: cardHeight
+                )
+                .animation(
+                    .spring(
+                        response: InterimResultConstants.Animation.springResponse,
+                        dampingFraction: InterimResultConstants.Animation.springDampingFraction,
+                        blendDuration: InterimResultConstants.Animation.springBlendDuration
+                    )
+                    .delay(InterimResultConstants.Animation.cardBaseDelay + 
+                          Double(index) * InterimResultConstants.Animation.cardDelayInterval),
+                    value: true
                 )
             }
         }
