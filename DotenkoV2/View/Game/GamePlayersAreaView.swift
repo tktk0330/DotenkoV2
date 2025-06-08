@@ -237,7 +237,7 @@ struct BottomPlayerAreaView: View {
                         size: 75,
                         isEnabled: canPlayerPerformActions
                     )
-                    .offset(x: 20, y: 50)
+                    .offset(x: 20, y: 70)
                     
                     // 中央：プレイヤーアイコン
                     VStack(spacing: 10) {
@@ -255,7 +255,7 @@ struct BottomPlayerAreaView: View {
                         size: 75,
                         isEnabled: canPlayCards
                     )
-                    .offset(x: -20, y: 50)
+                    .offset(x: -20, y: 70)
                 }
                 .zIndex(1001)
                 .offset(y: -CGFloat(Constant.BANNER_HEIGHT) - GameLayoutConfig.bottomPlayerBottomPadding)

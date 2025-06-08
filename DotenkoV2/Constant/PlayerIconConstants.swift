@@ -55,8 +55,8 @@ struct PlayerIconConstants {
         /// この値を変更することで、手札数字バッジとプレイヤーアイコンの距離を調整できます
         /// - 正の値：バッジがアイコンから離れる（上に移動）
         /// - 負の値：バッジがアイコンに近づく（下に移動）
-        /// - 現在値: 2pt（アイコンから少し離れた位置）
-        static let iconSpacing: CGFloat = 2
+        /// - 現在値: -2pt（アイコンに近い位置）
+        static let iconSpacing: CGFloat = 5
         
         // MARK: - Casino Colors
         /// カジノ風バッジ色

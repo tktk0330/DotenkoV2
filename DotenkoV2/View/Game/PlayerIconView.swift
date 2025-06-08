@@ -285,7 +285,7 @@ private struct HandCardsView: View {
     var body: some View {
         // すべてのプレイヤーに扇形配置を適用
         fanLayoutHandCards
-            .offset(adjustedGlobalOffset) // 人数に応じて位置を動的調整
+            .offset(handOffset) // 位置に応じた適切なオフセットを適用
     }
     
     // MARK: - Card Display Control
@@ -335,6 +335,7 @@ private struct HandCardsView: View {
             }
         }
         .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
+        // ⭐ 中心対称配置は calculateFanPosition と calculateFanAngle で実現
     }
     
     // MARK: - Fan Layout Calculations
@@ -358,14 +359,16 @@ private struct HandCardsView: View {
             curveCoefficient = PlayerLayoutConstants.FanLayout.botCurveCoefficient
         }
         
-        // 中心を基準にしたインデックス計算
-        let centerOffset = Double(index) - Double(total - 1) / 2
+        // ⭐ 完全中心対称配置のための精密計算
+        // 中心インデックスを小数点精度で計算
+        let centerIndex = Double(total - 1) / 2.0
+        let centerOffset = Double(index) - centerIndex
         
-        // X座標：角度に基づく横方向の位置
+        // X座標：中心からの距離に基づく横方向の位置（完全対称）
         let x = CGFloat(cardSpacingDegrees * centerOffset)
         
-        // Y座標：放物線的な配置
-        let y = CGFloat(pow(centerOffset, 2) * cardSpacingDegrees * curveCoefficient)
+        // Y座標：放物線的な配置（中心からの距離の二乗に比例）
+        let y = CGFloat(pow(abs(centerOffset), 2) * cardSpacingDegrees * curveCoefficient)
         
         return CGSize(width: x, height: y)
     }
@@ -386,8 +389,10 @@ private struct HandCardsView: View {
             cardTiltDegrees = PlayerLayoutConstants.Angle.botCardTilt
         }
         
-        // 中心を基準にしたインデックス計算
-        let centerOffset = Double(index) - Double(total - 1) / 2
+        // ⭐ 中心対称角度計算のための精密計算
+        // 完全に中心を基準とした対称角度を実現
+        let centerIndex = Double(total - 1) / 2.0  // 中心インデックス（小数点対応）
+        let centerOffset = Double(index) - centerIndex  // 中心からの距離
         
         return cardTiltDegrees * centerOffset
     }
@@ -583,6 +588,19 @@ private struct HandCardsView: View {
             // プレイヤー自身は調整なし
             return baseOffset
         }
+    }
+    
+    // MARK: - Hand Offset Calculation
+    /// 手札の位置オフセットを計算（中心対称配置を保証）
+    private var handOffset: CGSize {
+        // 下部プレイヤー（自分）の場合は中心対称配置を保証するため、
+        // 動的調整を行わず基本オフセットのみを使用
+        if position == .bottom {
+            return config.globalOffset
+        }
+        
+        // 他のプレイヤーは人数に応じた動的調整を適用
+        return adjustedGlobalOffset
     }
 }
 

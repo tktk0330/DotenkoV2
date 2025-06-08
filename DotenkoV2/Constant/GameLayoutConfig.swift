@@ -127,7 +127,7 @@ struct PlayerLayoutConstants {
     // MARK: - Card Sizes (カードサイズ)
     struct CardSize {
         static let bot: CGFloat = 80
-        static let player: CGFloat = 120
+        static let player: CGFloat = 150
     }
     
     // MARK: - Offset Values (オフセット値)
@@ -137,8 +137,8 @@ struct PlayerLayoutConstants {
         /// この値を変更することで、下部プレイヤー（自分）のアイコン位置を調整できます
         /// - 正の値：アイコンが下に移動
         /// - 負の値：アイコンが上に移動
-        /// - 現在値: 40pt（下に40pt移動）
-        static let playerIconVertical: CGFloat = 40
+        /// - 現在値: 60pt（下に60pt移動）
+        static let playerIconVertical: CGFloat = 60
         
         // Hand Offsets
         /// ⭐ 手札位置の調整ポイント
@@ -150,7 +150,7 @@ struct PlayerLayoutConstants {
         /// 右側プレイヤーの手札横位置（正の値で右に移動）
         static let rightHandHorizontal: CGFloat = 30
         /// 下部プレイヤー（自分）の手札縦位置（正の値で下に移動）
-        static let playerHandVertical: CGFloat = 5
+        static let playerHandVertical: CGFloat = 20
     }
     
     // MARK: - Radius Values (半径値)
@@ -383,7 +383,7 @@ struct PlayerLayoutConfig {
         ),
         hand: HandConfiguration(
             // 手札全体の位置オフセット（playerHandVerticalで縦位置調整）
-            globalOffset: CGSize(width: 0, height: PlayerLayoutConstants.Offset.playerHandVertical),
+            globalOffset: CGSize(width: 0.0, height: PlayerLayoutConstants.Offset.playerHandVertical),
             globalRotation: PlayerLayoutConstants.Angle.rotation,
             fanMaxAngle: PlayerLayoutConstants.Angle.playerFan,
             fanRadius: PlayerLayoutConstants.Radius.playerFan,
