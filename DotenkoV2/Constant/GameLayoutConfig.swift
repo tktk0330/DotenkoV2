@@ -17,7 +17,7 @@ struct LayoutConstants {
         static let headerHorizontal: CGFloat = 20
         static let headerVertical: CGFloat = 10
         static let topPlayersHorizontal: CGFloat = 40
-        static let topPlayersTop: CGFloat = 10
+        static let topPlayersTop: CGFloat = 50
         static let centerAreaHorizontal: CGFloat = 30
         static let bottomPlayerBottom: CGFloat = 0
         static let backButtonLeading: CGFloat = 20
@@ -39,7 +39,7 @@ struct LayoutConstants {
     // MARK: - Position Ratios (位置比率)
     struct Position {
         static let deckXRatio: CGFloat = 0.1
-        static let deckYRatio: CGFloat = 0.65
+        static let deckYRatio: CGFloat = 0.60
     }
     
     // MARK: - Field Card Layout (フィールドカード配置)
@@ -126,7 +126,7 @@ struct PlayerLayoutConstants {
     
     // MARK: - Card Sizes (カードサイズ)
     struct CardSize {
-        static let bot: CGFloat = 50
+        static let bot: CGFloat = 80
         static let player: CGFloat = 120
     }
     
