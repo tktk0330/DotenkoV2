@@ -59,6 +59,15 @@ struct GameMainView: View {
                 .allowsHitTesting(false)
             }
             
+            // レートアップエフェクト表示
+            if viewModel.showRateUpEffect {
+                RateUpEffectView(
+                    isVisible: viewModel.showRateUpEffect,
+                    multiplier: viewModel.rateUpMultiplier
+                )
+                .allowsHitTesting(false)
+            }
+            
             // スコア確定画面
             if viewModel.showScoreResult, let scoreData = viewModel.scoreResultData {
                 ScoreResultView(

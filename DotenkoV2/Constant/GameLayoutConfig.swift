@@ -82,13 +82,13 @@ struct LayoutConstants {
         static let startDelay: Double = 0.1
         
         // フェーズ1: 右から中央への移動時間（高速化）
-        static let enteringDuration: Double = 0.8
+        static let enteringDuration: Double = 0.6
         
-        // フェーズ2: 中央での停止時間
-        static let stayingDuration: Double = 1.5
+        // フェーズ2: 中央での停止時間（短縮）
+        static let stayingDuration: Double = 1.0
         
         // フェーズ3: 中央から左への移動時間（高速化）
-        static let exitingDuration: Double = 1.2
+        static let exitingDuration: Double = 0.8
         
         // 総アニメーション時間（自動計算）
         static let totalDuration: Double = startDelay + enteringDuration + stayingDuration + exitingDuration

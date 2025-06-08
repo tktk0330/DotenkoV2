@@ -558,17 +558,15 @@ struct GameAnnouncementView: View {
             // 絶対位置指定でレイアウトに影響しないオーバーレイ
             GeometryReader { geometry in
                 VStack(spacing: 16) {
-                    // 装飾的なトップライン
-                    decorativeTopLine
-                    
                     // メインタイトル
                     Text(title)
-                        .font(.system(size: 32, weight: .black))
+                        .font(.system(size: 36, weight: .black))
                         .foregroundColor(Appearance.Color.commonWhite)
-                        .tracking(3.0)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 4, x: 0, y: 2)
-                        .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 8, x: 0, y: 0)
-                        .scaleEffect(glowAnimation ? 1.05 : 1.0)
+                        .tracking(4.0)
+                        .shadow(color: Appearance.Color.commonBlack, radius: 6, x: 0, y: 3)
+                        .shadow(color: Appearance.Color.playerGold.opacity(0.9), radius: 12, x: 0, y: 0)
+                        .shadow(color: Color.red.opacity(0.6), radius: 8, x: 0, y: 0)
+                        .scaleEffect(glowAnimation ? 1.08 : 1.0)
                     
                     // サブタイトル
                     if !subtitle.isEmpty {
@@ -579,9 +577,6 @@ struct GameAnnouncementView: View {
                             .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 1)
                             .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 6, x: 0, y: 0)
                     }
-                    
-                    // 装飾的なボトムライン
-                    decorativeBottomLine
                 }
                 .padding(.horizontal, 50)
                 .padding(.vertical, 40)
@@ -589,8 +584,9 @@ struct GameAnnouncementView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 25))
                 .overlay(luxuryAnnouncementBorder)
                 .overlay(sparkleOverlay)
-                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 15, x: 0, y: 8)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.4), radius: 20, x: 0, y: 0)
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 18, x: 0, y: 10)
+                .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 25, x: 0, y: 0)
+                .shadow(color: Color.red.opacity(0.3), radius: 15, x: 0, y: 0)
                 .scaleEffect(animationPhase == .staying ? (glowAnimation ? 1.02 : 1.0) : 1.0)
                 .position(
                     x: geometry.size.width / 2 + offsetX(for: geometry),
@@ -617,144 +613,7 @@ struct GameAnnouncementView: View {
         }
     }
     
-    // MARK: - Decorative Elements
-    
-    @ViewBuilder
-    private var decorativeTopLine: some View {
-        HStack(spacing: 12) {
-            luxuryDecorationCluster
-            
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonClear,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.commonClear
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 3)
-                .overlay(
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonClear,
-                                    Appearance.Color.commonWhite.opacity(0.6),
-                                    Appearance.Color.commonClear
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 1)
-                        .offset(y: -1)
-                )
-            
-            luxuryDecorationCluster
-        }
-    }
-    
-    @ViewBuilder
-    private var decorativeBottomLine: some View {
-        HStack(spacing: 12) {
-            luxuryDecorationCluster
-            
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonClear,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.commonClear
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 3)
-                .overlay(
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonClear,
-                                    Appearance.Color.commonWhite.opacity(0.6),
-                                    Appearance.Color.commonClear
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 1)
-                        .offset(y: -1)
-                )
-            
-            luxuryDecorationCluster
-        }
-    }
-    
-    @ViewBuilder
-    private var luxuryDecorationCluster: some View {
-        HStack(spacing: 4) {
-            // 大きなダイヤモンド
-            Diamond()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.orange.opacity(0.8)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 2,
-                        endRadius: 10
-                    )
-                )
-                .frame(width: 16, height: 16)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 6, x: 0, y: 0)
-                .overlay(
-                    Diamond()
-                        .fill(Appearance.Color.commonWhite.opacity(0.4))
-                        .frame(width: 6, height: 6)
-                        .offset(x: -2, y: -2)
-                )
-            
-            // 小さなダイヤモンド
-            Diamond()
-                .fill(Appearance.Color.playerGold)
-                .frame(width: 8, height: 8)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 3, x: 0, y: 0)
-            
-            // 装飾的な円
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite.opacity(0.8),
-                            Appearance.Color.playerGold.opacity(0.6),
-                            Color.orange.opacity(0.4)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: 6
-                    )
-                )
-                .frame(width: 6, height: 6)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 2, x: 0, y: 0)
-        }
-    }
+    // MARK: - Decorative Elements (削除済み)
     
     @ViewBuilder
     private var sparkleOverlay: some View {
@@ -956,32 +815,34 @@ struct GameAnnouncementView: View {
     @ViewBuilder
     private var luxuryAnnouncementBackground: some View {
         ZStack {
-            // ベース背景（深いグラデーション）
+            // ベース背景（カジノ風深いグラデーション）
             RoundedRectangle(cornerRadius: 25)
                 .fill(
                     RadialGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Color(red: 0.05, green: 0.02, blue: 0.1), location: 0.0),
-                            .init(color: Appearance.Color.commonBlack.opacity(0.98), location: 0.3),
-                            .init(color: Color(red: 0.1, green: 0.05, blue: 0.2).opacity(0.95), location: 0.6),
+                            .init(color: Color(red: 0.1, green: 0.0, blue: 0.0), location: 0.0),
+                            .init(color: Color(red: 0.2, green: 0.0, blue: 0.0).opacity(0.95), location: 0.2),
+                            .init(color: Appearance.Color.commonBlack.opacity(0.98), location: 0.4),
+                            .init(color: Color(red: 0.15, green: 0.0, blue: 0.05).opacity(0.96), location: 0.7),
                             .init(color: Appearance.Color.commonBlack.opacity(0.99), location: 1.0)
                         ]),
                         center: .center,
-                        startRadius: 50,
-                        endRadius: 200
+                        startRadius: 30,
+                        endRadius: 250
                     )
                 )
             
-            // 金箔効果レイヤー
+            // カジノ風金箔効果レイヤー
             RoundedRectangle(cornerRadius: 25)
                 .fill(
                     LinearGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.playerGold.opacity(0.15), location: 0.0),
-                            .init(color: Color.yellow.opacity(0.08), location: 0.2),
-                            .init(color: Appearance.Color.commonClear, location: 0.4),
-                            .init(color: Color.orange.opacity(0.06), location: 0.6),
-                            .init(color: Appearance.Color.playerGold.opacity(0.12), location: 1.0)
+                            .init(color: Appearance.Color.playerGold.opacity(0.2), location: 0.0),
+                            .init(color: Color.red.opacity(0.1), location: 0.15),
+                            .init(color: Color.yellow.opacity(0.12), location: 0.3),
+                            .init(color: Appearance.Color.commonClear, location: 0.5),
+                            .init(color: Color.orange.opacity(0.08), location: 0.7),
+                            .init(color: Appearance.Color.playerGold.opacity(0.18), location: 1.0)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -1054,15 +915,17 @@ struct GameAnnouncementView: View {
     @ViewBuilder
     private var luxuryAnnouncementBorder: some View {
         ZStack {
-            // 最外側の太いゴールドボーダー（光沢効果付き）
+            // 最外側の太いカジノ風ボーダー（光沢効果付き）
             RoundedRectangle(cornerRadius: 25)
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.9),
+                            Appearance.Color.playerGold.opacity(0.95),
+                            Color.red.opacity(0.7),
                             Color.yellow,
                             Appearance.Color.playerGold,
                             Color.orange.opacity(0.8),
+                            Color.red.opacity(0.6),
                             Appearance.Color.playerGold,
                             Color.yellow.opacity(0.9),
                             Appearance.Color.playerGold.opacity(0.8),
@@ -1072,9 +935,10 @@ struct GameAnnouncementView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 5
+                    lineWidth: 6
                 )
-                .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 8, x: 0, y: 0)
+                .shadow(color: Appearance.Color.playerGold.opacity(0.7), radius: 10, x: 0, y: 0)
+                .shadow(color: Color.red.opacity(0.4), radius: 6, x: 0, y: 0)
             
             // 中間のシルバーボーダー
             RoundedRectangle(cornerRadius: 23)

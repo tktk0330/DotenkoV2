@@ -73,6 +73,11 @@ class GameViewModel: ObservableObject {
     @Published var announcementSubText: String = ""
     @Published var isAnnouncementBlocking: Bool = false
     
+    // レートアップエフェクトシステム
+    @Published var showRateUpEffect: Bool = false
+    @Published var rateUpMultiplier: Int = 1
+    private var rateUpEffectTimer: Timer?
+    
     // 中間結果画面システム
     @Published var showInterimResult: Bool = false
     @Published var isWaitingForOthers: Bool = false
@@ -86,6 +91,15 @@ class GameViewModel: ObservableObject {
     private let userProfileRepository = UserProfileRepository.shared
     private var countdownTimer: Timer?
     private var revengeTimer: Timer?
+    
+    // MARK: - Lifecycle
+    deinit {
+        // タイマーのクリーンアップ
+        countdownTimer?.invalidate()
+        revengeTimer?.invalidate()
+        rateUpEffectTimer?.invalidate()
+        print("🎮 GameViewModel解放")
+    }
     
     /// 安全な乗算処理（オーバーフロー防止）
     private func safeMultiply(_ value: Int, by multiplier: Int) -> Int {
@@ -145,8 +159,8 @@ class GameViewModel: ObservableObject {
         
         // ラウンド開始アナウンス
         showAnnouncementMessage(
-            title: "ラウンド \(currentRound) 開始",
-            subtitle: "カードを配布します"
+            title: "Round \(currentRound) Start",
+            subtitle: ""
         ) {
             // アナウンス完了後にカード配布開始
             DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.CardDealAnimation.initialDelay) {
@@ -444,8 +458,8 @@ class GameViewModel: ObservableObject {
             
             // 次のラウンド開始アナウンス
             showAnnouncementMessage(
-                title: "ラウンド \(currentRound) 開始",
-                subtitle: "新しいラウンドが始まります"
+                title: "Round \(currentRound) Start",
+                subtitle: ""
             ) {
                 // アナウンス後にゲーム初期化
                 self.initializeGame()
@@ -453,14 +467,8 @@ class GameViewModel: ObservableObject {
         } else {
             gamePhase = .finished
             
-            // ゲーム終了アナウンス
-            showAnnouncementMessage(
-                title: "ゲーム終了",
-                subtitle: "全ラウンド完了"
-            ) {
-                // ゲーム終了後の処理（必要に応じて追加）
-                print("🎮 全ゲーム終了")
-            }
+            // ゲーム終了後の処理
+            print("🎮 全ゲーム終了")
         }
     }
     
@@ -1160,19 +1168,13 @@ class GameViewModel: ObservableObject {
         players[playerIndex].dtnk = true
         dotenkoWinnerId = playerId
         
-        // どてんこ発生アナウンス
-        showAnnouncementMessage(
-            title: "どてんこ発生！",
-            subtitle: "\(players[playerIndex].name) の宣言"
-        ) {
-            // ゲームフェーズに応じて処理を分岐
-            if self.gamePhase == .challengeZone {
-                // チャレンジゾーン中の場合
-                self.handleChallengeDotenkoDeclaration(playerId: playerId)
-            } else {
-                // 通常のゲーム中の場合
-                self.startRevengeWaitingPhase()
-            }
+        // ゲームフェーズに応じて処理を分岐
+        if self.gamePhase == .challengeZone {
+            // チャレンジゾーン中の場合
+            self.handleChallengeDotenkoDeclaration(playerId: playerId)
+        } else {
+            // 通常のゲーム中の場合
+            self.startRevengeWaitingPhase()
         }
     }
     
@@ -1389,14 +1391,8 @@ class GameViewModel: ObservableObject {
         // 新しいどてんこ勝者を設定
         dotenkoWinnerId = playerId
         
-        // リベンジ発生アナウンス
-        showAnnouncementMessage(
-            title: "リベンジ発生！",
-            subtitle: "\(players[playerIndex].name) の逆転"
-        ) {
-            // リベンジ待機を再開（連鎖リベンジ対応）
-            self.startRevengeWaitingPhase()
-        }
+        // リベンジ待機を再開（連鎖リベンジ対応）
+        self.startRevengeWaitingPhase()
     }
     
     /// BOTプレイヤーのリベンジ宣言チェック（リアルタイム）
@@ -1475,13 +1471,8 @@ class GameViewModel: ObservableObject {
         print("   開始プレイヤー: \(getCurrentChallengePlayer()?.name ?? "不明")")
         
         // チャレンジゾーン開始アナウンス
-        showAnnouncementMessage(
-            title: "チャレンジゾーン開始",
-            subtitle: "参加者: \(challengeParticipants.count)人"
-        ) {
-            // アナウンス後にチャレンジゾーンの進行を開始
-            self.processChallengeZoneTurn()
-        }
+        // チャレンジゾーンの進行を開始
+        self.processChallengeZoneTurn()
     }
     
     /// 現在のチャレンジプレイヤーを取得
@@ -1524,13 +1515,8 @@ class GameViewModel: ObservableObject {
                 return
             }
             
-            // 参加者除外アナウンス
-            showAnnouncementMessage(
-                title: "\(currentPlayer.name) 除外",
-                subtitle: "残り参加者: \(challengeParticipants.count)人"
-            ) {
-                self.nextChallengePlayer()
-            }
+            // 次のプレイヤーへ
+            self.nextChallengePlayer()
             return
         }
         
@@ -1635,37 +1621,17 @@ class GameViewModel: ObservableObject {
     private func finalizeDotenko() {
         isChallengeZone = false
         
-        // チャレンジゾーン終了アナウンス
-        if challengeParticipants.isEmpty {
-            showAnnouncementMessage(
-                title: "チャレンジゾーン終了",
-                subtitle: "勝敗が確定しました"
-            ) {
-                // アナウンス後にゲーム終了処理
-                self.gamePhase = .finished
-                
-                if let winnerId = self.dotenkoWinnerId {
-                    self.handleDotenkoVictory(winnerId: winnerId)
-                } else {
-                    // 勝者がいない場合は直接スコア計算
-                    self.startScoreCalculation()
-                }
-                
-                print("🎮 ゲーム終了 - どてんこ勝利確定")
-            }
+        // ゲーム終了処理
+        gamePhase = .finished
+        
+        if let winnerId = dotenkoWinnerId {
+            handleDotenkoVictory(winnerId: winnerId)
         } else {
-            // 参加者がいる場合は即座にゲーム終了
-            gamePhase = .finished
-            
-            if let winnerId = dotenkoWinnerId {
-                handleDotenkoVictory(winnerId: winnerId)
-            } else {
-                // 勝者がいない場合は直接スコア計算
-                startScoreCalculation()
-            }
-            
-            print("🎮 ゲーム終了 - どてんこ勝利確定")
+            // 勝者がいない場合は直接スコア計算
+            startScoreCalculation()
         }
+        
+        print("🎮 ゲーム終了 - どてんこ勝利確定")
     }
     
     /// リベンジボタンを表示すべきかチェック
@@ -1738,14 +1704,8 @@ class GameViewModel: ObservableObject {
         print("🏆 しょてんこ勝者: \(players[playerIndex].name)")
         print("💀 しょてんこ敗者: その他全員")
         
-        // しょてんこ発生アナウンス
-        showAnnouncementMessage(
-            title: "しょてんこ発生！",
-            subtitle: "\(players[playerIndex].name) の勝利"
-        ) {
-            // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
-            self.startChallengeZone()
-        }
+        // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
+        self.startChallengeZone()
     }
     
     /// バーストイベントを処理
@@ -1858,6 +1818,35 @@ class GameViewModel: ObservableObject {
         announcementText = ""
         announcementSubText = ""
         print("📢 アナウンス表示終了")
+    }
+    
+    // MARK: - Rate Up Effect System
+    
+    /// レートアップエフェクトを表示
+    /// - Parameter multiplier: 現在の倍率
+    func showRateUpEffect(multiplier: Int) {
+        // 既存のタイマーをキャンセル
+        rateUpEffectTimer?.invalidate()
+        
+        rateUpMultiplier = multiplier
+        showRateUpEffect = true
+        
+        print("📈 レートアップエフェクト表示: ×\(multiplier)")
+        
+        // 5.0秒後にエフェクトを非表示（5回発射 + スローアニメーション完了時間に合わせて調整）
+        rateUpEffectTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            self.hideRateUpEffect()
+        }
+    }
+    
+    /// レートアップエフェクトを非表示
+    func hideRateUpEffect() {
+        rateUpEffectTimer?.invalidate()
+        rateUpEffectTimer = nil
+        showRateUpEffect = false
+        rateUpMultiplier = 1
+        print("📈 レートアップエフェクト終了")
     }
     
     // MARK: - Score Calculation System
@@ -2332,11 +2321,8 @@ class GameViewModel: ObservableObject {
                 
                 print("📈 上昇レート発生! 現在の倍率: \(currentUpRate)")
                 
-                // 上昇レート演出
-                showAnnouncementMessage(
-                    title: "レートアップ！",
-                    subtitle: "倍率 ×\(currentUpRate)"
-                )
+                // 上昇レート演出（矢印エフェクト）
+                showRateUpEffect(multiplier: currentUpRate)
             }
         }
     }
@@ -2351,9 +2337,9 @@ class GameViewModel: ObservableObject {
     
     /// 特殊カード演出を表示
     private func showSpecialCardEffect(title: String, subtitle: String, effectType: SpecialCardEffectType, completion: @escaping () -> Void) {
-        // TODO: 特殊カード演出の実装
-        // 現在は簡単なアナウンスで代用
-        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+        // 特殊カード演出（アナウンス削除）
+        print("🎴 特殊カード演出: \(title) - \(subtitle)")
+        completion()
     }
     
     /// ゲーム開始時の上昇レート判定（1、2、ジョーカー）
@@ -2364,11 +2350,8 @@ class GameViewModel: ObservableObject {
             currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
             print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
             
-            // 上昇レート演出
-            showAnnouncementMessage(
-                title: "ゲーム開始ボーナス！",
-                subtitle: "倍率 ×\(currentUpRate)"
-            )
+            // 上昇レート演出（矢印エフェクト）
+            showRateUpEffect(multiplier: currentUpRate)
             
             // 連続確認
             checkConsecutiveGameStartCards(from: card)
@@ -2387,12 +2370,11 @@ class GameViewModel: ObservableObject {
         if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
             currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
             
-            showAnnouncementMessage(
-                title: "連続ボーナス！",
-                subtitle: "\(nextCard.card.rawValue) - 倍率 ×\(currentUpRate)"
-            ) {
-                self.checkConsecutiveGameStartCards(from: nextCard)
-            }
+            // 連続ボーナス演出（矢印エフェクト）
+            showRateUpEffect(multiplier: currentUpRate)
+            
+            // 連続確認を継続
+            checkConsecutiveGameStartCards(from: nextCard)
         }
     }
     
