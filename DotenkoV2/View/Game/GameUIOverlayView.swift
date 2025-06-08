@@ -1,50 +1,25 @@
 import SwiftUI
 
 // MARK: - Game UI Overlay View
-/// ゲームUIオーバーレイ表示View（戻るボタン、設定ボタンなど）
+/// ゲームUIオーバーレイ表示View（設定ボタンなど）
 struct GameUIOverlayView: View {
-    let onBackAction: () -> Void
     let onSettingsAction: () -> Void
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 戻るボタン
+                // 設定ボタン（左上のヘッダー下に配置）
                 VStack {
                     HStack {
-                        BackButtonView(action: onBackAction)
+                        SettingsButtonView(action: onSettingsAction)
+                            .padding(.leading, 15)
+                            .padding(.top, geometry.size.height * GameLayoutConfig.headerAreaHeightRatio + 20)
                         Spacer()
                     }
                     Spacer()
                 }
-                
-                // 設定ボタン
-                SettingsButtonView(action: onSettingsAction)
-                    .position(
-                        x: geometry.size.width * 0.075,
-                        y: geometry.size.height * 0.85
-                    )
             }
         }
-    }
-}
-
-// MARK: - Back Button View
-/// 戻るボタン表示View
-struct BackButtonView: View {
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: Appearance.Icon.chevronLeft)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(Appearance.Color.commonWhite)
-                .padding()
-                .background(Appearance.Color.commonBlack.opacity(0.3))
-                .clipShape(Circle())
-        }
-        .padding(.leading, GameLayoutConfig.backButtonLeadingPadding)
-        .padding(.top, GameLayoutConfig.backButtonTopPadding)
     }
 }
 
@@ -59,8 +34,24 @@ struct SettingsButtonView: View {
                 .font(.system(size: 20, weight: .bold))
                 .foregroundColor(Appearance.Color.commonWhite)
                 .padding(12)
-                .background(Appearance.Color.commonBlack.opacity(0.3))
-                .clipShape(Circle())
+                .background(
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Appearance.Color.commonBlack.opacity(0.6),
+                                    Appearance.Color.commonBlack.opacity(0.4)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Appearance.Color.commonWhite.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.3), radius: 4, x: 0, y: 2)
         }
     }
 } 

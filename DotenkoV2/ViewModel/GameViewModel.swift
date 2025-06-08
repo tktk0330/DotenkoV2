@@ -87,6 +87,9 @@ class GameViewModel: ObservableObject {
     // 最終結果画面システム
     @Published var showFinalResult: Bool = false
     
+    // ⭐ 設定モーダル表示状態を追加
+    @Published var showGameSettingsModal: Bool = false
+    
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
     private var countdownTimer: Timer?
@@ -702,6 +705,14 @@ class GameViewModel: ObservableObject {
     /// 設定ボタンアクション
     func handleSettingsAction() {
         print("設定ボタンが押されました")
+        showGameSettingsModal = true
+    }
+    
+    /// ゲーム終了アクション
+    func handleExitGame() {
+        print("ゲームを終了します")
+        // ゲーム終了処理をここに実装
+        // 例: ナビゲーションの戻る処理など
     }
     
     // MARK: - Player Management Methods

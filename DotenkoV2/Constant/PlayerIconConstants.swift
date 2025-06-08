@@ -51,7 +51,11 @@ struct PlayerIconConstants {
         /// ボットバッジのテキストサイズ
         static let botTextSize: CGFloat = 10
         
-        /// バッジとアイコンの間隔
+        /// ⭐ バッジとアイコンの間隔調整ポイント
+        /// この値を変更することで、手札数字バッジとプレイヤーアイコンの距離を調整できます
+        /// - 正の値：バッジがアイコンから離れる（上に移動）
+        /// - 負の値：バッジがアイコンに近づく（下に移動）
+        /// - 現在値: 2pt（アイコンから少し離れた位置）
         static let iconSpacing: CGFloat = 2
         
         // MARK: - Casino Colors

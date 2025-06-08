@@ -133,12 +133,23 @@ struct PlayerLayoutConstants {
     // MARK: - Offset Values (オフセット値)
     struct Offset {
         // Icon Offsets
+        /// ⭐ プレイヤーアイコンの縦位置調整ポイント
+        /// この値を変更することで、下部プレイヤー（自分）のアイコン位置を調整できます
+        /// - 正の値：アイコンが下に移動
+        /// - 負の値：アイコンが上に移動
+        /// - 現在値: 40pt（下に40pt移動）
         static let playerIconVertical: CGFloat = 40
         
         // Hand Offsets
+        /// ⭐ 手札位置の調整ポイント
+        /// 各プレイヤー位置の手札オフセット値
+        /// 上部プレイヤーの手札縦位置（負の値で上に移動）
         static let topHandVertical: CGFloat = -30
+        /// 左側プレイヤーの手札横位置（負の値で左に移動）
         static let leftHandHorizontal: CGFloat = -30
+        /// 右側プレイヤーの手札横位置（正の値で右に移動）
         static let rightHandHorizontal: CGFloat = 30
+        /// 下部プレイヤー（自分）の手札縦位置（正の値で下に移動）
         static let playerHandVertical: CGFloat = 5
     }
     
@@ -218,10 +229,11 @@ struct GameLayoutConfig {
     static let gameFieldHeight: CGFloat = LayoutConstants.Size.gameFieldHeight
     
     // MARK: - Back Button (戻るボタン設定)
-    /// 戻るボタンの左パディング
-    static let backButtonLeadingPadding: CGFloat = LayoutConstants.Padding.backButtonLeading
-    /// 戻るボタンの上パディング
-    static let backButtonTopPadding: CGFloat = LayoutConstants.Padding.backButtonTop
+    // ⭐ 戻るボタンは削除されたため、以下の設定は使用されません
+    // /// 戻るボタンの左パディング
+    // static let backButtonLeadingPadding: CGFloat = LayoutConstants.Padding.backButtonLeading
+    // /// 戻るボタンの上パディング
+    // static let backButtonTopPadding: CGFloat = LayoutConstants.Padding.backButtonTop
     
     // MARK: - Deck Position (デッキ位置設定)
     /// デッキのX位置比率
@@ -303,14 +315,19 @@ struct PlayerLayoutConfig {
     }
     
     // MARK: - Position-specific Configurations
-    /// 上部プレイヤーの設定
+    /// ⭐ 上部プレイヤー（Bot）の配置設定
+    /// アイコンと手札の位置を調整したい場合は、以下の値を変更してください
     static let topPlayer = (
         icon: IconPosition(
+            // アイコンの位置オフセット（x: 横位置, y: 縦位置）
             offset: .zero,
+            // アイコンのサイズ
             size: PlayerLayoutConstants.IconSize.bot,
+            // 名前テキストのサイズ
             nameTextSize: PlayerLayoutConstants.TextSize.botName
         ),
         hand: HandConfiguration(
+            // 手札全体の位置オフセット（topHandVerticalで縦位置調整）
             globalOffset: CGSize(width: 0, height: PlayerLayoutConstants.Offset.topHandVertical),
             globalRotation: PlayerLayoutConstants.Angle.rotation,
             fanMaxAngle: PlayerLayoutConstants.Angle.botFan,
@@ -320,7 +337,7 @@ struct PlayerLayoutConfig {
         )
     )
     
-    /// 左側プレイヤーの設定
+    /// ⭐ 左側プレイヤー（Bot）の配置設定
     static let leftPlayer = (
         icon: IconPosition(
             offset: .zero,
@@ -328,6 +345,7 @@ struct PlayerLayoutConfig {
             nameTextSize: PlayerLayoutConstants.TextSize.botName
         ),
         hand: HandConfiguration(
+            // 手札全体の位置オフセット（leftHandHorizontalで横位置調整）
             globalOffset: CGSize(width: PlayerLayoutConstants.Offset.leftHandHorizontal, height: 0),
             globalRotation: PlayerLayoutConstants.Angle.rotation,
             fanMaxAngle: PlayerLayoutConstants.Angle.botFan,
@@ -337,7 +355,7 @@ struct PlayerLayoutConfig {
         )
     )
     
-    /// 右側プレイヤーの設定
+    /// ⭐ 右側プレイヤー（Bot）の配置設定
     static let rightPlayer = (
         icon: IconPosition(
             offset: .zero,
@@ -345,6 +363,7 @@ struct PlayerLayoutConfig {
             nameTextSize: PlayerLayoutConstants.TextSize.botName
         ),
         hand: HandConfiguration(
+            // 手札全体の位置オフセット（rightHandHorizontalで横位置調整）
             globalOffset: CGSize(width: PlayerLayoutConstants.Offset.rightHandHorizontal, height: 0),
             globalRotation: PlayerLayoutConstants.Angle.rotation,
             fanMaxAngle: PlayerLayoutConstants.Angle.botFan,
@@ -354,14 +373,16 @@ struct PlayerLayoutConfig {
         )
     )
     
-    /// 下部プレイヤー（自分）の設定
+    /// ⭐ 下部プレイヤー（自分）の配置設定
     static let bottomPlayer = (
         icon: IconPosition(
+            // アイコンの位置オフセット（playerIconVerticalで縦位置調整）
             offset: CGSize(width: 0, height: PlayerLayoutConstants.Offset.playerIconVertical),
             size: PlayerLayoutConstants.IconSize.player,
             nameTextSize: PlayerLayoutConstants.TextSize.playerName
         ),
         hand: HandConfiguration(
+            // 手札全体の位置オフセット（playerHandVerticalで縦位置調整）
             globalOffset: CGSize(width: 0, height: PlayerLayoutConstants.Offset.playerHandVertical),
             globalRotation: PlayerLayoutConstants.Angle.rotation,
             fanMaxAngle: PlayerLayoutConstants.Angle.playerFan,

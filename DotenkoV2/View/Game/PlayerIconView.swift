@@ -155,16 +155,26 @@ private struct PlayerIconContainer: View {
     @ViewBuilder
     private var handCountBadgeOverlay: some View {
         if player.hand.count > 0 {
+            // ⭐ 手札数字バッジの配置調整ポイント
+            // - badgeTopOffsetで縦位置を調整
+            // - .offset(x: 0, y: badgeTopOffset) のx値を変更すると横位置が調整可能
+            // - 例: .offset(x: 10, y: badgeTopOffset) で右に10pt移動
             HandCountBadgeView(handCount: player.hand.count, position: position)
-                .offset(x: 0, y: badgeTopOffset)
+                .offset(x: 0, y: badgeTopOffset) // ← ここで位置調整
         }
     }
     
+    // ⭐ 手札数字バッジの縦位置計算
+    // この関数を修正することで、バッジとアイコンの距離を調整できます
     private var badgeTopOffset: CGFloat {
         let badgeSize: CGFloat = position == .bottom ? PlayerIconConstants.HandCountBadge.playerBadgeSize : PlayerIconConstants.HandCountBadge.botBadgeSize
         let iconRadius = config.size / 2
         
-        // バッジをアイコンにより近く配置（間隔を調整可能）
+        // ⭐ バッジ位置の調整ポイント
+        // PlayerIconConstants.HandCountBadge.iconSpacing の値を変更すると
+        // バッジとアイコンの間隔を調整できます
+        // 正の値：バッジがアイコンから離れる
+        // 負の値：バッジがアイコンに近づく
         return -iconRadius - badgeSize / 2 + PlayerIconConstants.HandCountBadge.iconSpacing
     }
     
@@ -589,7 +599,10 @@ struct PlayerIconView: View {
                 viewModel: viewModel,
                 namespace: namespace
             )
-            .offset(config.hand.globalOffset)
+            // ⭐ 手札全体の位置調整ポイント
+            // config.hand.globalOffset で手札の位置を調整
+            // GameLayoutConfig.swift の PlayerLayoutConfig で設定値を変更可能
+            .offset(config.hand.globalOffset) // ← 手札の位置調整
             .zIndex(position == .bottom ? 1 : 0)
             
             // プレイヤーアイコンとUI要素
@@ -605,7 +618,10 @@ struct PlayerIconView: View {
                     isMainPlayer: position == .bottom
                 )
             }
-            .offset(config.icon.offset)
+            // ⭐ プレイヤーアイコン全体の位置調整ポイント
+            // config.icon.offset でアイコン全体の位置を調整
+            // GameLayoutConfig.swift の PlayerLayoutConfig で設定値を変更可能
+            .offset(config.icon.offset) // ← アイコン全体の位置調整
             .zIndex(position == .bottom ? 2 : 1)
         }
     }

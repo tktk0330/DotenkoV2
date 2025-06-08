@@ -35,9 +35,8 @@ struct GameMainView: View {
                     // メインゲーム画面レイアウト
                     gameMainLayout(geometry: geometry)
                     
-                    // UI オーバーレイ（戻るボタンなど）
+                    // UI オーバーレイ（設定ボタンなど）
                     GameUIOverlayView(
-                        onBackAction: { allViewNavigator.pop() },
                         onSettingsAction: viewModel.handleSettingsAction
                     )
                     
@@ -100,6 +99,13 @@ struct GameMainView: View {
                     onOKAction: viewModel.handleFinalResultOK
                 )
             }
+        }
+        // ⭐ 設定モーダルの表示を追加
+        .sheet(isPresented: $viewModel.showGameSettingsModal) {
+            GameSettingsModal(onExitGame: {
+                allViewNavigator.pop()
+            })
+            .presentationBackground(.clear)
         }
     }
 }
