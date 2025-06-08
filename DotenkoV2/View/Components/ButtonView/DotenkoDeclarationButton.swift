@@ -543,7 +543,6 @@ struct GameAnnouncementView: View {
     let isVisible: Bool
     
     @State private var animationPhase: AnnouncementPhase = .hidden
-    @State private var sparkleAnimation: Bool = false
     @State private var glowAnimation: Bool = false
     
     enum AnnouncementPhase {
@@ -563,9 +562,7 @@ struct GameAnnouncementView: View {
                         .font(.system(size: 36, weight: .black))
                         .foregroundColor(Appearance.Color.commonWhite)
                         .tracking(4.0)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 6, x: 0, y: 3)
-                        .shadow(color: Appearance.Color.playerGold.opacity(0.9), radius: 12, x: 0, y: 0)
-                        .shadow(color: Color.red.opacity(0.6), radius: 8, x: 0, y: 0)
+                        .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 2)
                         .scaleEffect(glowAnimation ? 1.08 : 1.0)
                     
                     // サブタイトル
@@ -574,8 +571,7 @@ struct GameAnnouncementView: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(Appearance.Color.commonWhite.opacity(0.95))
                             .tracking(1.5)
-                            .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 1)
-                            .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 6, x: 0, y: 0)
+                            .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
                     }
                 }
                 .padding(.horizontal, 50)
@@ -583,10 +579,8 @@ struct GameAnnouncementView: View {
                 .background(luxuryAnnouncementBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 25))
                 .overlay(luxuryAnnouncementBorder)
-                .overlay(sparkleOverlay)
-                .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 18, x: 0, y: 10)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 25, x: 0, y: 0)
-                .shadow(color: Color.red.opacity(0.3), radius: 15, x: 0, y: 0)
+
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 8, x: 0, y: 4)
                 .scaleEffect(animationPhase == .staying ? (glowAnimation ? 1.02 : 1.0) : 1.0)
                 .position(
                     x: geometry.size.width / 2 + offsetX(for: geometry),
@@ -606,7 +600,6 @@ struct GameAnnouncementView: View {
                     startContinuousAnimations()
                 } else {
                     animationPhase = .hidden
-                    sparkleAnimation = false
                     glowAnimation = false
                 }
             }
@@ -614,124 +607,6 @@ struct GameAnnouncementView: View {
     }
     
     // MARK: - Decorative Elements (削除済み)
-    
-    @ViewBuilder
-    private var sparkleOverlay: some View {
-        if sparkleAnimation {
-            ZStack {
-                // 左上のスパークル（大）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonWhite,
-                                    Color.yellow.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 6
-                            )
-                        )
-                        .frame(width: 8, height: 8)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite)
-                        .frame(width: 3, height: 3)
-                }
-                .offset(x: -90, y: -45)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 右上のスパークル（中）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.playerGold,
-                                    Color.orange.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 8
-                            )
-                        )
-                        .frame(width: 10, height: 10)
-                    
-                    Circle()
-                        .fill(Color.yellow)
-                        .frame(width: 4, height: 4)
-                }
-                .offset(x: 85, y: -35)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 左下のスパークル（小）
-                ZStack {
-                    Circle()
-                        .fill(Appearance.Color.commonWhite.opacity(0.9))
-                        .frame(width: 5, height: 5)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite)
-                        .frame(width: 2, height: 2)
-                }
-                .offset(x: -70, y: 40)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 右下のスパークル（中）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Color.yellow,
-                                    Appearance.Color.playerGold.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 7
-                            )
-                        )
-                        .frame(width: 9, height: 9)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite.opacity(0.8))
-                        .frame(width: 3, height: 3)
-                }
-                .offset(x: 95, y: 30)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 追加の装飾スパークル
-                Circle()
-                    .fill(Appearance.Color.playerGold.opacity(0.7))
-                    .frame(width: 4, height: 4)
-                    .offset(x: -40, y: -20)
-                    .opacity(sparkleAnimation ? 0.8 : 0.0)
-                
-                Circle()
-                    .fill(Color.yellow.opacity(0.6))
-                    .frame(width: 3, height: 3)
-                    .offset(x: 50, y: 10)
-                    .opacity(sparkleAnimation ? 0.9 : 0.0)
-                
-                Circle()
-                    .fill(Appearance.Color.commonWhite.opacity(0.8))
-                    .frame(width: 2, height: 2)
-                    .offset(x: 20, y: -40)
-                    .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                Circle()
-                    .fill(Appearance.Color.playerGold.opacity(0.5))
-                    .frame(width: 3, height: 3)
-                    .offset(x: -20, y: 25)
-                    .opacity(sparkleAnimation ? 0.7 : 0.0)
-            }
-            .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: sparkleAnimation)
-        }
-    }
     
     // MARK: - Animation Properties
     
@@ -796,14 +671,9 @@ struct GameAnnouncementView: View {
         }
     }
     
-    /// 継続的なアニメーション効果を開始（スパークル・グロー効果）
+    /// 継続的なアニメーション効果を開始（グロー効果）
     /// 中央停止フェーズで視覚的インパクトを最大化
     private func startContinuousAnimations() {
-        // スパークルアニメーション開始（中央停止時に開始）
-        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.sparkleStartDelay) {
-            self.sparkleAnimation = true
-        }
-        
         // グローアニメーション開始（中央停止時に開始）
         DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.glowStartDelay) {
             withAnimation(.easeInOut(duration: LayoutConstants.AnnouncementAnimation.glowDuration).repeatForever(autoreverses: true)) {
@@ -814,168 +684,37 @@ struct GameAnnouncementView: View {
     
     @ViewBuilder
     private var luxuryAnnouncementBackground: some View {
-        ZStack {
-            // ベース背景（カジノ風深いグラデーション）
-            RoundedRectangle(cornerRadius: 25)
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Color(red: 0.1, green: 0.0, blue: 0.0), location: 0.0),
-                            .init(color: Color(red: 0.2, green: 0.0, blue: 0.0).opacity(0.95), location: 0.2),
-                            .init(color: Appearance.Color.commonBlack.opacity(0.98), location: 0.4),
-                            .init(color: Color(red: 0.15, green: 0.0, blue: 0.05).opacity(0.96), location: 0.7),
-                            .init(color: Appearance.Color.commonBlack.opacity(0.99), location: 1.0)
-                        ]),
-                        center: .center,
-                        startRadius: 30,
-                        endRadius: 250
-                    )
+        // キリッとしたシンプルな背景
+        RoundedRectangle(cornerRadius: 25)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Appearance.Color.commonBlack.opacity(0.95),
+                        Appearance.Color.commonBlack.opacity(0.85)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-            
-            // カジノ風金箔効果レイヤー
-            RoundedRectangle(cornerRadius: 25)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.playerGold.opacity(0.2), location: 0.0),
-                            .init(color: Color.red.opacity(0.1), location: 0.15),
-                            .init(color: Color.yellow.opacity(0.12), location: 0.3),
-                            .init(color: Appearance.Color.commonClear, location: 0.5),
-                            .init(color: Color.orange.opacity(0.08), location: 0.7),
-                            .init(color: Appearance.Color.playerGold.opacity(0.18), location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .scaleEffect(0.98)
-            
-            // 内側の光沢エフェクト
-            RoundedRectangle(cornerRadius: 23)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.commonWhite.opacity(0.08), location: 0.0),
-                            .init(color: Appearance.Color.commonClear, location: 0.3),
-                            .init(color: Appearance.Color.playerGold.opacity(0.05), location: 0.7),
-                            .init(color: Appearance.Color.commonClear, location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .center
-                    )
-                )
-                .scaleEffect(0.95)
-            
-            // 宝石風装飾パターン
-            VStack {
-                HStack {
-                    luxuryCornerGem
-                    Spacer()
-                    luxuryCornerGem
-                }
-                Spacer()
-                HStack {
-                    luxuryCornerGem
-                    Spacer()
-                    luxuryCornerGem
-                }
-            }
-            .padding(15)
-        }
+            )
     }
     
-    @ViewBuilder
-    private var luxuryCornerGem: some View {
-        ZStack {
-            // 宝石のベース
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold.opacity(0.6)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 2,
-                        endRadius: 8
-                    )
-                )
-                .frame(width: 8, height: 8)
-            
-            // 宝石の光沢
-            Circle()
-                .fill(Appearance.Color.commonWhite.opacity(0.6))
-                .frame(width: 3, height: 3)
-                .offset(x: -1, y: -1)
-        }
-        .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 4, x: 0, y: 0)
-    }
+
     
     @ViewBuilder
     private var luxuryAnnouncementBorder: some View {
-        ZStack {
-            // 最外側の太いカジノ風ボーダー（光沢効果付き）
-            RoundedRectangle(cornerRadius: 25)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.95),
-                            Color.red.opacity(0.7),
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.orange.opacity(0.8),
-                            Color.red.opacity(0.6),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.9),
-                            Appearance.Color.playerGold.opacity(0.8),
-                            Color.orange,
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 6
-                )
-                .shadow(color: Appearance.Color.playerGold.opacity(0.7), radius: 10, x: 0, y: 0)
-                .shadow(color: Color.red.opacity(0.4), radius: 6, x: 0, y: 0)
-            
-            // 中間のシルバーボーダー
-            RoundedRectangle(cornerRadius: 23)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite.opacity(0.8),
-                            Color.gray.opacity(0.6),
-                            Appearance.Color.commonWhite.opacity(0.9),
-                            Color.gray.opacity(0.4),
-                            Appearance.Color.commonWhite.opacity(0.7)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2.5
-                )
-                .scaleEffect(0.94)
-            
-            // 内側の細いゴールドボーダー
-            RoundedRectangle(cornerRadius: 21)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.6),
-                            Color.yellow.opacity(0.4),
-                            Appearance.Color.playerGold.opacity(0.8),
-                            Color.orange.opacity(0.5),
-                            Appearance.Color.playerGold.opacity(0.6)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-                .scaleEffect(0.88)
-        }
+        // キリッとしたシンプルなボーダー
+        RoundedRectangle(cornerRadius: 25)
+            .stroke(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Appearance.Color.playerGold,
+                        Appearance.Color.playerGold.opacity(0.8)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 3
+            )
     }
 }
 
