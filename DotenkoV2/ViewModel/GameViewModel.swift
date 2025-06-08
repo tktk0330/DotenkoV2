@@ -2066,7 +2066,14 @@ class GameViewModel: ObservableObject {
     /// 最終スコア計算
     private func calculateFinalScore(bottomCard: Card) {
         let baseRate = Int(gameRuleInfo.gameRate) ?? 1
-        let bottomCardValue = bottomCard.card.handValue().first ?? 1
+        
+        // デッキの裏カードの値を取得（ジョーカーの場合は1を使用）
+        let bottomCardValue: Int
+        if bottomCard.card.suit() == .joker {
+            bottomCardValue = 1 // ジョーカーの場合は1として計算
+        } else {
+            bottomCardValue = bottomCard.card.handValue().first ?? 1
+        }
         
         // 基本計算式：初期レート × 上昇レート × デッキの裏の数字
         roundScore = baseRate * currentUpRate * bottomCardValue

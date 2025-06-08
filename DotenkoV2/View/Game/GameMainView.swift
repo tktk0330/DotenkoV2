@@ -103,7 +103,7 @@ struct GameMainView: View {
         // ⭐ 設定モーダルの表示を追加
         .sheet(isPresented: $viewModel.showGameSettingsModal) {
             GameSettingsModal(onExitGame: {
-                allViewNavigator.pop()
+                allViewNavigator.popToRoot()
             })
             .presentationBackground(.clear)
         }

@@ -9,7 +9,6 @@ struct GameSettingsModal: View {
     @State private var isSEOn: Bool = true
     @State private var isSoundOn: Bool = true
     @State private var isVibrationOn: Bool = true
-    @State private var showExitConfirmation: Bool = false
     
     var body: some View {
         ZStack {
@@ -46,15 +45,6 @@ struct GameSettingsModal: View {
         .presentationDetents([.height(600), .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(20)
-        .alert("ゲームを終了しますか？", isPresented: $showExitConfirmation) {
-            Button("キャンセル", role: .cancel) { }
-            Button("終了", role: .destructive) {
-                dismiss()
-                onExitGame()
-            }
-        } message: {
-            Text("現在のゲームの進行状況は失われます。")
-        }
     }
     
     // MARK: - Header View
@@ -100,7 +90,10 @@ struct GameSettingsModal: View {
         VStack(spacing: 12) {
             // ゲームを抜けるボタン
             Button(action: {
-                showExitConfirmation = true
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    onExitGame()
+                }
             }) {
                 HStack(spacing: 10) {
                     Image(systemName: "door.left.hand.open")
