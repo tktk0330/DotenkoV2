@@ -179,8 +179,9 @@ struct UpRateDisplayView: View {
                         .blur(radius: 1)
                 )
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 24)
         .padding(.vertical, 12)
+        .frame(minWidth: 120)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(

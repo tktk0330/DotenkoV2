@@ -228,12 +228,12 @@ struct BottomPlayerAreaView: View {
             
             if let player = player {
                 HStack(spacing: -20) {
-                    // 左側：パス/引くボタン
+                    // 左側：引く/パスボタン
                     GameActionButton(
-                        icon: Appearance.Icon.arrowDownCircleFill,
-                        label: "パス",
+                        icon: hasDrawnCard ? Appearance.Icon.arrowDownCircleFill : "plus.rectangle.on.rectangle",
+                        label: hasDrawnCard ? "パス" : "引く",
                         action: onPassAction,
-                        backgroundColor: Appearance.Color.passButtonBackground,
+                        backgroundColor: hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground,
                         size: 75,
                         isEnabled: canPlayerPerformActions
                     )
@@ -448,6 +448,12 @@ struct BottomPlayerAreaView: View {
     private var canPlayerPerformActions: Bool {
         guard let player = player else { return false }
         return viewModel.canPlayerPerformAction(playerId: player.id)
+    }
+    
+    /// プレイヤーがこのターンでカードを引いたかチェック
+    private var hasDrawnCard: Bool {
+        guard let player = player else { return false }
+        return viewModel.hasPlayerDrawnCardThisTurn(playerId: player.id)
     }
     
     /// カードを出せるかチェック

@@ -509,6 +509,21 @@ class GameViewModel: ObservableObject {
             return
         }
         
+        // カードを引いていない場合は引く
+        if !currentPlayer.hasDrawnCardThisTurn {
+            print("カード引きアクションが実行されました - プレイヤー \(currentPlayer.name)")
+            
+            // 現在のプレイヤーの選択をクリア
+            clearPlayerSelectedCards(playerId: currentPlayer.id)
+            
+            // デッキからカードを引く
+            drawCardFromDeck(playerId: currentPlayer.id)
+            
+            print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
+            return
+        }
+        
+        // カードを引いている場合はパス
         // バースト判定（手札7枚でパス）
         if currentPlayer.hand.count >= 7 {
             print("💥 バースト発生! - プレイヤー \(currentPlayer.name) (手札\(currentPlayer.hand.count)枚)")
@@ -516,18 +531,13 @@ class GameViewModel: ObservableObject {
             return
         }
         
-        print("パス/引くアクションが実行されました - プレイヤー \(currentPlayer.name)")
+        print("パスアクションが実行されました - プレイヤー \(currentPlayer.name)")
         
         // 現在のプレイヤーの選択をクリア
         clearPlayerSelectedCards(playerId: currentPlayer.id)
         
-        // デッキからカードを引く
-        drawCardFromDeck(playerId: currentPlayer.id)
-        
         // 次のターンに進む
         nextTurn()
-        
-        print("プレイヤー \(currentPlayer.name) の手札: \(currentPlayer.hand)")
     }
     
     /// デッキからカードを引く
@@ -547,6 +557,7 @@ class GameViewModel: ObservableObject {
                 handCard.location = .hand(playerIndex: playerIndex, cardIndex: players[playerIndex].hand.count)
                 
                 players[playerIndex].hand.append(handCard)
+                players[playerIndex].hasDrawnCardThisTurn = true // カードを引いた状態を記録
                 print("プレイヤー \(players[playerIndex].name) がカードを引きました: \(handCard.card.rawValue)")
             }
         } else {
@@ -840,6 +851,11 @@ class GameViewModel: ObservableObject {
     // MARK: - Turn Management System
     /// 次のプレイヤーのターンに進む
     func nextTurn() {
+        // 全プレイヤーのカード引き状態をリセット
+        for index in players.indices {
+            players[index].hasDrawnCardThisTurn = false
+        }
+        
         currentTurnPlayerIndex = (currentTurnPlayerIndex + 1) % players.count
         print("ターン変更: プレイヤー\(currentTurnPlayerIndex + 1) (\(getCurrentTurnPlayer()?.name ?? "不明")) のターン")
         
@@ -871,6 +887,11 @@ class GameViewModel: ObservableObject {
     
     /// ターンをリセット（ラウンド開始時など）
     func resetTurn() {
+        // 全プレイヤーのカード引き状態をリセット
+        for index in players.indices {
+            players[index].hasDrawnCardThisTurn = false
+        }
+        
         currentTurnPlayerIndex = 0
         print("ターンリセット: プレイヤー1から開始")
     }
@@ -900,6 +921,12 @@ class GameViewModel: ObservableObject {
     /// 早い者勝ちでカードを出せるかチェック（カウントダウン中のみ）
     func canPlayerPlayFirstCard(playerId: String) -> Bool {
         return isWaitingForFirstCard && !fieldCards.isEmpty == false
+    }
+    
+    /// プレイヤーがこのターンでカードを引いたかチェック
+    func hasPlayerDrawnCardThisTurn(playerId: String) -> Bool {
+        guard let player = players.first(where: { $0.id == playerId }) else { return false }
+        return player.hasDrawnCardThisTurn
     }
     
     // MARK: - Card Play Validation System
@@ -2537,20 +2564,22 @@ class GameViewModel: ObservableObject {
     
     /// BOTのデッキ引きまたはパス
     private func executeBotDrawOrPass(player: Player) {
-        // 70%の確率でデッキから引く、30%でパス
-        let shouldDraw = Double.random(in: 0...1) < 0.7
-        
-        if shouldDraw && !deckCards.isEmpty && player.hand.count < 7 {
-            print("🤖 BOT \(player.name) がデッキからカードを引きます")
-            drawCardFromDeck(playerId: player.id)
-        } else {
-            print("🤖 BOT \(player.name) がパスします")
-            
-            // バースト判定
-            if player.hand.count >= 7 {
-                handleBurstEvent(playerId: player.id)
-                return
+        // カードを引いていない場合は引く
+        if !player.hasDrawnCardThisTurn {
+            if !deckCards.isEmpty && player.hand.count < 7 {
+                print("🤖 BOT \(player.name) がデッキからカードを引きます")
+                drawCardFromDeck(playerId: player.id)
             }
+            return
+        }
+        
+        // カードを引いている場合はパス
+        print("🤖 BOT \(player.name) がパスします")
+        
+        // バースト判定
+        if player.hand.count >= 7 {
+            handleBurstEvent(playerId: player.id)
+            return
         }
         
         // 次のターンに進む
