@@ -71,7 +71,7 @@ private struct PlayerScoreView: View {
     private var botPlayerScore: some View {
         Text(score)
             .font(.system(size: 10, weight: .medium))
-            .foregroundColor(Appearance.Color.commonGray)
+            .foregroundColor(Appearance.Color.commonWhite)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
@@ -154,14 +154,12 @@ private struct PlayerIconContainer: View {
     
     @ViewBuilder
     private var handCountBadgeOverlay: some View {
-        if player.hand.count > 0 {
-            // ⭐ 手札数字バッジの配置調整ポイント
-            // - badgeTopOffsetで縦位置を調整
-            // - .offset(x: 0, y: badgeTopOffset) のx値を変更すると横位置が調整可能
-            // - 例: .offset(x: 10, y: badgeTopOffset) で右に10pt移動
-            HandCountBadgeView(handCount: player.hand.count, position: position)
-                .offset(x: 0, y: badgeTopOffset) // ← ここで位置調整
-        }
+        // ⭐ 手札数字バッジの配置調整ポイント
+        // - badgeTopOffsetで縦位置を調整
+        // - .offset(x: 0, y: badgeTopOffset) のx値を変更すると横位置が調整可能
+        // - 例: .offset(x: 10, y: badgeTopOffset) で右に10pt移動
+        HandCountBadgeView(handCount: player.hand.count, position: position)
+            .offset(x: 0, y: badgeTopOffset) // ← ここで位置調整
     }
     
     // ⭐ 手札数字バッジの縦位置計算
@@ -290,6 +288,19 @@ private struct HandCardsView: View {
             .offset(adjustedGlobalOffset) // 人数に応じて位置を動的調整
     }
     
+    // MARK: - Card Display Control
+    /// カードの表面を表示するかどうかを判定
+    private var shouldShowCardFront: Bool {
+        // 自分（bottom）の手札は常に表面を表示
+        if position == .bottom {
+            return true
+        }
+        
+        // 他のプレイヤーの手札は設定に応じて表示
+        // DEBUG時またはisCardOpenがtrueの場合は表面を表示
+        return Config.GameConfig.isCardOpen
+    }
+    
     // MARK: - Fan Layout (扇形配置)
     /// 手札を扇形に配置（全プレイヤー対応）
     private var fanLayoutHandCards: some View {
@@ -300,7 +311,11 @@ private struct HandCardsView: View {
                 let cardPosition = calculateFanPosition(index: index, total: total)
                 let cardAngle = calculateFanAngle(index: index, total: total)
                 
-                CardView(card: card, size: adaptiveCardSize)
+                CardView(
+                    card: card, 
+                    size: adaptiveCardSize,
+                    showFront: shouldShowCardFront
+                )
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .rotationEffect(.degrees(cardAngle))
                     .offset(cardPosition)
