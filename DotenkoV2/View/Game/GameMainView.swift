@@ -71,6 +71,10 @@ struct GameMainView: View {
                     upRate: scoreData.upRate,
                     finalMultiplier: scoreData.finalMultiplier,
                     totalScore: scoreData.totalScore,
+                    isShotenkoRound: scoreData.isShotenkoRound,
+                    isBurstRound: scoreData.isBurstRound,
+                    shotenkoWinnerId: scoreData.shotenkoWinnerId,
+                    burstPlayerId: scoreData.burstPlayerId,
                     onOKAction: viewModel.onScoreResultOK
                 )
             }

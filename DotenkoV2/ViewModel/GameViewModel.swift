@@ -2062,17 +2062,33 @@ class GameViewModel: ObservableObject {
         let loser = players.first { $0.rank == players.count }
         let winnerHand = winner?.hand ?? []
         
+        // しょてんこ・バーストの場合は該当プレイヤーも渡す
+        var shotenkoPlayer: Player? = nil
+        var burstPlayer: Player? = nil
+        
+        if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
+            shotenkoPlayer = players.first { $0.id == shotenkoWinnerId }
+        }
+        
+        if isBurst, let burstPlayerId = burstPlayerId {
+            burstPlayer = players.first { $0.id == burstPlayerId }
+        }
+        
         // スコア確定画面データを作成
         scoreResultData = ScoreResultData(
-            winner: winner,
-            loser: loser,
+            winner: shotenkoPlayer ?? winner,
+            loser: burstPlayer ?? loser,
             deckBottomCard: bottomCard,
             consecutiveCards: consecutiveSpecialCards,
             winnerHand: winnerHand,
             baseRate: baseRate,
             upRate: currentUpRate,
             finalMultiplier: bottomCardValue,
-            totalScore: roundScore
+            totalScore: roundScore,
+            isShotenkoRound: isShotenkoRound,
+            isBurstRound: isBurst,
+            shotenkoWinnerId: shotenkoWinnerId,
+            burstPlayerId: burstPlayerId
         )
         
         // スコア確定画面を表示
@@ -2094,6 +2110,19 @@ class GameViewModel: ObservableObject {
     
     /// プレイヤーにスコアを適用
     private func applyScoreToPlayers() {
+        // しょてんこの場合の特別計算
+        if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
+            applyShotenkoScore(winnerId: shotenkoWinnerId)
+            return
+        }
+        
+        // バーストの場合の特別計算
+        if isBurst, let burstPlayerId = burstPlayerId {
+            applyBurstScore(burstPlayerId: burstPlayerId)
+            return
+        }
+        
+        // 通常のどてんこの場合
         for index in players.indices {
             let player = players[index]
             
@@ -2107,6 +2136,54 @@ class GameViewModel: ObservableObject {
                 print("💀 \(player.name) がスコア失失: -\(roundScore)")
             }
             // 中間順位は変動なし
+        }
+    }
+    
+    /// しょてんこのスコア計算
+    /// しょてんこした人が他の全プレイヤーからラウンドスコアを受け取る
+    /// 例：ラウンドスコア1000、プレイヤー5人の場合
+    /// しょてんこした人：+4000（1000×4人分）
+    /// その他の人：-1000（各自）
+    private func applyShotenkoScore(winnerId: String) {
+        let otherPlayersCount = players.count - 1
+        let shotenkoWinnerGain = roundScore * otherPlayersCount
+        
+        for index in players.indices {
+            let player = players[index]
+            
+            if player.id == winnerId {
+                // しょてんこした人：他の全プレイヤー分のスコアを獲得
+                players[index].score += shotenkoWinnerGain
+                print("🎊 しょてんこ勝者 \(player.name): +\(shotenkoWinnerGain) (基本スコア\(roundScore) × \(otherPlayersCount)人分)")
+            } else {
+                // その他のプレイヤー：ラウンドスコアを失う
+                players[index].score -= roundScore
+                print("💀 しょてんこ敗者 \(player.name): -\(roundScore)")
+            }
+        }
+    }
+    
+    /// バーストのスコア計算
+    /// バーストした人が他の全プレイヤーにラウンドスコアを支払う
+    /// 例：ラウンドスコア1000、プレイヤー5人の場合
+    /// バーストした人：-4000（1000×4人分）
+    /// その他の人：+1000（各自）
+    private func applyBurstScore(burstPlayerId: String) {
+        let otherPlayersCount = players.count - 1
+        let burstPlayerLoss = roundScore * otherPlayersCount
+        
+        for index in players.indices {
+            let player = players[index]
+            
+            if player.id == burstPlayerId {
+                // バーストした人：他の全プレイヤー分のスコアを失う
+                players[index].score -= burstPlayerLoss
+                print("💥 バースト敗者 \(player.name): -\(burstPlayerLoss) (基本スコア\(roundScore) × \(otherPlayersCount)人分)")
+            } else {
+                // その他のプレイヤー：ラウンドスコアを獲得
+                players[index].score += roundScore
+                print("🏆 バースト勝者 \(player.name): +\(roundScore)")
+            }
         }
     }
     
@@ -2201,6 +2278,13 @@ class GameViewModel: ObservableObject {
         challengeParticipants.removeAll()
         isChallengeZone = false
         isRevengeWaiting = false
+        
+        // しょてんこ・バースト状態をリセット
+        isShotenkoRound = false
+        shotenkoWinnerId = nil
+        burstPlayerId = nil
+        isFirstCardDealt = false
+        isBurst = false
         
         print("🎮 次のラウンド開始 - ラウンド \(currentRound)")
         

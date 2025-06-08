@@ -92,6 +92,12 @@ class ScoreResultViewModel: ObservableObject {
     private let finalMultiplier: Int
     private let totalScore: Int
     
+    // しょてんこ・バースト情報
+    private let isShotenkoRound: Bool
+    private let isBurstRound: Bool
+    private let shotenkoWinnerId: String?
+    private let burstPlayerId: String?
+    
     // MARK: - Animation Phase Enum
     enum AnimationPhase {
         case waiting
@@ -102,7 +108,9 @@ class ScoreResultViewModel: ObservableObject {
     
     // MARK: - Initialization
     init(winner: Player?, loser: Player?, deckBottomCard: Card?, consecutiveCards: [Card], 
-         baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int) {
+         baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int,
+         isShotenkoRound: Bool = false, isBurstRound: Bool = false,
+         shotenkoWinnerId: String? = nil, burstPlayerId: String? = nil) {
         self.winner = winner
         self.loser = loser
         self.deckBottomCard = deckBottomCard
@@ -111,6 +119,10 @@ class ScoreResultViewModel: ObservableObject {
         self.upRate = upRate
         self.finalMultiplier = finalMultiplier
         self.totalScore = totalScore
+        self.isShotenkoRound = isShotenkoRound
+        self.isBurstRound = isBurstRound
+        self.shotenkoWinnerId = shotenkoWinnerId
+        self.burstPlayerId = burstPlayerId
         
         setupInitialState()
     }
@@ -126,8 +138,34 @@ class ScoreResultViewModel: ObservableObject {
     
     /// プレイヤー状態を設定
     private func setupPlayerStates() {
-        currentWinner = winner
-        currentLoser = loser
+        // バーストの場合：バーストしたプレイヤーをLoserとして表示
+        if isBurstRound, let burstPlayerId = burstPlayerId {
+            // バーストしたプレイヤーを見つけてLoserに設定
+            if let burstPlayer = [winner, loser].compactMap({ $0 }).first(where: { $0.id == burstPlayerId }) {
+                currentWinner = nil
+                currentLoser = burstPlayer
+            } else {
+                currentWinner = winner
+                currentLoser = loser
+            }
+        }
+        // しょてんこの場合：しょてんこしたプレイヤーをWinnerとして表示
+        else if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
+            // しょてんこしたプレイヤーを見つけてWinnerに設定
+            if let shotenkoPlayer = [winner, loser].compactMap({ $0 }).first(where: { $0.id == shotenkoWinnerId }) {
+                currentWinner = shotenkoPlayer
+                currentLoser = nil
+            } else {
+                currentWinner = winner
+                currentLoser = loser
+            }
+        }
+        // 通常のどてんこの場合
+        else {
+            currentWinner = winner
+            currentLoser = loser
+        }
+        
         currentUpRate = upRate
     }
     

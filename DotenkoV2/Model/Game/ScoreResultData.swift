@@ -13,6 +13,12 @@ struct ScoreResultData {
     let finalMultiplier: Int
     let totalScore: Int
     
+    // しょてんこ・バースト情報
+    let isShotenkoRound: Bool
+    let isBurstRound: Bool
+    let shotenkoWinnerId: String?
+    let burstPlayerId: String?
+    
     init(
         winner: Player?,
         loser: Player?,
@@ -22,7 +28,11 @@ struct ScoreResultData {
         baseRate: Int,
         upRate: Int,
         finalMultiplier: Int,
-        totalScore: Int
+        totalScore: Int,
+        isShotenkoRound: Bool = false,
+        isBurstRound: Bool = false,
+        shotenkoWinnerId: String? = nil,
+        burstPlayerId: String? = nil
     ) {
         self.winner = winner
         self.loser = loser
@@ -33,5 +43,9 @@ struct ScoreResultData {
         self.upRate = upRate
         self.finalMultiplier = finalMultiplier
         self.totalScore = totalScore
+        self.isShotenkoRound = isShotenkoRound
+        self.isBurstRound = isBurstRound
+        self.shotenkoWinnerId = shotenkoWinnerId
+        self.burstPlayerId = burstPlayerId
     }
 } 

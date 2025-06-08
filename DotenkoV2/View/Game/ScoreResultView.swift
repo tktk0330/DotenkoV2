@@ -32,6 +32,10 @@ struct ScoreResultView: View {
     let upRate: Int
     let finalMultiplier: Int
     let totalScore: Int
+    let isShotenkoRound: Bool
+    let isBurstRound: Bool
+    let shotenkoWinnerId: String?
+    let burstPlayerId: String?
     let onOKAction: () -> Void
     
     // MARK: - State
@@ -39,7 +43,9 @@ struct ScoreResultView: View {
     
     // MARK: - Initialization
     init(winner: Player?, loser: Player?, deckBottomCard: Card?, consecutiveCards: [Card], 
-         winnerHand: [Card], baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int, 
+         winnerHand: [Card], baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int,
+         isShotenkoRound: Bool = false, isBurstRound: Bool = false,
+         shotenkoWinnerId: String? = nil, burstPlayerId: String? = nil,
          onOKAction: @escaping () -> Void) {
         self.winner = winner
         self.loser = loser
@@ -50,6 +56,10 @@ struct ScoreResultView: View {
         self.upRate = upRate
         self.finalMultiplier = finalMultiplier
         self.totalScore = totalScore
+        self.isShotenkoRound = isShotenkoRound
+        self.isBurstRound = isBurstRound
+        self.shotenkoWinnerId = shotenkoWinnerId
+        self.burstPlayerId = burstPlayerId
         self.onOKAction = onOKAction
         
         self._viewModel = StateObject(wrappedValue: ScoreResultViewModel(
@@ -60,7 +70,11 @@ struct ScoreResultView: View {
             baseRate: baseRate,
             upRate: upRate,
             finalMultiplier: finalMultiplier,
-            totalScore: totalScore
+            totalScore: totalScore,
+            isShotenkoRound: isShotenkoRound,
+            isBurstRound: isBurstRound,
+            shotenkoWinnerId: shotenkoWinnerId,
+            burstPlayerId: burstPlayerId
         ))
     }
     
@@ -110,8 +124,19 @@ struct ScoreResultView: View {
     @ViewBuilder
     private var winnerLoserSection: some View {
         HStack(spacing: 60) {
-            winnerView
-            loserView
+            // しょてんこの場合：Winnerのみ表示
+            if isShotenkoRound {
+                winnerView
+            }
+            // バーストの場合：Loserのみ表示
+            else if isBurstRound {
+                loserView
+            }
+            // 通常のどてんこの場合：Winner/Loser両方表示
+            else {
+                winnerView
+                loserView
+            }
         }
         .padding(.top, ViewConstants.topPadding)
         .animation(.easeInOut(duration: 1.0), value: viewModel.reversalAnimationPhase)
