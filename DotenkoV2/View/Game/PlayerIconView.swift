@@ -572,6 +572,13 @@ struct PlayerIconView: View {
         PlayerLayoutConfig.configuration(for: position)
     }
     
+    /// スコアをカンマ区切りでフォーマット
+    private func formatScore(_ score: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: score)) ?? "\(score)"
+    }
+    
     var body: some View {
         ZStack {
             // 手札を配置（アイコンの後ろに来るようにzIndex調整）
@@ -594,7 +601,7 @@ struct PlayerIconView: View {
                 }
                 
                 PlayerScoreView(
-                    score: position == .bottom ? "100,000" : "50,000",
+                    score: formatScore(player.score),
                     isMainPlayer: position == .bottom
                 )
             }
