@@ -36,8 +36,8 @@ class ScoreResultViewModel: ObservableObject {
     
     private enum ScoreConstants {
         static let maxUpRate: Int = 1_000_000 // 上昇レートの上限値
+        static let specialCardMultiplier2: Int = 2  // 特殊カード（1、2、ジョーカー）の実際の倍率
         static let specialCardMultiplier: Int = 2
-        static let jokerMultiplier: Int = 50
     }
     
     // MARK: - Published Properties
@@ -303,15 +303,15 @@ class ScoreResultViewModel: ObservableObject {
     
     /// カードの倍率を取得
     private func getCardMultiplier(_ card: Card) -> Int {
-        switch card.card {
-        case .spade1, .heart1, .diamond1, .club1,
-             .spade2, .heart2, .diamond2, .club2:
-            return ScoreConstants.jokerMultiplier
-        case .whiteJoker, .blackJoker:
-            return ScoreConstants.jokerMultiplier
-        default:
-            return ScoreConstants.specialCardMultiplier
+        let rateValues = card.card.rateValue()
+        
+        // 特殊カード（1、2、ジョーカー）の場合は50倍
+        if rateValues[0] == 50 {
+            return ScoreConstants.specialCardMultiplier2
         }
+        
+        // その他のカードは2倍
+        return ScoreConstants.specialCardMultiplier
     }
     
     /// 安全な乗算処理（オーバーフロー防止）
@@ -344,24 +344,16 @@ class ScoreResultViewModel: ObservableObject {
     
     /// カードが特殊カード（1、2、ジョーカー）かどうかを判定
     private func isSpecialCard(_ card: Card) -> Bool {
-        switch card.card {
-        case .spade1, .heart1, .diamond1, .club1,
-             .spade2, .heart2, .diamond2, .club2,
-             .whiteJoker, .blackJoker:
-            return true
-        default:
-            return false
-        }
+        let rateValues = card.card.rateValue()
+        // rateValueの開始値が50の場合は特殊カード
+        return rateValues[0] == 50
     }
     
     /// カードが逆転カード（スペード3、クローバー3）かどうかを判定
     private func isReversalCard(_ card: Card) -> Bool {
-        switch card.card {
-        case .spade3, .club3:
-            return true
-        default:
-            return false
-        }
+        let rateValues = card.card.rateValue()
+        // rateValueの終了値が20の場合は逆転カード
+        return rateValues.count > 1 && rateValues[1] == 20
     }
     
     /// ランダムなカードを生成
@@ -578,47 +570,48 @@ class ScoreResultViewModel: ObservableObject {
     
     /// カードの効果テキストを取得
     func getCardEffectText(_ card: Card) -> String {
-        switch card.card {
-        case .spade1, .heart1, .diamond1, .club1,
-             .spade2, .heart2, .diamond2, .club2,
-             .whiteJoker, .blackJoker:
+        let rateValues = card.card.rateValue()
+        
+        // 特殊カード判定（rateValueの開始値が50の場合）
+        if rateValues[0] == 50 {
             return "×2"
-        case .spade3, .club3:
-            return "逆転"
-        case .diamond3:
-            return "30"
-        default:
-            let cardNumber = extractCardNumber(from: card.card)
-            return "\(cardNumber)"
         }
+        
+        // 逆転カード判定（rateValueの終了値が20の場合）
+        if rateValues.count > 1 && rateValues[1] == 20 {
+            return "逆転"
+        }
+        
+        // ダイヤ3判定（rateValueの終了値が30の場合）
+        if rateValues.count > 1 && rateValues[1] == 30 {
+            return "30"
+        }
+        
+        // その他のカードは数字を表示
+        let cardNumber = card.card.handValue().first ?? 0
+        return "\(cardNumber)"
     }
     
     /// カード効果の色を取得
     func getCardEffectColor(_ card: Card) -> Color {
-        switch card.card {
-        case .spade1, .heart1, .diamond1, .club1,
-             .spade2, .heart2, .diamond2, .club2,
-             .whiteJoker, .blackJoker:
+        let rateValues = card.card.rateValue()
+        
+        // 特殊カード判定（rateValueの開始値が50の場合）
+        if rateValues[0] == 50 {
             return .yellow
-        case .spade3, .club3:
-            return .red
-        case .diamond3:
-            return .orange
-        default:
-            return .white
         }
-    }
-    
-    /// カードから数字を抽出
-    private func extractCardNumber(from playCard: PlayCard) -> Int {
-        let rawValue = playCard.rawValue
         
-        let numberString = rawValue
-            .replacingOccurrences(of: "s", with: "")
-            .replacingOccurrences(of: "h", with: "")
-            .replacingOccurrences(of: "d", with: "")
-            .replacingOccurrences(of: "c", with: "")
+        // 逆転カード判定（rateValueの終了値が20の場合）
+        if rateValues.count > 1 && rateValues[1] == 20 {
+            return .red
+        }
         
-        return Int(numberString) ?? 0
+        // ダイヤ3判定（rateValueの終了値が30の場合）
+        if rateValues.count > 1 && rateValues[1] == 30 {
+            return .orange
+        }
+        
+        // その他のカード
+        return .white
     }
 } 

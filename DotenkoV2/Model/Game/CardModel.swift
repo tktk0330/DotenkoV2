@@ -108,7 +108,7 @@ enum PlayCard: String, CaseIterable {
         }
     }
     
-    //　最初にめくった時のレート値[開始時, 終了時]([0,1])　倍：５０　逆転：２０　ダイ３：３０
+    //　最初にめくった時のレート値[開始時, 終了時]([0,1])　２倍を意味する：５０　逆転を意味する：２０　ダイ３：３０
     func rateValue() -> [Int] {
         switch self {
         case .spade1, .heart1, .diamond1, .club1, .spade2, .heart2, .diamond2, .club2, .whiteJoker, .blackJoker:

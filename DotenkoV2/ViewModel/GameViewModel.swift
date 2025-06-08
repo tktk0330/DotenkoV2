@@ -8,7 +8,7 @@ class GameViewModel: ObservableObject {
     // MARK: - Score Constants
     private enum ScoreConstants {
         static let maxUpRate: Int = 1_000_000 // 上昇レートの上限値
-        static let specialCardMultiplier50: Int = 50
+        static let specialCardMultiplier2: Int = 2  // 特殊カード（1、2、ジョーカー）の実際の倍率
         static let specialCardMultiplier30: Int = 30
         static let specialCardMultiplier3: Int = 3
     }
@@ -1928,18 +1928,18 @@ class GameViewModel: ObservableObject {
         let cardValue = card.card.handValue().first ?? 0
         let rateValues = card.card.rateValue()
         
-        // 特殊カード判定
-        if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
-            // 1、2、ジョーカー：50倍演出
+        // 特殊カード判定をCardModelのrateValueを使用
+        if rateValues[0] == 50 {
+            // 1、2、ジョーカー：2倍演出
             showSpecialCardEffect(
                 title: "特殊カード発生！",
-                subtitle: "\(card.card.rawValue) - 50倍",
+                subtitle: "\(card.card.rawValue) - 2倍",
                 effectType: .multiplier50
             ) {
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier50)
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
                 self.checkConsecutiveSpecialCards(from: card, completion: completion)
             }
-        } else if card.card == .diamond3 {
+        } else if rateValues.count > 1 && rateValues[1] == 30 {
             // ダイヤ3：30倍演出
             showSpecialCardEffect(
                 title: "ダイヤ3発生！",
@@ -1949,7 +1949,7 @@ class GameViewModel: ObservableObject {
                 self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier30)
                 completion()
             }
-        } else if card.card == .spade3 || card.card == .club3 {
+        } else if rateValues.count > 1 && rateValues[1] == 20 {
             // 黒3：勝敗逆転演出
             showSpecialCardEffect(
                 title: "黒3発生！",
@@ -1959,7 +1959,7 @@ class GameViewModel: ObservableObject {
                 self.reverseWinLose()
                 completion()
             }
-        } else if card.card == .heart3 {
+        } else if rateValues.count > 1 && rateValues[1] == 3 && card.card == .heart3 {
             // ハート3：通常の3倍
             showSpecialCardEffect(
                 title: "ハート3",
@@ -1989,18 +1989,18 @@ class GameViewModel: ObservableObject {
         }
         
         let nextCard = cardsToCheck.last!
-        let nextCardValue = nextCard.card.handValue().first ?? 0
+        let nextCardRateValues = nextCard.card.rateValue()
         
-        // 連続特殊カード判定
-        if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
+        // 連続特殊カード判定（rateValueの開始値が50の場合）
+        if nextCardRateValues[0] == 50 {
             // 連続特殊カードリストに追加
             consecutiveSpecialCards.append(nextCard)
             
             showAnnouncementMessage(
                 title: "連続特殊カード！",
-                subtitle: "\(nextCard.card.rawValue) - さらに50倍"
+                subtitle: "\(nextCard.card.rawValue) - さらに2倍"
             ) {
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier50)
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
                 self.checkConsecutiveSpecialCards(from: nextCard, completion: completion)
             }
         } else {
@@ -2277,7 +2277,7 @@ class GameViewModel: ObservableObject {
         let cardValue = card.card.handValue().first ?? 0
         
         if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
-            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier50)
+            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
             print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
             
             // 上昇レート演出
@@ -2301,7 +2301,7 @@ class GameViewModel: ObservableObject {
         
         // 連続特殊カード判定
         if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
-            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier50)
+            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
             
             showAnnouncementMessage(
                 title: "連続ボーナス！",
