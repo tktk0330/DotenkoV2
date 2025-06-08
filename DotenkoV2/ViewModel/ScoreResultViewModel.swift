@@ -162,6 +162,10 @@ class ScoreResultViewModel: ObservableObject {
     /// カードめくりシーケンスを開始
     private func startCardRevealSequence() {
         guard hasMoreCardsToReveal() else {
+            // 全カードめくり終了時にデッキを非表示
+            withAnimation(.easeOut(duration: 0.5)) {
+                showDeck = false
+            }
             startCalculationAnimation()
             return
         }

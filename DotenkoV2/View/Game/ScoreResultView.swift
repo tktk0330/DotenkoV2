@@ -119,17 +119,30 @@ struct ScoreResultView: View {
     
     @ViewBuilder
     private var winnerView: some View {
-        VStack(spacing: ViewConstants.cardSpacing) {
-            Text("Winner")
-                .font(.system(size: 36, weight: .black))
-                .foregroundColor(.red)
-                .shadow(color: .black, radius: 3, x: 0, y: 2)
+        VStack(spacing: 10) {
+            Text("WINNER")
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.playerGold,
+                            Color.yellow,
+                            Appearance.Color.playerGold
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: .black, radius: 4, x: 0, y: 3)
             
             Text(viewModel.currentWinner?.name ?? "不明")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.white)
                 .shadow(color: .black, radius: 2, x: 0, y: 1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+        .padding(.vertical, 15)
         .rotation3DEffect(
             Angle(degrees: viewModel.reversalAnimationPhase == 1 ? 180 : 0),
             axis: (x: 0, y: 1, z: 0)
@@ -139,17 +152,30 @@ struct ScoreResultView: View {
     
     @ViewBuilder
     private var loserView: some View {
-        VStack(spacing: ViewConstants.cardSpacing) {
-            Text("Loser")
-                .font(.system(size: 36, weight: .black))
-                .foregroundColor(.blue)
-                .shadow(color: .black, radius: 3, x: 0, y: 2)
+        VStack(spacing: 10) {
+            Text("LOSER")
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.blue,
+                            Color.cyan,
+                            Color.blue
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(color: .black, radius: 4, x: 0, y: 3)
             
             Text(viewModel.currentLoser?.name ?? "不明")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.white)
                 .shadow(color: .black, radius: 2, x: 0, y: 1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+        .padding(.vertical, 15)
         .rotation3DEffect(
             Angle(degrees: viewModel.reversalAnimationPhase == 1 ? 180 : 0),
             axis: (x: 0, y: 1, z: 0)
@@ -203,13 +229,17 @@ struct ScoreResultView: View {
     // MARK: - Deck and Cards Section
     @ViewBuilder
     private var deckAndCardsSection: some View {
-        VStack(spacing: ViewConstants.cardSpacing) {
+        VStack(spacing: viewModel.showDeck || viewModel.showFloatingCard ? 30 : 15) {
             // デッキ表示エリア
-            deckDisplayArea
+            if viewModel.showDeck || viewModel.showFloatingCard {
+                deckDisplayArea
+            }
             
             // めくられたカード表示エリア
             revealedCardsArea
         }
+        .animation(.easeInOut(duration: 0.5), value: viewModel.showDeck)
+        .animation(.easeInOut(duration: 0.5), value: viewModel.showFloatingCard)
     }
     
     // MARK: - Deck Display Area
@@ -259,7 +289,9 @@ struct ScoreResultView: View {
                 .zIndex(10) // 最前面に表示
             }
         }
-        .frame(height: ViewConstants.deckHeight)
+        .frame(height: viewModel.showDeck || viewModel.showFloatingCard ? ViewConstants.deckHeight : 0)
+        .animation(.easeInOut(duration: 0.5), value: viewModel.showDeck)
+        .animation(.easeInOut(duration: 0.5), value: viewModel.showFloatingCard)
     }
     
     // MARK: - Revealed Cards Area
