@@ -4,6 +4,15 @@ import Combine
 // MARK: - Game View Model
 /// ゲーム全体の状態管理を行うViewModel
 class GameViewModel: ObservableObject {
+    
+    // MARK: - Score Constants
+    private enum ScoreConstants {
+        static let maxUpRate: Int = 1_000_000 // 上昇レートの上限値
+        static let specialCardMultiplier50: Int = 50
+        static let specialCardMultiplier30: Int = 30
+        static let specialCardMultiplier3: Int = 3
+    }
+    
     // MARK: - Published Properties
     
     // ゲーム基本情報
@@ -77,6 +86,18 @@ class GameViewModel: ObservableObject {
     private let userProfileRepository = UserProfileRepository.shared
     private var countdownTimer: Timer?
     private var revengeTimer: Timer?
+    
+    /// 安全な乗算処理（オーバーフロー防止）
+    private func safeMultiply(_ value: Int, by multiplier: Int) -> Int {
+        // オーバーフローチェック
+        if value > ScoreConstants.maxUpRate / multiplier {
+            print("⚠️ 上昇レートが上限値に達しました: \(ScoreConstants.maxUpRate)")
+            return ScoreConstants.maxUpRate
+        }
+        
+        let result = value * multiplier
+        return min(result, ScoreConstants.maxUpRate)
+    }
     
     // MARK: - Initialization
     init(players: [Player] = [], maxPlayers: Int = 5, gameType: GameType = .vsBot) {
@@ -1915,7 +1936,7 @@ class GameViewModel: ObservableObject {
                 subtitle: "\(card.card.rawValue) - 50倍",
                 effectType: .multiplier50
             ) {
-                self.currentUpRate *= 50
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier50)
                 self.checkConsecutiveSpecialCards(from: card, completion: completion)
             }
         } else if card.card == .diamond3 {
@@ -1925,7 +1946,7 @@ class GameViewModel: ObservableObject {
                 subtitle: "30倍ボーナス",
                 effectType: .diamond3
             ) {
-                self.currentUpRate *= 30
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier30)
                 completion()
             }
         } else if card.card == .spade3 || card.card == .club3 {
@@ -1945,7 +1966,7 @@ class GameViewModel: ObservableObject {
                 subtitle: "3倍",
                 effectType: .heart3
             ) {
-                self.currentUpRate *= 3
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier3)
                 completion()
             }
         } else {
@@ -1979,7 +2000,7 @@ class GameViewModel: ObservableObject {
                 title: "連続特殊カード！",
                 subtitle: "\(nextCard.card.rawValue) - さらに50倍"
             ) {
-                self.currentUpRate *= 50
+                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier50)
                 self.checkConsecutiveSpecialCards(from: nextCard, completion: completion)
             }
         } else {
@@ -2222,7 +2243,7 @@ class GameViewModel: ObservableObject {
            let upRateThreshold = Int(upRateString) {
             
             if consecutiveCardCount >= upRateThreshold {
-                currentUpRate *= 2
+                currentUpRate = safeMultiply(currentUpRate, by: 2)
                 consecutiveCardCount = 0 // リセット
                 
                 print("📈 上昇レート発生! 現在の倍率: \(currentUpRate)")
@@ -2256,7 +2277,7 @@ class GameViewModel: ObservableObject {
         let cardValue = card.card.handValue().first ?? 0
         
         if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
-            currentUpRate *= 50
+            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier50)
             print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
             
             // 上昇レート演出
@@ -2280,7 +2301,7 @@ class GameViewModel: ObservableObject {
         
         // 連続特殊カード判定
         if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
-            currentUpRate *= 50
+            currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier50)
             
             showAnnouncementMessage(
                 title: "連続ボーナス！",
