@@ -2543,23 +2543,17 @@ class GameViewModel: ObservableObject {
             // 上昇レート演出（矢印エフェクト）
             showRateUpEffect(multiplier: currentUpRate)
             
-            // 連続確認
-            checkConsecutiveGameStartCards(from: card)
+            // 連続確認（現在のカードは既に処理済みなので、次のカードから開始）
+            checkConsecutiveGameStartCardsAfterProcessing(processedCard: card)
         }
     }
     
-    /// ゲーム開始時の連続特殊カード確認
-    private func checkConsecutiveGameStartCards(from currentCard: Card) {
-        // デッキから次のカードを確認
-        guard !deckCards.isEmpty else { 
-            print("🔄 デッキが空のため連続確認を終了")
-            return 
-        }
-        
+    /// ゲーム開始時の連続特殊カード確認（処理済みカード除外後）
+    private func checkConsecutiveGameStartCardsAfterProcessing(processedCard: Card) {
         // 処理済みカードをデッキから削除
-        if let currentIndex = deckCards.firstIndex(where: { $0.id == currentCard.id }) {
+        if let currentIndex = deckCards.firstIndex(where: { $0.id == processedCard.id }) {
             deckCards.remove(at: currentIndex)
-            print("🗑️ 処理済みカードをデッキから削除: \(currentCard.card.rawValue)")
+            print("🗑️ 処理済みカードをデッキから削除: \(processedCard.card.rawValue)")
         }
         
         // デッキが空になった場合は終了
@@ -2582,11 +2576,13 @@ class GameViewModel: ObservableObject {
             showRateUpEffect(multiplier: currentUpRate)
             
             // 連続確認を継続（次のカードで再帰）
-            checkConsecutiveGameStartCards(from: nextCard)
+            checkConsecutiveGameStartCardsAfterProcessing(processedCard: nextCard)
         } else {
             print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)")
         }
     }
+    
+
     
     // MARK: - BOT思考システム
     
