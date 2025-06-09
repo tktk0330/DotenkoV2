@@ -80,7 +80,7 @@ class GameViewModel: ObservableObject {
     // 中間結果画面システム
     @Published var showInterimResult: Bool = false
     @Published var isWaitingForOthers: Bool = false
-    @Published var lastRoundScore: Int = 0
+
     @Published var playersReadyCount: Int = 0
     
     // 最終結果画面システム
@@ -852,7 +852,7 @@ class GameViewModel: ObservableObject {
     // MARK: - Countdown System
     /// 5秒カウントダウンを開始
     func startCountdown() {
-        countdownValue = 5
+        countdownValue = 1
         isCountdownActive = true
         showCountdown = true
         isWaitingForFirstCard = true
@@ -2322,13 +2322,13 @@ class GameViewModel: ObservableObject {
     
     /// 次のラウンド準備
     private func prepareNextRound() {
-        // 中間結果画面を表示
-        lastRoundScore = roundScore
+        // 中間結果画面を表示（lastRoundScoreの設定は不要 - revealedCardsから動的計算）
         showInterimResult = true
         playersReadyCount = 0
         isWaitingForOthers = false
         
         print("📊 中間結果画面表示 - ラウンド \(currentRound) 終了")
+        print("📊 計算されたラウンドスコア: \(roundScore)")
         
         // BOTプレイヤーは自動的にOKを押す（3秒後）
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -2338,6 +2338,9 @@ class GameViewModel: ObservableObject {
     
     /// 中間結果画面のOKボタン処理
     func handleInterimResultOK() {
+        // スコアに基づいてランクを再計算
+        updatePlayerRanksByScore()
+        
         playersReadyCount += 1
         print("✅ プレイヤーOK - 現在の準備完了数: \(playersReadyCount)/\(players.count)")
         
@@ -2346,6 +2349,35 @@ class GameViewModel: ObservableObject {
             proceedToNextRound()
         } else {
             isWaitingForOthers = true
+        }
+    }
+    
+    /// スコアに基づいてプレイヤーのランクを更新
+    private func updatePlayerRanksByScore() {
+        // スコア順でソート（降順：高いスコアが上位）
+        let sortedPlayers = players.sorted { $0.score > $1.score }
+        
+        // ランクを設定（同点の場合は同じランク）
+        var currentRank = 1
+        var previousScore: Int? = nil
+        
+        for (index, sortedPlayer) in sortedPlayers.enumerated() {
+            // 同点でない場合はランクを更新
+            if let prevScore = previousScore, sortedPlayer.score != prevScore {
+                currentRank = index + 1
+            }
+            
+            // 該当プレイヤーのランクを更新
+            if let playerIndex = players.firstIndex(where: { $0.id == sortedPlayer.id }) {
+                players[playerIndex].rank = currentRank
+            }
+            
+            previousScore = sortedPlayer.score
+        }
+        
+        print("🏆 スコアに基づくランク更新完了:")
+        for player in players.sorted(by: { $0.rank < $1.rank }) {
+            print("   \(player.name): \(player.score)点 - \(player.rank)位")
         }
     }
     

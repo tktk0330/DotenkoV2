@@ -381,9 +381,12 @@ class ScoreResultViewModel: ObservableObject {
     private func generateRandomCard() -> Card {
         let allCards: [PlayCard] = [
             .spade1, .spade2, .spade3, .spade4, .spade5, .spade6, .spade7, .spade8, .spade9, .spade10, .spade11, .spade12, .spade13,
-            .heart1, .heart2, .heart3, .heart4, .heart5, .heart6, .heart7, .heart8, .heart9, .heart10, .heart11, .heart12, .heart13,
-            .diamond1, .diamond2, .diamond3, .diamond4, .diamond5, .diamond6, .diamond7, .diamond8, .diamond9, .diamond10, .diamond11, .diamond12, .diamond13,
-            .club1, .club2, .club3, .club4, .club5, .club6, .club7, .club8, .club9, .club10, .club11, .club12, .club13,
+            .heart1, .heart2, .heart3,
+//                .heart4, .heart5, .heart6, .heart7, .heart8, .heart9, .heart10, .heart11, .heart12, .heart13,
+            .diamond1, .diamond2, .diamond3,
+//                .diamond4, .diamond5, .diamond6, .diamond7, .diamond8, .diamond9, .diamond10, .diamond11, .diamond12, .diamond13,
+            .club1, .club2, .club3,
+//                .club4, .club5, .club6, .club7, .club8, .club9, .club10, .club11, .club12, .club13,
             .whiteJoker, .blackJoker
         ]
         
@@ -462,7 +465,8 @@ class ScoreResultViewModel: ObservableObject {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 self.showFinalMultiplier = true
             }
-            self.animateValue(from: 0, to: self.finalMultiplier, duration: ScoreAnimationTiming.countUpDuration) { value in
+            let calculatedFinalMultiplier = self.calculateFinalMultiplierFromRevealedCards()
+            self.animateValue(from: 0, to: calculatedFinalMultiplier, duration: ScoreAnimationTiming.countUpDuration) { value in
                 self.animatedFinalMultiplier = value
             }
         }
@@ -490,9 +494,38 @@ class ScoreResultViewModel: ObservableObject {
         }
     }
     
-    /// 最終スコアを計算
+    /// 最終スコアを計算（revealedCardsの最後のカードのfinalScoreNum()を使用）
     private func calculateFinalScore() -> Int {
-        return baseRate * currentUpRate * finalMultiplier
+        // 最後にめくったカードの最終数字を取得
+        let calculatedFinalMultiplier = calculateFinalMultiplierFromRevealedCards()
+        
+        print("💰 revealedCardsを利用したスコア計算")
+        print("   基本レート: \(baseRate)")
+        print("   上昇レート: \(currentUpRate)")
+        print("   計算された最終倍率: \(calculatedFinalMultiplier)")
+        
+        return baseRate * currentUpRate * calculatedFinalMultiplier
+    }
+    
+    /// revealedCardsから最終倍率を計算（最後のカードのfinalScoreNum()を使用）
+    private func calculateFinalMultiplierFromRevealedCards() -> Int {
+        // 最後にめくられたカード（デッキの裏）の最終数字を使用
+        guard let lastCard = revealedCards.last else {
+            print("⚠️ revealedCardsが空のため、デフォルト値1を使用")
+            return 1
+        }
+        
+        let finalNum = lastCard.card.finalScoreNum()
+        print("🔢 最終倍率カード: \(lastCard.card.rawValue) - 最終数字: \(finalNum)")
+        
+        return finalNum
+    }
+    
+    /// revealedCardsから逆転効果があるかチェック
+    private func hasReversalEffectInRevealedCards() -> Bool {
+        return revealedCards.contains { card in
+            card.card.finalReverce()
+        }
     }
     
     /// 数値のカウントアップアニメーション

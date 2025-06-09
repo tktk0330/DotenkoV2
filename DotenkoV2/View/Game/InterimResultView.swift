@@ -88,16 +88,19 @@ struct InterimResultView: View {
     }
     
     private func getScoreChange(for player: Player) -> Int {
+        // スコア確定画面で算出されたラウンドスコアを使用
+        let roundScore = viewModel.roundScore
+        
         // しょてんこの場合の特別計算
         if viewModel.isShotenkoRound, let shotenkoWinnerId = viewModel.shotenkoWinnerId {
             let otherPlayersCount = viewModel.players.count - 1
             
             if player.id == shotenkoWinnerId {
                 // しょてんこした人：他の全プレイヤー分のスコアを獲得
-                return viewModel.lastRoundScore * otherPlayersCount
+                return roundScore * otherPlayersCount
             } else {
                 // その他のプレイヤー：ラウンドスコアを失う
-                return -viewModel.lastRoundScore
+                return -roundScore
             }
         }
         
@@ -107,22 +110,24 @@ struct InterimResultView: View {
             
             if player.id == burstPlayerId {
                 // バーストした人：他の全プレイヤー分のスコアを失う
-                return -(viewModel.lastRoundScore * otherPlayersCount)
+                return -(roundScore * otherPlayersCount)
             } else {
                 // その他のプレイヤー：ラウンドスコアを獲得
-                return viewModel.lastRoundScore
+                return roundScore
             }
         }
         
         // 通常のどてんこの場合
         if player.rank == 1 {
-            return viewModel.lastRoundScore
+            return roundScore
         } else if player.rank == viewModel.players.count {
-            return -viewModel.lastRoundScore
+            return -roundScore
         } else {
             return 0
         }
     }
+    
+
     
     private func handleOKButtonTapped() {
         print(InterimResultConstants.Messages.logOKButtonMessage)
