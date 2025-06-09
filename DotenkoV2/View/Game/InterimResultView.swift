@@ -88,6 +88,33 @@ struct InterimResultView: View {
     }
     
     private func getScoreChange(for player: Player) -> Int {
+        // しょてんこの場合の特別計算
+        if viewModel.isShotenkoRound, let shotenkoWinnerId = viewModel.shotenkoWinnerId {
+            let otherPlayersCount = viewModel.players.count - 1
+            
+            if player.id == shotenkoWinnerId {
+                // しょてんこした人：他の全プレイヤー分のスコアを獲得
+                return viewModel.lastRoundScore * otherPlayersCount
+            } else {
+                // その他のプレイヤー：ラウンドスコアを失う
+                return -viewModel.lastRoundScore
+            }
+        }
+        
+        // バーストの場合の特別計算
+        if viewModel.isBurst, let burstPlayerId = viewModel.burstPlayerId {
+            let otherPlayersCount = viewModel.players.count - 1
+            
+            if player.id == burstPlayerId {
+                // バーストした人：他の全プレイヤー分のスコアを失う
+                return -(viewModel.lastRoundScore * otherPlayersCount)
+            } else {
+                // その他のプレイヤー：ラウンドスコアを獲得
+                return viewModel.lastRoundScore
+            }
+        }
+        
+        // 通常のどてんこの場合
         if player.rank == 1 {
             return viewModel.lastRoundScore
         } else if player.rank == viewModel.players.count {
@@ -189,13 +216,14 @@ private struct InterimResultPlayerCardsView: View {
             value: shouldSortByRank
         )
         .onAppear {
-            sortedPlayers = players
+            // 最初は前回の順位（rank順）で整列
+            sortedPlayers = players.sorted(by: { $0.rank < $1.rank })
             startRankSortAnimation()
         }
     }
     
     private var displayPlayers: [Player] {
-        shouldSortByRank ? sortedPlayers.sorted { $0.rank < $1.rank } : sortedPlayers
+        shouldSortByRank ? sortedPlayers.sorted(by: { $0.score > $1.score }) : sortedPlayers
     }
     
     private func startRankSortAnimation() {

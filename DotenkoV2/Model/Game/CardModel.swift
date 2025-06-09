@@ -108,45 +108,66 @@ enum PlayCard: String, CaseIterable {
         }
     }
     
-    //　最初にめくった時のレート値[開始時, 終了時]([0,1])　２倍を意味する：５０　逆転を意味する：２０　ダイ３：３０
-    func rateValue() -> [Int] {
+    // 最初に配置した時/スコア確定でめくった時にレートアップするか
+    func isUpRateCard() -> Bool {
         switch self {
         case .spade1, .heart1, .diamond1, .club1, .spade2, .heart2, .diamond2, .club2, .whiteJoker, .blackJoker:
-            return [50,50]
+            return true
+        default:
+            return false
+        }
+    }
+    
+    // スコア確定でめくった時に逆転するか
+    func finalReverce() -> Bool {
+        switch self {
         case .spade3, .club3:
-            return [3,20]
+            return true
+        default:
+            return false
+        }
+    }
+    
+    // 最終数字
+    func finalScoreNum() -> Int {
+        switch self {
+        case .spade1, .club1, .heart1, .diamond1:
+            return 1
+        case .spade2, .club2, .heart2, .diamond2:
+            return 2
+        case .spade3, .club3, .heart3:
+            return 3
         case .diamond3:
-            return [3,30]
-        case .heart3:
-            return [3,3]
-        case .spade4, .heart4, .diamond4, .club4:
-            return [4,4]
-        case .spade5, .heart5, .diamond5, .club5:
-            return [5,5]
-        case .spade6, .heart6, .diamond6, .club6:
-            return [6,6]
-        case .spade7, .heart7, .diamond7, .club7:
-            return [7,7]
-        case .spade8, .heart8, .diamond8, .club8:
-            return [8,8]
-        case .spade9, .heart9, .diamond9, .club9:
-            return [9,9]
-        case .spade10, .heart10, .diamond10, .club10:
-            return [10,10]
-        case .spade11, .heart11, .diamond11, .club11:
-            return [11,11]
-        case .spade12, .heart12, .diamond12, .club12:
-            return [12,12]
-        case .spade13, .heart13, .diamond13, .club13:
-            return [13,13]
-        case .back:
-            return [900]
+            return 30
+        case .spade4, .club4, .heart4, .diamond4:
+            return 4
+        case .spade5, .club5, .heart5, .diamond5:
+            return 5
+        case .spade6, .club6, .heart6, .diamond6:
+            return 6
+        case .spade7, .club7, .heart7, .diamond7:
+            return 7
+        case .spade8, .club8, .heart8, .diamond8:
+            return 8
+        case .spade9, .club9, .heart9, .diamond9:
+            return 9
+        case .spade10, .club10, .heart10, .diamond10:
+            return 10
+        case .spade11, .club11, .heart11, .diamond11:
+            return 11
+        case .spade12, .club12, .heart12, .diamond12:
+            return 12
+        case .spade13, .club13, .heart13, .diamond13:
+            return 13
+        default:
+            return 1
         }
     }
 
     func image() -> UIImage? {
         return UIImage(named: self.rawValue)
     }
+    
 }
 
 enum Suit: String {

@@ -36,8 +36,7 @@ class ScoreResultViewModel: ObservableObject {
     
     private enum ScoreConstants {
         static let maxUpRate: Int = 1_000_000 // 上昇レートの上限値
-        static let specialCardMultiplier2: Int = 2  // 特殊カード（1、2、ジョーカー）の実際の倍率
-        static let specialCardMultiplier: Int = 2
+        // 特殊カード倍率定数は削除 - 重複処理防止のため
     }
     
     // MARK: - Published Properties
@@ -330,26 +329,12 @@ class ScoreResultViewModel: ObservableObject {
             return
         }
         
-        // 特殊カード判定とレート倍増
+        // 特殊カード判定（1、2、ジョーカー）の場合は追加カード生成のみ
+        // レート倍増はGameViewModelで既に処理済みのため、ここでは重複処理を避ける
         if isSpecialCard(card) {
-            let multiplier = getCardMultiplier(card)
-            currentUpRate = safeMultiply(currentUpRate, by: multiplier)
-            print("特殊カード検出: \(card.card.rawValue), 上昇レート: \(currentUpRate)")
+            print("特殊カード検出: \(card.card.rawValue) - 追加カード生成")
             needsAdditionalCard = true
         }
-    }
-    
-    /// カードの倍率を取得
-    private func getCardMultiplier(_ card: Card) -> Int {
-        let rateValues = card.card.rateValue()
-        
-        // 特殊カード（1、2、ジョーカー）の場合は50倍
-        if rateValues[0] == 50 {
-            return ScoreConstants.specialCardMultiplier2
-        }
-        
-        // その他のカードは2倍
-        return ScoreConstants.specialCardMultiplier
     }
     
     /// 安全な乗算処理（オーバーフロー防止）
@@ -382,16 +367,14 @@ class ScoreResultViewModel: ObservableObject {
     
     /// カードが特殊カード（1、2、ジョーカー）かどうかを判定
     private func isSpecialCard(_ card: Card) -> Bool {
-        let rateValues = card.card.rateValue()
-        // rateValueの開始値が50の場合は特殊カード
-        return rateValues[0] == 50
+        // CardModelの統合されたメソッドを使用
+        return card.card.isUpRateCard()
     }
     
     /// カードが逆転カード（スペード3、クローバー3）かどうかを判定
     private func isReversalCard(_ card: Card) -> Bool {
-        let rateValues = card.card.rateValue()
-        // rateValueの終了値が20の場合は逆転カード
-        return rateValues.count > 1 && rateValues[1] == 20
+        // CardModelの新しいメソッドを使用
+        return card.card.finalReverce()
     }
     
     /// ランダムなカードを生成
@@ -608,44 +591,35 @@ class ScoreResultViewModel: ObservableObject {
     
     /// カードの効果テキストを取得
     func getCardEffectText(_ card: Card) -> String {
-        let rateValues = card.card.rateValue()
-        
-        // 特殊カード判定（rateValueの開始値が50の場合）
-        if rateValues[0] == 50 {
+        // CardModelの統合されたメソッドを使用して特殊効果を判定
+        if card.card.isUpRateCard() {
             return "×2"
         }
         
-        // 逆転カード判定（rateValueの終了値が20の場合）
-        if rateValues.count > 1 && rateValues[1] == 20 {
+        // 逆転カード判定
+        if card.card.finalReverce() {
             return "逆転"
         }
         
-        // ダイヤ3判定（rateValueの終了値が30の場合）
-        if rateValues.count > 1 && rateValues[1] == 30 {
-            return "30"
-        }
-        
         // その他のカードは数字を表示
-        let cardNumber = card.card.handValue().first ?? 0
+        let cardNumber = card.card.finalScoreNum()
         return "\(cardNumber)"
     }
     
     /// カード効果の色を取得
     func getCardEffectColor(_ card: Card) -> Color {
-        let rateValues = card.card.rateValue()
-        
-        // 特殊カード判定（rateValueの開始値が50の場合）
-        if rateValues[0] == 50 {
+        // CardModelの統合されたメソッドを使用して特殊効果を判定
+        if card.card.isUpRateCard() {
             return .yellow
         }
         
-        // 逆転カード判定（rateValueの終了値が20の場合）
-        if rateValues.count > 1 && rateValues[1] == 20 {
+        // 逆転カード判定
+        if card.card.finalReverce() {
             return .red
         }
         
-        // ダイヤ3判定（rateValueの終了値が30の場合）
-        if rateValues.count > 1 && rateValues[1] == 30 {
+        // ダイヤ3判定
+        if card.card.finalScoreNum() == 30 {
             return .orange
         }
         

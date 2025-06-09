@@ -9,8 +9,7 @@ class GameViewModel: ObservableObject {
     private enum ScoreConstants {
         static let maxUpRate: Int = 1_000_000 // 上昇レートの上限値
         static let specialCardMultiplier2: Int = 2  // 特殊カード（1、2、ジョーカー）の実際の倍率
-        static let specialCardMultiplier30: Int = 30
-        static let specialCardMultiplier3: Int = 3
+        // specialCardMultiplier30とspecialCardMultiplier3は削除 - 要件に合わせて修正
     }
     
     // MARK: - Published Properties
@@ -282,31 +281,95 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    /// 最初の場札を1枚めくる
+    /// 最初の場札を1枚めくる（特殊カードの場合は引き直し）
     private func dealInitialFieldCard() {
         guard !deckCards.isEmpty else { return }
         
-        // 場札もスプリングアニメーションで表示
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
-            let firstFieldCard = deckCards.removeFirst()
-            var fieldCard = firstFieldCard
-            fieldCard.location = .field
+        // 特殊カードでない場札が出るまで繰り返し
+        dealNonSpecialFieldCard()
+    }
+    
+    /// 特殊カードでない場札を引くまで繰り返す
+    private func dealNonSpecialFieldCard() {
+        guard !deckCards.isEmpty else { 
+            print("⚠️ デッキが空のため、場札を配布できません")
+            return 
+        }
+        
+        // 無限ループ防止：最大試行回数を設定
+        let maxAttempts = deckCards.count
+        var attempts = 0
+        
+        func attemptDealCard() {
+            attempts += 1
             
-            fieldCards.append(fieldCard)
-            isFirstCardDealt = true
+            // 最大試行回数に達した場合は強制的に場札として確定
+            if attempts > maxAttempts {
+                print("⚠️ 最大試行回数に達しました。最後のカードを場札として確定します")
+                if !deckCards.isEmpty {
+                    let lastCard = deckCards.removeFirst()
+                    var fieldCard = lastCard
+                    fieldCard.location = .field
+                    fieldCards.append(fieldCard)
+                    isFirstCardDealt = true
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.checkShotenkoDeclarations()
+                    }
+                }
+                return
+            }
+            
+            guard !deckCards.isEmpty else { 
+                print("⚠️ デッキが空になりました")
+                return 
+            }
+            
+            // 山札からカードを引くアニメーション
+            withAnimation(.easeOut(duration: 0.4)) {
+                let drawnCard = deckCards.removeFirst()
+                
+                // カードを場に配置
+                var fieldCard = drawnCard
+                fieldCard.location = .field
+                fieldCards.append(fieldCard)
+                
+                print("🎯 場札候補: \(drawnCard.card.rawValue) (試行回数: \(attempts)/\(maxAttempts))")
+                
+                // 特殊カード判定（1、2、ジョーカー）
+                if isSpecialCard(drawnCard) {
+                    print("🎯 特殊カード発生: \(drawnCard.card.rawValue) - レートアップ後に引き直し")
+                    
+                    // ゲーム開始時の上昇レート判定とアニメーション
+                    checkGameStartUpRate(card: drawnCard)
+                    
+                    // レートアップアニメーション終了後に引き直し処理
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) { // レートアップアニメーション時間を考慮
+                        print("🔄 レートアップアニメーション終了 - 次のカードを引きます")
+                        attemptDealCard() // 再帰呼び出しではなく内部関数を呼び出し
+                    }
+                    return
+                }
+                
+                // 特殊カードでない場合は場札として確定
+                isFirstCardDealt = true
+                print("✅ 最初の場札確定: \(fieldCards.last?.card.rawValue ?? "なし") (試行回数: \(attempts))")
+                
+                // しょてんこ判定を実行
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.checkShotenkoDeclarations()
+                }
+            }
         }
         
-        print("最初の場札: \(fieldCards.last?.card.rawValue ?? "なし")")
-        
-        // ゲーム開始時の上昇レート判定
-        if let firstCard = fieldCards.last {
-            checkGameStartUpRate(card: firstCard)
-        }
-        
-        // しょてんこ判定を実行
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.checkShotenkoDeclarations()
-        }
+        // 最初の試行を開始
+        attemptDealCard()
+    }
+    
+    /// カードが特殊カード（1、2、ジョーカー）かどうかを判定
+    private func isSpecialCard(_ card: Card) -> Bool {
+        // CardModelの統合されたメソッドを使用
+        return card.card.isUpRateCard()
     }
     
     private func setupDeck() {
@@ -1952,12 +2015,13 @@ class GameViewModel: ObservableObject {
     
     /// 特殊カード効果の処理と演出
     private func processSpecialCardEffect(card: Card, completion: @escaping () -> Void) {
-        let cardValue = card.card.handValue().first ?? 0
-        let rateValues = card.card.rateValue()
+        print("🎴 特殊カード効果処理開始")
+        print("   カード: \(card.card.rawValue)")
         
-        // 特殊カード判定をCardModelのrateValueを使用
-        if rateValues[0] == 50 {
+        // CardModelの統合されたメソッドを使用して特殊効果を判定
+        if card.card.isUpRateCard() {
             // 1、2、ジョーカー：2倍演出
+            print("🎯 1、2、ジョーカー判定: 上昇レート2倍")
             showSpecialCardEffect(
                 title: "特殊カード発生！",
                 subtitle: "\(card.card.rawValue) - 2倍",
@@ -1966,18 +2030,20 @@ class GameViewModel: ObservableObject {
                 self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
                 self.checkConsecutiveSpecialCards(from: card, completion: completion)
             }
-        } else if rateValues.count > 1 && rateValues[1] == 30 {
-            // ダイヤ3：30倍演出
+        } else if card.card == .diamond3 {
+            // ダイヤ3：最終数字30として扱う（上昇レート倍増なし）
+            print("💎 ダイヤ3判定: 最終数字30（上昇レート変更なし）")
             showSpecialCardEffect(
                 title: "ダイヤ3発生！",
-                subtitle: "30倍ボーナス",
+                subtitle: "最終数字30",
                 effectType: .diamond3
             ) {
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier30)
+                // ダイヤ3は上昇レートを変更せず、最終数字のみ30にする
                 completion()
             }
-        } else if rateValues.count > 1 && rateValues[1] == 20 {
+        } else if card.card.finalReverce() {
             // 黒3：勝敗逆転演出
+            print("♠️♣️ 黒3判定: 勝敗逆転")
             showSpecialCardEffect(
                 title: "黒3発生！",
                 subtitle: "勝敗逆転",
@@ -1986,18 +2052,9 @@ class GameViewModel: ObservableObject {
                 self.reverseWinLose()
                 completion()
             }
-        } else if rateValues.count > 1 && rateValues[1] == 3 && card.card == .heart3 {
-            // ハート3：通常の3倍
-            showSpecialCardEffect(
-                title: "ハート3",
-                subtitle: "3倍",
-                effectType: .heart3
-            ) {
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier3)
-                completion()
-            }
         } else {
-            // 通常カード
+            // 通常カード（ハート3も含む）
+            print("🔢 通常カード判定: 特殊効果なし")
             completion()
         }
     }
@@ -2006,31 +2063,44 @@ class GameViewModel: ObservableObject {
     private func checkConsecutiveSpecialCards(from currentCard: Card, completion: @escaping () -> Void) {
         // デッキから次のカードを確認
         var cardsToCheck = deckCards
+        
+        // 処理済みカードをデッキから削除
         if let currentIndex = cardsToCheck.firstIndex(where: { $0.id == currentCard.id }) {
             cardsToCheck.remove(at: currentIndex)
+            print("🗑️ 処理済みカードを確認用リストから削除: \(currentCard.card.rawValue)")
         }
         
         guard !cardsToCheck.isEmpty else {
+            print("🔄 確認用デッキが空のため連続確認を終了")
             completion()
             return
         }
         
         let nextCard = cardsToCheck.last!
-        let nextCardRateValues = nextCard.card.rateValue()
         
-        // 連続特殊カード判定（rateValueの開始値が50の場合）
-        if nextCardRateValues[0] == 50 {
+        print("🔍 次の連続カード確認: \(nextCard.card.rawValue)")
+        
+        // 連続特殊カード判定（CardModelの統合されたメソッドを使用）
+        if nextCard.card.isUpRateCard() {
             // 連続特殊カードリストに追加
             consecutiveSpecialCards.append(nextCard)
+            
+            // 実際のデッキからも削除
+            if let actualIndex = deckCards.firstIndex(where: { $0.id == nextCard.id }) {
+                deckCards.remove(at: actualIndex)
+                print("🗑️ 連続特殊カードを実際のデッキからも削除: \(nextCard.card.rawValue)")
+            }
             
             showAnnouncementMessage(
                 title: "連続特殊カード！",
                 subtitle: "\(nextCard.card.rawValue) - さらに2倍"
             ) {
                 self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
+                print("🎯 連続特殊カード処理完了! 新倍率: ×\(self.currentUpRate)")
                 self.checkConsecutiveSpecialCards(from: nextCard, completion: completion)
             }
         } else {
+            print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)")
             completion()
         }
     }
@@ -2067,12 +2137,27 @@ class GameViewModel: ObservableObject {
     private func calculateFinalScore(bottomCard: Card) {
         let baseRate = Int(gameRuleInfo.gameRate) ?? 1
         
-        // デッキの裏カードの値を取得（ジョーカーの場合は1を使用）
+        // デッキの裏カードの値を取得（CardModelの新しいメソッドを使用）
         let bottomCardValue: Int
+        
+        print("🔍 最終数字計算開始")
+        print("   カード: \(bottomCard.card.rawValue)")
+        print("   スート: \(bottomCard.card.suit())")
+        
+        // CardModelの新しいメソッドを使用して最終数字を決定
+        bottomCardValue = bottomCard.card.finalScoreNum()
+        
+        print("💰 最終数字決定: \(bottomCardValue)")
+        
+        // 特殊効果のログ出力
         if bottomCard.card.suit() == .joker {
-            bottomCardValue = 1 // ジョーカーの場合は1として計算
+            print("🃏 ジョーカー効果: 最終数字を\(bottomCardValue)として計算")
+        } else if bottomCard.card == .diamond3 {
+            print("💎 ダイヤ3効果: 最終数字を\(bottomCardValue)として計算")
+        } else if bottomCard.card.finalReverce() {
+            print("♠️♣️ 黒3効果: 最終数字を\(bottomCardValue)として計算")
         } else {
-            bottomCardValue = bottomCard.card.handValue().first ?? 1
+            print("🔢 通常カード: 最終数字を\(bottomCardValue)として計算")
         }
         
         // 基本計算式：初期レート × 上昇レート × デッキの裏の数字
@@ -2088,7 +2173,8 @@ class GameViewModel: ObservableObject {
         print("💰 最終スコア計算完了")
         print("   基本レート: \(baseRate)")
         print("   上昇レート: \(currentUpRate)")
-        print("   デッキの裏: \(bottomCardValue)")
+        print("   デッキの裏: \(bottomCard.card.rawValue)")
+        print("   最終数字: \(bottomCardValue)")
         print("   ラウンドスコア: \(roundScore)")
         
         // 勝者・敗者を特定
@@ -2389,9 +2475,8 @@ class GameViewModel: ObservableObject {
     
     /// ゲーム開始時の上昇レート判定（1、2、ジョーカー）
     private func checkGameStartUpRate(card: Card) {
-        let cardValue = card.card.handValue().first ?? 0
-        
-        if cardValue == 1 || cardValue == 2 || card.card.suit() == .joker {
+        // CardModelの統合されたメソッドを使用
+        if card.card.isUpRateCard() {
             currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
             print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
             
@@ -2406,20 +2491,40 @@ class GameViewModel: ObservableObject {
     /// ゲーム開始時の連続特殊カード確認
     private func checkConsecutiveGameStartCards(from currentCard: Card) {
         // デッキから次のカードを確認
-        guard !deckCards.isEmpty else { return }
+        guard !deckCards.isEmpty else { 
+            print("🔄 デッキが空のため連続確認を終了")
+            return 
+        }
         
+        // 処理済みカードをデッキから削除
+        if let currentIndex = deckCards.firstIndex(where: { $0.id == currentCard.id }) {
+            deckCards.remove(at: currentIndex)
+            print("🗑️ 処理済みカードをデッキから削除: \(currentCard.card.rawValue)")
+        }
+        
+        // デッキが空になった場合は終了
+        guard !deckCards.isEmpty else { 
+            print("🔄 デッキが空になったため連続確認を終了")
+            return 
+        }
+        
+        // 次のカードを取得（デッキの最後から）
         let nextCard = deckCards.last!
-        let nextCardValue = nextCard.card.handValue().first ?? 0
         
-        // 連続特殊カード判定
-        if nextCardValue == 1 || nextCardValue == 2 || nextCard.card.suit() == .joker {
+        print("🔍 次のカード確認: \(nextCard.card.rawValue)")
+        
+        // 連続特殊カード判定（CardModelの統合されたメソッドを使用）
+        if nextCard.card.isUpRateCard() {
             currentUpRate = safeMultiply(currentUpRate, by: ScoreConstants.specialCardMultiplier2)
+            print("🎯 連続特殊カード発生! カード: \(nextCard.card.rawValue), 新倍率: ×\(currentUpRate)")
             
             // 連続ボーナス演出（矢印エフェクト）
             showRateUpEffect(multiplier: currentUpRate)
             
-            // 連続確認を継続
+            // 連続確認を継続（次のカードで再帰）
             checkConsecutiveGameStartCards(from: nextCard)
+        } else {
+            print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)")
         }
     }
     
