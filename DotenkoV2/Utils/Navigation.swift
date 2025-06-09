@@ -68,7 +68,7 @@ class NavigationAllViewStateManager: ObservableObject {
         withAnimation(.easeInOut(duration: 0.0)) {
             currentView = AnyView(
                 ZStack {
-                    Color(uiColor: Appearance.Color.forestGreen)
+                    Color(uiColor: Appearance.Color.mossGreen)
                         .ignoresSafeArea()
                     view
                 }
