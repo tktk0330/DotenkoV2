@@ -72,3 +72,21 @@ alwaysApply: true
 - 1ファイル400行以内とし、肥大化する場合は別ファイルを作成する
 - 同じ名前の構造体(Struct)やClassが生成されていないか確認してください
 - 端末サイズでUIが崩れないようにする
+
+## 技術スタック制約
+@techstack.mdc
+
+## プロジェクト概要
+@aboutproject.mdc
+
+## UI/UX設計指針
+@uiux.mdc
+
+## 最終ゲームルール
+@final_game_rules.md
+
+## 実装状況
+@implementation-status.md
+
+## 現在のタスク
+@todo.md
