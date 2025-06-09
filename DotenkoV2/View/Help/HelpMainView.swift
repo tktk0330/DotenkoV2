@@ -10,7 +10,7 @@ struct HelpMainView: View {
         ZStack {
             BaseLayout {
                 VStack(spacing: 32) {
-                    Spacer().frame(height: 50)
+                    Spacer().frame(height: 30)
                     
                     // ヘルプセクション
                     ForEach(HelpSection.allCases, id: \.self) { section in
