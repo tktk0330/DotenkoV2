@@ -624,6 +624,16 @@ struct PlayerIconView: View {
     
     var body: some View {
         ZStack {
+            // スポットライト効果（最背面）- 自分以外のプレイヤーのみ表示
+            if position != .bottom {
+                WaterRippleSpotlightView(
+                    isActive: viewModel.isPlayerTurn(playerId: player.id),
+                    size: spotlightSize
+                )
+                .offset(config.icon.offset) // アイコンと同じ位置に配置
+                .zIndex(-1) // 最背面に配置
+            }
+            
             // 手札を配置（アイコンの後ろに来るようにzIndex調整）
             HandCardsView(
                 player: player,
@@ -656,6 +666,20 @@ struct PlayerIconView: View {
             // GameLayoutConfig.swift の PlayerLayoutConfig で設定値を変更可能
             .offset(config.icon.offset) // ← アイコン全体の位置調整
             .zIndex(position == .bottom ? 2 : 1)
+        }
+    }
+    
+    /// スポットライトのサイズを計算
+    private var spotlightSize: CGFloat {
+        let baseSize = config.icon.size
+        
+        switch position {
+        case .bottom:
+            // プレイヤー自身：スポットライト非表示のため0
+            return 0
+        case .top, .left, .right:
+            // Bot：適度なサイズのスポットライト
+            return baseSize * 3.2
         }
     }
 }
