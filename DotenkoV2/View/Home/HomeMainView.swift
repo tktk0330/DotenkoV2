@@ -11,7 +11,7 @@ struct HomeMainView: View {
             // メインコンテンツ
             VStack(spacing: 16) {
                 
-                Spacer().frame(height: 80)
+                Spacer().frame(height: 50)
                 
                 // プロフィールアイコンとユーザー名
                 ProfileSectionView(profileVM: profileVM)

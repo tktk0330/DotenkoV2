@@ -10,7 +10,7 @@ struct HelpMainView: View {
         ZStack {
             BaseLayout {
                 VStack(spacing: 32) {
-                    Spacer().frame(height: 80)
+                    Spacer().frame(height: 50)
                     
                     // ヘルプセクション
                     ForEach(HelpSection.allCases, id: \.self) { section in
@@ -55,36 +55,7 @@ struct HelpMainView: View {
                         isSoundOn: $isSoundOn,
                         isVibrationOn: $isVibrationOn
                     )
-                    
-                    // MENU1への遷移ボタン
-                    Button(action: {
-                        navigator.push(Menu1View())
-                    }) {
-                        Text("MENU 1を開く")
-                            .fontWeight(.bold)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    
-                    // MENU2のモーダル表示ボタン
-                    Button(action: {
-                        ModalManager.shared.show {
-                            Menu2View()
-                        }
-                    }) {
-                        Text("MENU 2を開く")
-                            .fontWeight(.bold)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
                 }
-                .padding(.horizontal)
             }
         }
     }
