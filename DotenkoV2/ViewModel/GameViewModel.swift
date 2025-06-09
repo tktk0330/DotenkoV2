@@ -213,16 +213,42 @@ class GameViewModel: ObservableObject {
         let availableBots = botList.getBotPlayer().shuffled()
         
         let neededBots = maxPlayers - players.count
+        
+        // 時計回りの順序でBotを配置
+        // 5人対戦の場合: 自分(0) → 中央左(1) → 上左(2) → 上右(3) → 中央右(4)
+        let clockwiseOrder = getClockwiseBotOrder(totalPlayers: maxPlayers)
+        
         for i in 0..<min(neededBots, availableBots.count) {
             let bot = availableBots[i]
             let botPlayer = Player(
                 id: bot.id,
-                side: players.count,
+                side: clockwiseOrder[i],
                 name: bot.name,
                 icon_url: bot.icon_url,
                 dtnk: false
             )
             players.append(botPlayer)
+        }
+    }
+    
+    /// 時計回りのBot配置順序を取得
+    private func getClockwiseBotOrder(totalPlayers: Int) -> [Int] {
+        switch totalPlayers {
+        case 2:
+            // 2人: 自分(0) → 上(1)
+            return [1]
+        case 3:
+            // 3人: 自分(0) → 左(1) → 右(2)
+            return [1, 2]
+        case 4:
+            // 4人: 自分(0) → 左(1) → 上(2) → 右(3)
+            return [1, 2, 3]
+        case 5:
+            // 5人: 自分(0) → 中央左(1) → 上左(2) → 上右(3) → 中央右(4)
+            return [1, 2, 3, 4]
+        default:
+            // デフォルト: 順番通り
+            return Array(1..<totalPlayers)
         }
     }
     
@@ -415,31 +441,33 @@ class GameViewModel: ObservableObject {
     
     /// 上部プレイヤーを取得
     func getTopPlayers() -> [Player] {
-        let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
-        
         switch maxPlayers {
         case 2:
-            return Array(botPlayers.prefix(1))
+            // 2人: side 1 (上)
+            return players.filter { $0.side == 1 }
         case 3:
-            return Array(botPlayers.prefix(2))
+            // 3人: side 1 (左), side 2 (右)
+            return players.filter { $0.side == 1 || $0.side == 2 }.sorted { $0.side < $1.side }
         case 4:
-            return Array(botPlayers.prefix(1))
+            // 4人: side 2 (上)
+            return players.filter { $0.side == 2 }
         case 5:
-            return Array(botPlayers.prefix(2))
+            // 5人: side 2 (上左), side 3 (上右)
+            return players.filter { $0.side == 2 || $0.side == 3 }.sorted { $0.side < $1.side }
         default:
-            return Array(botPlayers.prefix(1))
+            return []
         }
     }
     
     /// 左側プレイヤーを取得
     func getLeftPlayers() -> [Player] {
-        let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
-        
         switch maxPlayers {
         case 4:
-            return Array(botPlayers.dropFirst(1).prefix(1))
+            // 4人: side 1 (左)
+            return players.filter { $0.side == 1 }
         case 5:
-            return Array(botPlayers.dropFirst(2).prefix(1))
+            // 5人: side 1 (中央左)
+            return players.filter { $0.side == 1 }
         default:
             return []
         }
@@ -447,13 +475,13 @@ class GameViewModel: ObservableObject {
     
     /// 右側プレイヤーを取得
     func getRightPlayers() -> [Player] {
-        let botPlayers = players.filter { $0.id.hasPrefix("bot-") }
-        
         switch maxPlayers {
         case 4:
-            return Array(botPlayers.dropFirst(2).prefix(1))
+            // 4人: side 3 (右)
+            return players.filter { $0.side == 3 }
         case 5:
-            return Array(botPlayers.dropFirst(3).prefix(1))
+            // 5人: side 4 (中央右)
+            return players.filter { $0.side == 4 }
         default:
             return []
         }
@@ -2713,12 +2741,61 @@ class GameViewModel: ObservableObject {
             if !deckCards.isEmpty && player.hand.count < 7 {
                 print("🤖 BOT \(player.name) がデッキからカードを引きます")
                 drawCardFromDeck(playerId: player.id)
+                
+                // カードを引いた後、再度行動判定を行う
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.performBotActionAfterDraw(player: player)
+                }
+            } else {
+                // デッキが空または手札が7枚の場合はパス
+                print("🤖 BOT \(player.name) がパスします（デッキ空または手札満杯）")
+                nextTurn()
             }
             return
         }
         
         // カードを引いている場合はパス
         print("🤖 BOT \(player.name) がパスします")
+        
+        // バースト判定
+        if player.hand.count >= 7 {
+            handleBurstEvent(playerId: player.id)
+            return
+        }
+        
+        // 次のターンに進む
+        nextTurn()
+    }
+    
+    /// BOTがカードを引いた後の行動判定
+    private func performBotActionAfterDraw(player: Player) {
+        // 1. どてんこ宣言チェック（最優先）
+        if canPlayerDeclareDotenko(playerId: player.id) {
+            print("🤖 BOT \(player.name) がカード引き後にどてんこ宣言!")
+            handleDotenkoDeclaration(playerId: player.id)
+            return
+        }
+        
+        // 2. カード出し判定
+        let playableCards = getBotPlayableCards(player: player)
+        if !playableCards.isEmpty {
+            guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+            
+            // 最適なカードを選択
+            let bestCards = selectBestCards(from: playableCards, player: player)
+            
+            // カードを選択状態にする
+            players[playerIndex].selectedCards = bestCards
+            
+            print("🤖 BOT \(player.name) がカード引き後にカードを出します: \(bestCards.map { $0.card.rawValue })")
+            
+            // カード出し実行
+            executeBotCardPlay(player: player)
+            return
+        }
+        
+        // 3. 出せるカードがない場合はパス
+        print("🤖 BOT \(player.name) がカード引き後にパスします")
         
         // バースト判定
         if player.hand.count >= 7 {
