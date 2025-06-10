@@ -1,16 +1,16 @@
 import SwiftUI
 
 // MARK: - Dotenko Declaration Button
-/// どてんこ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// どてんこ宣言専用ボタンコンポーネント（円形パチンコ風赤ボタンデザイン）
 struct DotenkoDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
     @State private var isPressed = false
     @State private var isBlinking = false
+    @State private var heartbeatAnimation = false
     
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
+    private let size: CGFloat = 100 // 円形ボタンのサイズ
     
     var body: some View {
         Button(action: {
@@ -19,35 +19,61 @@ struct DotenkoDeclarationButton: View {
             }
         }) {
             ZStack {
-                // カジノ風背景
-                casinoBackground
+                // 円形パチンコ風赤背景
+                circularPachinkoRedBackground
                 
-                // メインテキスト
-                VStack(spacing: 2) {
+                // メインテキスト（DOTENKOのみ、カジノ風立体的な文字）
+                ZStack {
+                    // テキストの深い影（立体感の基盤）
                     Text("DOTENKO")
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundColor(textColor)
-                        .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
+                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonBlack.opacity(0.8))
+                        .tracking(1.2)
+                        .offset(x: 2, y: 3)
                     
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
+                    // メインテキスト（カジノ風ゴールド）
+                    Text("DOTENKO")
+                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.9, blue: 0.3), // 明るいゴールド
+                                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                                    Color(red: 0.8, green: 0.6, blue: 0.0),  // 深いゴールド
+                                    Color(red: 1.0, green: 0.84, blue: 0.0)  // ゴールド
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .tracking(1.2)
+                        .shadow(color: Appearance.Color.commonBlack.opacity(0.9), radius: 2, x: 1, y: 2)
+                        .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8), radius: 4, x: 0, y: 0) // ゴールドグロー
+                        .multilineTextAlignment(.center)
+                    
+                    // カジノ風の輝きエフェクト
+                    Text("DOTENKO")
+                        .font(.system(size: 14, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.6))
+                        .tracking(1.2)
+                        .blur(radius: 1)
+                        .offset(x: -1, y: -1)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // 押下時のオーバーレイ
+                // 押下時のオーバーレイ（円形パチンコボタンの押し込み効果）
                 if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
+                    Circle()
+                        .fill(Appearance.Color.commonBlack.opacity(0.4))
+                        .scaleEffect(0.9)
                 }
             }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
+            .frame(width: size, height: size)
+            .scaleEffect(isPressed && isEnabled ? 0.88 : 1.0) // より強い押し込み効果
+            .scaleEffect(isBlinking ? 1.15 : 1.0) // より強い点滅効果
+            .scaleEffect(heartbeatAnimation ? 1.12 : 1.0) // 心臓の鼓動アニメーション
+            .animation(.easeInOut(duration: 0.1), value: isPressed) // より素早い反応
+            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isBlinking)
             .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
         }
         .buttonStyle(PlainButtonStyle())
@@ -59,12 +85,18 @@ struct DotenkoDeclarationButton: View {
         }, perform: {})
         .disabled(!isEnabled)
         .onAppear {
-            // 有効な時のみ点滅
+            // 有効な時のみ点滅と心臓の鼓動
             isBlinking = isEnabled
+            startHeartbeatAnimation()
         }
         .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
+            // 有効状態に応じて点滅・心臓の鼓動制御
             isBlinking = enabled
+            if enabled {
+                startHeartbeatAnimation()
+            } else {
+                heartbeatAnimation = false
+            }
         }
     }
     
@@ -75,100 +107,179 @@ struct DotenkoDeclarationButton: View {
     }
     
     @ViewBuilder
-    private var casinoBackground: some View {
+    private var circularPachinkoRedBackground: some View {
         ZStack {
-            // ベース背景（深い紫のグラデーション）
-            RoundedRectangle(cornerRadius: 12)
+            // 最下層: 深い影（立体感の基盤）
+            Circle()
+                .fill(Appearance.Color.commonBlack.opacity(0.9))
+                .offset(x: 0, y: 8) // 下方向に影をずらす
+                .blur(radius: 6)
+            
+            // ベース背景（深い赤のグラデーション - 円形パチンコボタン風）
+            Circle()
                 .fill(
-                    LinearGradient(
+                    RadialGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.95), location: 0.0),
-                            .init(color: Appearance.Color.dotenkoButtonBackground, location: 0.3),
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.8), location: 0.7),
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.9), location: 1.0)
+                            .init(color: Color(red: 1.0, green: 0.2, blue: 0.2), location: 0.0), // 中心の明るい赤
+                            .init(color: Color(red: 0.9, green: 0.1, blue: 0.1), location: 0.3), // 中間赤
+                            .init(color: Color(red: 0.7, green: 0.0, blue: 0.0), location: 0.7), // 深い赤
+                            .init(color: Color(red: 0.4, green: 0.0, blue: 0.0), location: 1.0)  // 外縁の最深赤
                         ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
                     )
                 )
-                .shadow(color: Appearance.Color.dotenkoButtonBackground.opacity(0.6), radius: 8, x: 0, y: 4)
+                .shadow(color: Appearance.Color.commonRed.opacity(0.9), radius: 15, x: 0, y: 0) // 強い赤いグロー
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 10, x: 0, y: 6) // 立体感の影
             
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
+            // 上部ハイライト（パチンコボタンの強い光沢感）
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: Appearance.Color.commonWhite.opacity(0.6), location: 0.0),
+                            .init(color: Appearance.Color.commonWhite.opacity(0.3), location: 0.4),
+                            .init(color: Appearance.Color.commonClear, location: 0.8)
+                        ]),
+                        center: UnitPoint(x: 0.3, y: 0.3), // 左上からの光
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .scaleEffect(0.8)
+                .offset(x: -8, y: -8)
+            
+            // 金色の装飾枠線（円形パチンコボタンの豪華さ）
+            Circle()
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Appearance.Color.dotenkoButtonAccent,
-                            Appearance.Color.playerGold,
-                            Appearance.Color.dotenkoButtonAccent,
-                            Appearance.Color.playerGold
+                            Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                            Color(red: 1.0, green: 0.6, blue: 0.0),  // オレンジゴールド
+                            Color(red: 1.0, green: 0.9, blue: 0.2),  // 明るいゴールド
+                            Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                            Color(red: 1.0, green: 0.6, blue: 0.0)   // オレンジゴールド
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 2.5
+                    lineWidth: 4.0
                 )
+                .shadow(color: Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8), radius: 3, x: 0, y: 0)
             
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
+            // 内側の細い枠線（立体感の強調）
+            Circle()
+                .stroke(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.8 : 0.3),
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.4 : 0.1),
+                            Appearance.Color.commonClear
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 35
+                    ),
+                    lineWidth: 2.0
+                )
+                .scaleEffect(0.85)
             
-            // カジノ風の光沢エフェクト
+            // 中央の強い光沢効果（パチンコボタンの特徴的な光）
             if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
+                Circle()
                     .fill(
-                        LinearGradient(
+                        RadialGradient(
                             gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
+                                .init(color: Appearance.Color.commonWhite.opacity(0.4), location: 0.0),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.2), location: 0.3),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.1), location: 0.6),
+                                .init(color: Appearance.Color.commonClear, location: 1.0)
                             ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
+                            center: UnitPoint(x: 0.4, y: 0.4),
+                            startRadius: 0,
+                            endRadius: 25
                         )
                     )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
+                    .scaleEffect(0.6)
+                    .offset(x: -5, y: -5)
             }
             
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    casinoCornerDecoration
-                    Spacer()
-                    casinoCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    casinoCornerDecoration
-                    Spacer()
-                    casinoCornerDecoration
-                }
-            }
-            .padding(4)
+            // 外側のリング装飾（パチンコボタンの豪華さ）
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8),
+                            Color(red: 1.0, green: 0.6, blue: 0.0).opacity(0.6),
+                            Color(red: 1.0, green: 0.9, blue: 0.2).opacity(0.9),
+                            Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8)
+                        ]),
+                        center: .center
+                    ),
+                    lineWidth: 1.5
+                )
+                .scaleEffect(1.05)
+                .opacity(isEnabled ? 0.7 : 0.3)
         }
     }
     
-    @ViewBuilder
-    private var casinoCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
+    // MARK: - Animation Methods
+    
+    /// 心臓の鼓動のようなリズムアニメーションを開始
+    /// ドクン、ドクンという2回の拍動パターンを繰り返す
+    private func startHeartbeatAnimation() {
+        guard isEnabled else { return }
+        
+        // 心臓の鼓動パターン: ドクン（0.15秒）→ 休憩（0.1秒）→ ドクン（0.15秒）→ 長い休憩（0.8秒）
+        func performHeartbeat() {
+            // 1回目の鼓動
+            withAnimation(.easeInOut(duration: 0.15)) {
+                heartbeatAnimation = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    heartbeatAnimation = false
+                }
+                
+                // 短い休憩後、2回目の鼓動
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        heartbeatAnimation = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            heartbeatAnimation = false
+                        }
+                        
+                        // 長い休憩後、次のサイクル
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            if isEnabled {
+                                performHeartbeat()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        performHeartbeat()
     }
 }
 
 // MARK: - Revenge Declaration Button
-/// リベンジ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// リベンジ宣言専用ボタンコンポーネント（円形パチンコ風黄色ボタンデザイン）
 struct RevengeDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
     @State private var isPressed = false
     @State private var isBlinking = false
+    @State private var heartbeatAnimation = false
     
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
+    private let size: CGFloat = 100 // 円形ボタンのサイズ
     
     var body: some View {
         Button(action: {
@@ -177,35 +288,67 @@ struct RevengeDeclarationButton: View {
             }
         }) {
             ZStack {
-                // カジノ風背景（リベンジ用カラー）
-                revengeBackground
+                // 円形パチンコ風黄色背景
+                circularPachinkoYellowBackground
                 
-                // メインテキスト
-                VStack(spacing: 2) {
+                // メインテキスト（REVENGEのみ、カジノ風立体的な文字）
+                ZStack {
+                    // テキストの深い影（立体感の基盤）
                     Text("REVENGE")
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundColor(textColor)
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonBlack.opacity(0.8))
                         .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
+                        .offset(x: 2, y: 3)
                     
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
+                    // メインテキスト（カジノ風ブロンズゴールド）
+                    Text("REVENGE")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 1.0, green: 0.9, blue: 0.1), // 明るい黄金
+                                    Color(red: 1.0, green: 0.7, blue: 0.0), // オレンジゴールド
+                                    Color(red: 0.8, green: 0.5, blue: 0.0), // 深いブロンズ
+                                    Color(red: 1.0, green: 0.7, blue: 0.0)  // オレンジゴールド
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .tracking(1.0)
+                        .shadow(color: Appearance.Color.commonBlack.opacity(0.9), radius: 2, x: 1, y: 2)
+                        .shadow(color: Color.orange.opacity(0.8), radius: 4, x: 0, y: 0) // オレンジグロー
+                        .multilineTextAlignment(.center)
+                    
+                    // カジノ風の輝きエフェクト
+                    Text("REVENGE")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.6))
+                        .tracking(1.0)
+                        .blur(radius: 1)
+                        .offset(x: -1, y: -1)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // 押下時のオーバーレイ
+                // 押下時のオーバーレイ（円形パチンコボタンの押し込み効果）
                 if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
+                    Circle()
+                        .fill(Appearance.Color.commonBlack.opacity(0.4))
+                        .scaleEffect(0.9)
                 }
             }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
+            .frame(width: size, height: size)
+            .scaleEffect(isPressed && isEnabled ? 0.88 : 1.0) // より強い押し込み効果
+            .scaleEffect(isBlinking ? 1.15 : 1.0) // より強い点滅効果
+            .scaleEffect(heartbeatAnimation ? 1.12 : 1.0) // 心臓の鼓動アニメーション
+            .animation(.easeInOut(duration: 0.1), value: isPressed) // より素早い反応
+            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isBlinking)
+            .animation(
+                Animation.easeInOut(duration: 0.6)
+                    .repeatForever(autoreverses: false)
+                    .delay(0.0),
+                value: heartbeatAnimation
+            ) // 心臓の鼓動リズム
             .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
         }
         .buttonStyle(PlainButtonStyle())
@@ -217,12 +360,18 @@ struct RevengeDeclarationButton: View {
         }, perform: {})
         .disabled(!isEnabled)
         .onAppear {
-            // 有効な時のみ点滅
+            // 有効な時のみ点滅と心臓の鼓動
             isBlinking = isEnabled
+            startHeartbeatAnimation()
         }
         .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
+            // 有効状態に応じて点滅・心臓の鼓動制御
             isBlinking = enabled
+            if enabled {
+                startHeartbeatAnimation()
+            } else {
+                heartbeatAnimation = false
+            }
         }
     }
     
@@ -232,101 +381,180 @@ struct RevengeDeclarationButton: View {
         isEnabled ? Appearance.Color.commonWhite : Appearance.Color.commonGray
     }
     
+    // MARK: - Animation Methods
+    
+    /// 心臓の鼓動のようなリズムアニメーションを開始
+    /// ドクン、ドクンという2回の拍動パターンを繰り返す
+    private func startHeartbeatAnimation() {
+        guard isEnabled else { return }
+        
+        // 心臓の鼓動パターン: ドクン（0.15秒）→ 休憩（0.1秒）→ ドクン（0.15秒）→ 長い休憩（0.8秒）
+        func performHeartbeat() {
+            // 1回目の鼓動
+            withAnimation(.easeInOut(duration: 0.15)) {
+                heartbeatAnimation = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    heartbeatAnimation = false
+                }
+                
+                // 短い休憩後、2回目の鼓動
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        heartbeatAnimation = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            heartbeatAnimation = false
+                        }
+                        
+                        // 長い休憩後、次のサイクル
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            if isEnabled {
+                                performHeartbeat()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        performHeartbeat()
+    }
+    
     @ViewBuilder
-    private var revengeBackground: some View {
+    private var circularPachinkoYellowBackground: some View {
         ZStack {
-            // ベース背景（深い赤のグラデーション）
-            RoundedRectangle(cornerRadius: 12)
+            // 最下層: 深い影（立体感の基盤）
+            Circle()
+                .fill(Appearance.Color.commonBlack.opacity(0.9))
+                .offset(x: 0, y: 8) // 下方向に影をずらす
+                .blur(radius: 6)
+            
+            // ベース背景（深い黄色のグラデーション - 円形パチンコボタン風）
+            Circle()
                 .fill(
-                    LinearGradient(
+                    RadialGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Color.red.opacity(0.95), location: 0.0),
-                            .init(color: Color.red, location: 0.3),
-                            .init(color: Color.red.opacity(0.8), location: 0.7),
-                            .init(color: Color.red.opacity(0.9), location: 1.0)
+                            .init(color: Color(red: 1.0, green: 0.9, blue: 0.1), location: 0.0), // 中心の明るい黄色
+                            .init(color: Color(red: 1.0, green: 0.7, blue: 0.0), location: 0.3), // 中間オレンジ
+                            .init(color: Color(red: 0.8, green: 0.5, blue: 0.0), location: 0.7), // 深いオレンジ
+                            .init(color: Color(red: 0.6, green: 0.3, blue: 0.0), location: 1.0)  // 外縁の最深オレンジ
                         ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
                     )
                 )
-                .shadow(color: Color.red.opacity(0.6), radius: 8, x: 0, y: 4)
+                .shadow(color: Color.orange.opacity(0.9), radius: 15, x: 0, y: 0) // 強いオレンジグロー
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 10, x: 0, y: 6) // 立体感の影
             
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
+            // 上部ハイライト（パチンコボタンの強い光沢感）
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: Appearance.Color.commonWhite.opacity(0.6), location: 0.0),
+                            .init(color: Appearance.Color.commonWhite.opacity(0.3), location: 0.4),
+                            .init(color: Appearance.Color.commonClear, location: 0.8)
+                        ]),
+                        center: UnitPoint(x: 0.3, y: 0.3), // 左上からの光
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .scaleEffect(0.8)
+                .offset(x: -8, y: -8)
+            
+            // ブロンズゴールドの装飾枠線（円形パチンコボタンの豪華さ）
+            Circle()
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.orange,
-                            Appearance.Color.playerGold,
-                            Color.orange,
-                            Appearance.Color.playerGold
+                            Color(red: 1.0, green: 0.7, blue: 0.0), // オレンジゴールド
+                            Color(red: 1.0, green: 0.9, blue: 0.1), // 明るい黄金
+                            Color(red: 0.8, green: 0.5, blue: 0.0), // ブロンズ
+                            Color(red: 1.0, green: 0.7, blue: 0.0), // オレンジゴールド
+                            Color(red: 1.0, green: 0.9, blue: 0.1)  // 明るい黄金
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 2.5
+                    lineWidth: 4.0
                 )
+                .shadow(color: Color.orange.opacity(0.8), radius: 3, x: 0, y: 0)
             
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
+            // 内側の細い枠線（立体感の強調）
+            Circle()
+                .stroke(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.8 : 0.3),
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.4 : 0.1),
+                            Appearance.Color.commonClear
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 35
+                    ),
+                    lineWidth: 2.0
+                )
+                .scaleEffect(0.85)
             
-            // カジノ風の光沢エフェクト
+            // 中央の強い光沢効果（パチンコボタンの特徴的な光）
             if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
+                Circle()
                     .fill(
-                        LinearGradient(
+                        RadialGradient(
                             gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
+                                .init(color: Appearance.Color.commonWhite.opacity(0.4), location: 0.0),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.2), location: 0.3),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.1), location: 0.6),
+                                .init(color: Appearance.Color.commonClear, location: 1.0)
                             ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
+                            center: UnitPoint(x: 0.4, y: 0.4),
+                            startRadius: 0,
+                            endRadius: 25
                         )
                     )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
+                    .scaleEffect(0.6)
+                    .offset(x: -5, y: -5)
             }
             
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    revengeCornerDecoration
-                    Spacer()
-                    revengeCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    revengeCornerDecoration
-                    Spacer()
-                    revengeCornerDecoration
-                }
-            }
-            .padding(4)
+            // 外側のリング装飾（パチンコボタンの豪華さ）
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            Color.orange.opacity(0.8),
+                            Color.yellow.opacity(0.6),
+                            Color(red: 1.0, green: 0.7, blue: 0.0).opacity(0.9),
+                            Color.orange.opacity(0.8)
+                        ]),
+                        center: .center
+                    ),
+                    lineWidth: 1.5
+                )
+                .scaleEffect(1.05)
+                .opacity(isEnabled ? 0.7 : 0.3)
         }
-    }
-    
-    @ViewBuilder
-    private var revengeCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
     }
 }
 
 // MARK: - Shotenko Declaration Button
-/// しょてんこ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// しょてんこ宣言専用ボタンコンポーネント（円形パチンコ風青ボタンデザイン）
 struct ShotenkoDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
     @State private var isPressed = false
     @State private var isBlinking = false
+    @State private var heartbeatAnimation = false
     
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
+    private let size: CGFloat = 100 // 円形ボタンのサイズ
     
     var body: some View {
         Button(action: {
@@ -335,35 +563,61 @@ struct ShotenkoDeclarationButton: View {
             }
         }) {
             ZStack {
-                // カジノ風背景（しょてんこ用カラー）
-                shotenkoBackground
+                // 円形パチンコ風青背景
+                circularPachinkoBlueBackground
                 
-                // メインテキスト
-                VStack(spacing: 2) {
+                // メインテキスト（SHOTENKOのみ、カジノ風立体的な文字）
+                ZStack {
+                    // テキストの深い影（立体感の基盤）
                     Text("SHOTENKO")
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundColor(textColor)
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonBlack.opacity(0.8))
                         .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
+                        .offset(x: 2, y: 3)
                     
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
+                    // メインテキスト（カジノ風シルバー）
+                    Text("SHOTENKO")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.95, green: 0.95, blue: 1.0), // 明るいシルバー
+                                    Color(red: 0.9, green: 0.9, blue: 0.9),   // シルバー
+                                    Color(red: 0.7, green: 0.7, blue: 0.8),   // 深いシルバー
+                                    Color(red: 0.9, green: 0.9, blue: 0.9)    // シルバー
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .tracking(1.0)
+                        .shadow(color: Appearance.Color.commonBlack.opacity(0.9), radius: 2, x: 1, y: 2)
+                        .shadow(color: Color.cyan.opacity(0.8), radius: 4, x: 0, y: 0) // シアングロー
+                        .multilineTextAlignment(.center)
+                    
+                    // カジノ風の輝きエフェクト
+                    Text("SHOTENKO")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.6))
+                        .tracking(1.0)
+                        .blur(radius: 1)
+                        .offset(x: -1, y: -1)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // 押下時のオーバーレイ
+                // 押下時のオーバーレイ（円形パチンコボタンの押し込み効果）
                 if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
+                    Circle()
+                        .fill(Appearance.Color.commonBlack.opacity(0.4))
+                        .scaleEffect(0.9)
                 }
             }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
+            .frame(width: size, height: size)
+            .scaleEffect(isPressed && isEnabled ? 0.88 : 1.0) // より強い押し込み効果
+            .scaleEffect(isBlinking ? 1.15 : 1.0) // より強い点滅効果
+            .scaleEffect(heartbeatAnimation ? 1.12 : 1.0) // 心臓の鼓動アニメーション
+            .animation(.easeInOut(duration: 0.1), value: isPressed) // より素早い反応
+            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isBlinking)
             .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
         }
         .buttonStyle(PlainButtonStyle())
@@ -375,12 +629,18 @@ struct ShotenkoDeclarationButton: View {
         }, perform: {})
         .disabled(!isEnabled)
         .onAppear {
-            // 有効な時のみ点滅
+            // 有効な時のみ点滅と心臓の鼓動
             isBlinking = isEnabled
+            startHeartbeatAnimation()
         }
         .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
+            // 有効状態に応じて点滅・心臓の鼓動制御
             isBlinking = enabled
+            if enabled {
+                startHeartbeatAnimation()
+            } else {
+                heartbeatAnimation = false
+            }
         }
     }
     
@@ -390,87 +650,166 @@ struct ShotenkoDeclarationButton: View {
         isEnabled ? Appearance.Color.commonWhite : Appearance.Color.commonGray
     }
     
+    // MARK: - Animation Methods
+    
+    /// 心臓の鼓動のようなリズムアニメーションを開始
+    /// ドクン、ドクンという2回の拍動パターンを繰り返す
+    private func startHeartbeatAnimation() {
+        guard isEnabled else { return }
+        
+        // 心臓の鼓動パターン: ドクン（0.15秒）→ 休憩（0.1秒）→ ドクン（0.15秒）→ 長い休憩（0.8秒）
+        func performHeartbeat() {
+            // 1回目の鼓動
+            withAnimation(.easeInOut(duration: 0.15)) {
+                heartbeatAnimation = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    heartbeatAnimation = false
+                }
+                
+                // 短い休憩後、2回目の鼓動
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        heartbeatAnimation = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            heartbeatAnimation = false
+                        }
+                        
+                        // 長い休憩後、次のサイクル
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            if isEnabled {
+                                performHeartbeat()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        performHeartbeat()
+    }
+    
     @ViewBuilder
-    private var shotenkoBackground: some View {
+    private var circularPachinkoBlueBackground: some View {
         ZStack {
-            // ベース背景（深いオレンジのグラデーション）
-            RoundedRectangle(cornerRadius: 12)
+            // 最下層: 深い影（立体感の基盤）
+            Circle()
+                .fill(Appearance.Color.commonBlack.opacity(0.9))
+                .offset(x: 0, y: 8) // 下方向に影をずらす
+                .blur(radius: 6)
+            
+            // ベース背景（深い青のグラデーション - 円形パチンコボタン風）
+            Circle()
                 .fill(
-                    LinearGradient(
+                    RadialGradient(
                         gradient: Gradient(stops: [
-                            .init(color: Color.orange.opacity(0.95), location: 0.0),
-                            .init(color: Color.orange, location: 0.3),
-                            .init(color: Color.orange.opacity(0.8), location: 0.7),
-                            .init(color: Color.orange.opacity(0.9), location: 1.0)
+                            .init(color: Color(red: 0.2, green: 0.4, blue: 1.0), location: 0.0), // 中心の明るい青
+                            .init(color: Color(red: 0.1, green: 0.3, blue: 0.9), location: 0.3), // 中間青
+                            .init(color: Color(red: 0.0, green: 0.2, blue: 0.7), location: 0.7), // 深い青
+                            .init(color: Color(red: 0.0, green: 0.1, blue: 0.4), location: 1.0)  // 外縁の最深青
                         ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
                     )
                 )
-                .shadow(color: Color.orange.opacity(0.6), radius: 8, x: 0, y: 4)
+                .shadow(color: Color.cyan.opacity(0.9), radius: 15, x: 0, y: 0) // 強いシアングロー
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 10, x: 0, y: 6) // 立体感の影
             
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
+            // 上部ハイライト（パチンコボタンの強い光沢感）
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: Appearance.Color.commonWhite.opacity(0.6), location: 0.0),
+                            .init(color: Appearance.Color.commonWhite.opacity(0.3), location: 0.4),
+                            .init(color: Appearance.Color.commonClear, location: 0.8)
+                        ]),
+                        center: UnitPoint(x: 0.3, y: 0.3), // 左上からの光
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .scaleEffect(0.8)
+                .offset(x: -8, y: -8)
+            
+            // シルバーの装飾枠線（円形パチンコボタンの豪華さ）
+            Circle()
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.yellow,
-                            Appearance.Color.playerGold
+                            Color(red: 0.9, green: 0.9, blue: 0.9), // シルバー
+                            Color(red: 0.7, green: 0.8, blue: 1.0), // ブルーシルバー
+                            Color(red: 0.95, green: 0.95, blue: 1.0), // 明るいシルバー
+                            Color(red: 0.9, green: 0.9, blue: 0.9), // シルバー
+                            Color(red: 0.7, green: 0.8, blue: 1.0)  // ブルーシルバー
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 2.5
+                    lineWidth: 4.0
                 )
+                .shadow(color: Color.cyan.opacity(0.8), radius: 3, x: 0, y: 0)
             
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
+            // 内側の細い枠線（立体感の強調）
+            Circle()
+                .stroke(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.8 : 0.3),
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.4 : 0.1),
+                            Appearance.Color.commonClear
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 35
+                    ),
+                    lineWidth: 2.0
+                )
+                .scaleEffect(0.85)
             
-            // カジノ風の光沢エフェクト
+            // 中央の強い光沢効果（パチンコボタンの特徴的な光）
             if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
+                Circle()
                     .fill(
-                        LinearGradient(
+                        RadialGradient(
                             gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
+                                .init(color: Appearance.Color.commonWhite.opacity(0.4), location: 0.0),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.2), location: 0.3),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.1), location: 0.6),
+                                .init(color: Appearance.Color.commonClear, location: 1.0)
                             ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
+                            center: UnitPoint(x: 0.4, y: 0.4),
+                            startRadius: 0,
+                            endRadius: 25
                         )
                     )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
+                    .scaleEffect(0.6)
+                    .offset(x: -5, y: -5)
             }
             
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    shotenkoCornerDecoration
-                    Spacer()
-                    shotenkoCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    shotenkoCornerDecoration
-                    Spacer()
-                    shotenkoCornerDecoration
-                }
-            }
-            .padding(4)
+            // 外側のリング装飾（パチンコボタンの豪華さ）
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            Color.cyan.opacity(0.8),
+                            Color.blue.opacity(0.6),
+                            Color(red: 0.7, green: 0.8, blue: 1.0).opacity(0.9),
+                            Color.cyan.opacity(0.8)
+                        ]),
+                        center: .center
+                    ),
+                    lineWidth: 1.5
+                )
+                .scaleEffect(1.05)
+                .opacity(isEnabled ? 0.7 : 0.3)
         }
-    }
-    
-    @ViewBuilder
-    private var shotenkoCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
     }
 }
 
@@ -734,5 +1073,193 @@ struct Diamond: Shape {
         path.closeSubpath()
         
         return path
+    }
+}
+
+// MARK: - SwiftUI Previews
+/// DOTENKOボタンのプレビュー（パチンコ風赤ボタンデザイン）
+struct DotenkoDeclarationButton_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // 有効状態のDOTENKOボタン
+            VStack(spacing: 30) {
+                Text("パチンコ風DOTENKOボタン")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                DotenkoDeclarationButton(
+                    action: {
+                        print("DOTENKO宣言！")
+                    },
+                    isEnabled: true
+                )
+                
+                Text("有効状態 - 赤い立体ボタン")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("DOTENKO有効")
+            
+            // 無効状態のDOTENKOボタン
+            VStack(spacing: 30) {
+                Text("無効状態")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                DotenkoDeclarationButton(
+                    action: {
+                        print("無効状態")
+                    },
+                    isEnabled: false
+                )
+                
+                Text("無効状態 - 非表示")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("DOTENKO無効")
+            
+            // 複数ボタン比較プレビュー
+            VStack(spacing: 40) {
+                Text("宣言ボタン比較")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 30) {
+                    VStack(spacing: 10) {
+                        DotenkoDeclarationButton(
+                            action: { print("DOTENKO!") },
+                            isEnabled: true
+                        )
+                        Text("DOTENKO")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 10) {
+                        RevengeDeclarationButton(
+                            action: { print("REVENGE!") },
+                            isEnabled: true
+                        )
+                        Text("REVENGE")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 10) {
+                        ShotenkoDeclarationButton(
+                            action: { print("SHOTENKO!") },
+                            isEnabled: true
+                        )
+                        Text("SHOTENKO")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("ボタン比較")
+            
+            // アニメーション確認用プレビュー
+            AnimationPreviewView()
+                .previewDisplayName("アニメーション確認")
+        }
+    }
+}
+
+/// アニメーション確認用プレビュー
+struct AnimationPreviewView: View {
+    @State private var isPressed = false
+    @State private var showButton = true
+    
+    var body: some View {
+        VStack(spacing: 40) {
+            Text("アニメーション確認")
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            DotenkoDeclarationButton(
+                action: {
+                    // ボタンを一時的に無効化してアニメーション確認
+                    showButton = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        showButton = true
+                    }
+                },
+                isEnabled: showButton
+            )
+            
+            VStack(spacing: 15) {
+                Text("特徴:")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("• 赤ベースの立体的デザイン")
+                    Text("• パチンコボタン風の光沢感")
+                    Text("• 金色装飾枠線")
+                    Text("• 常時グローアニメーション")
+                    Text("• 強い押し込み効果")
+                    Text("• 赤いグロー効果")
+                }
+                .font(.caption)
+                .foregroundColor(.gray)
+            }
+            
+            Button("リセット") {
+                showButton = true
+            }
+            .padding()
+            .background(Color.blue.opacity(0.3))
+            .foregroundColor(.white)
+            .cornerRadius(8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black,
+                    Color(red: 0.1, green: 0.2, blue: 0.1)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 } 
