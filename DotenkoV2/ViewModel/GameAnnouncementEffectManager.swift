@@ -113,6 +113,46 @@ class GameAnnouncementEffectManager: ObservableObject {
         return showRateUpEffect
     }
     
+    // MARK: - Declaration Animation System
+    
+    /// 宣言アニメーションの種類
+    enum DeclarationAnimationType {
+        case dotenko    // どてんこ宣言
+        case shotenko   // しょてんこ宣言
+        case revenge    // リベンジ宣言
+        
+        var title: String {
+            switch self {
+            case .dotenko: return "どてんこ！"
+            case .shotenko: return "しょてんこ！"
+            case .revenge: return "リベンジ！"
+            }
+        }
+        
+        var subtitle: String {
+            switch self {
+            case .dotenko: return "勝利宣言"
+            case .shotenko: return "初手勝利"
+            case .revenge: return "逆転宣言"
+            }
+        }
+    }
+    
+    /// 宣言アニメーションを表示
+    /// - Parameters:
+    ///   - type: 宣言の種類
+    ///   - playerName: 宣言したプレイヤー名
+    ///   - completion: アニメーション完了後のコールバック
+    func showDeclarationAnimation(type: DeclarationAnimationType, playerName: String, completion: (() -> Void)? = nil) {
+        let title = type.title
+        let subtitle = "\(playerName) の\(type.subtitle)"
+        
+        print("🎊 宣言アニメーション開始: \(type) - プレイヤー: \(playerName)")
+        
+        // アナウンスシステムを使用してアニメーション表示
+        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+    }
+    
     // MARK: - Special Card Effect System
     
     /// 特殊カード演出の種類

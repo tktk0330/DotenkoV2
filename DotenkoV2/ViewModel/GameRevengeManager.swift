@@ -162,8 +162,15 @@ class GameRevengeManager: ObservableObject {
         // 新しいどてんこ勝者を設定
         dotenkoWinnerId = playerId
         
-        // リベンジ待機を再開（連鎖リベンジ対応）
-        self.startRevengeWaitingPhase()
+        // リベンジアニメーションを表示
+        let playerName = gameViewModel.players[playerIndex].name
+        gameViewModel.announcementEffectManager.showDeclarationAnimation(type: .revenge, playerName: playerName) {
+            // アニメーション完了後にリベンジ待機を再開
+            DispatchQueue.main.async {
+                // リベンジ待機を再開（連鎖リベンジ対応）
+                self.startRevengeWaitingPhase()
+            }
+        }
     }
     
     /// BOTプレイヤーのリベンジ宣言チェック（リアルタイム）

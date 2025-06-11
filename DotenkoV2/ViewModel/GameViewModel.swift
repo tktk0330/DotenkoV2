@@ -1162,13 +1162,20 @@ class GameViewModel: ObservableObject {
         // 最後の宣言者を勝者に設定（複数同時宣言の場合は最後の人が勝ち）
         updateDotenkoWinnerToLatest()
         
-        // ゲームフェーズに応じて処理を分岐
-        if self.gamePhase == .challengeZone {
-            // チャレンジゾーン中の場合
-            self.revengeManager.handleChallengeDotenkoDeclaration(playerId: playerId)
-        } else {
-            // 通常のゲーム中の場合
-            self.revengeManager.startRevengeWaitingPhase()
+        // どてんこアニメーションを表示
+        let playerName = players[playerIndex].name
+        announcementEffectManager.showDeclarationAnimation(type: .dotenko, playerName: playerName) {
+            // アニメーション完了後にゲーム処理を継続
+            DispatchQueue.main.async {
+                // ゲームフェーズに応じて処理を分岐
+                if self.gamePhase == .challengeZone {
+                    // チャレンジゾーン中の場合
+                    self.revengeManager.handleChallengeDotenkoDeclaration(playerId: playerId)
+                } else {
+                    // 通常のゲーム中の場合
+                    self.revengeManager.startRevengeWaitingPhase()
+                }
+            }
         }
     }
     
@@ -1435,8 +1442,15 @@ class GameViewModel: ObservableObject {
         print("🏆 しょてんこ勝者: \(players[playerIndex].name)")
         print("💀 しょてんこ敗者: その他全員")
         
-        // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
-        self.revengeManager.startChallengeZone()
+        // しょてんこアニメーションを表示
+        let playerName = players[playerIndex].name
+        announcementEffectManager.showDeclarationAnimation(type: .shotenko, playerName: playerName) {
+            // アニメーション完了後にチャレンジゾーンを開始
+            DispatchQueue.main.async {
+                // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
+                self.revengeManager.startChallengeZone()
+            }
+        }
     }
     
     /// バーストイベントを処理
