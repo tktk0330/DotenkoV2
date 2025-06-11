@@ -1,30 +1,62 @@
+/*
+ * GameSetting.swift
+ * 
+ * ファイル概要:
+ * ドテンコゲームの設定項目を定義する列挙型
+ * - ゲームルールの各種設定項目
+ * - 設定可能な値の定義
+ * - デフォルト値の管理  
+ * - UI表示用のプロパティ
+ * - 設定値の検証機能
+ * 
+ * 主要機能:
+ * - ラウンド数、ジョーカー枚数、レートなどの設定
+ * - 設定項目の表示名、説明、例文の提供
+ * - 設定値の配列とデフォルト値の管理
+ * - SF Symbolsアイコンの定義
+ * - 特殊値（無制限、なし）の処理
+ * 
+ * 設定項目:
+ * - roundCount: ゲームラウンド数
+ * - jokerCount: ジョーカー枚数
+ * - gameRate: 基本レート
+ * - upRate: 重ねレートアップ条件
+ * - maxScore: スコア上限
+ * - deckCycle: デッキサイクル制限
+ * 
+ * 作成日: 2024年12月
+ */
+
 import Foundation
 
 /// ゲームルールの設定項目を定義する列挙型
+/// ドテンコゲームで使用される各種設定項目とその値を管理
 enum GameSetting: String, Identifiable {
     // MARK: - Cases
     
-    /// ゲームの実施回数
+    /// ゲームの実施回数（1ゲームあたりのラウンド数）
     case roundCount
-    /// ジョーカーの枚数
+    /// ジョーカーの枚数（0-4枚）
     case jokerCount
-    /// 1ゲームあたりのレート
+    /// 1ゲームあたりのレート（基本倍率）
     case gameRate
-    /// スコアの上限値
+    /// 重ねレートアップ条件（連続同一数字での倍率上昇）
     case upRate
-    /// 重ねレートの上限値
+    /// スコアの上限値（1ラウンドあたりの最大スコア）
     case maxScore
-    /// デッキの種類
+    /// デッキサイクル制限（1ラウンドでのデッキ周回数上限）
     case deckCycle
     
     // MARK: - Identifiable
     
     /// Identifiableプロトコルの要件を満たすためのID
+    /// - Returns: 設定項目のraw value
     var id: String { rawValue }
     
     // MARK: - View Properties
     
     /// 設定項目の表示名
+    /// - Returns: UI表示用の日本語タイトル
     var title: String {
         switch self {
         case .roundCount: return "ラウンド数"
@@ -36,7 +68,8 @@ enum GameSetting: String, Identifiable {
         }
     }
     
-    /// 設定項目の表示名
+    /// 設定項目の詳細説明
+    /// - Returns: 設定項目の役割を説明するテキスト
     var detail: String {
         switch self {
         case .roundCount: return "１ゲームのラウンド数を決めます"
@@ -48,7 +81,8 @@ enum GameSetting: String, Identifiable {
         }
     }
     
-    /// 設定項目の表示名
+    /// 設定項目の使用例
+    /// - Returns: 具体的な使用例を示すテキスト
     var example: String {
         switch self {
         case .roundCount: return "例：１０ラウンドで１ゲーム終了"
@@ -62,6 +96,7 @@ enum GameSetting: String, Identifiable {
     
     /// 設定可能な値の配列
     /// - Note: 特殊な値として "なし" や "♾️"(無制限) が含まれる場合があります
+    /// - Returns: 選択可能な値の文字列配列
     var values: [String] {
         switch self {
         case .roundCount:
@@ -86,6 +121,7 @@ enum GameSetting: String, Identifiable {
     }
     
     /// 各設定項目のデフォルト値
+    /// - Returns: 初期設定として使用される値
     var defaultValue: String {
         switch self {
         case .roundCount: return "5"    // 5ゲーム
@@ -98,6 +134,7 @@ enum GameSetting: String, Identifiable {
     }
     
     /// 各設定項目のアイコン（SF Symbols）
+    /// - Returns: UI表示用のシステムアイコン名
     var icon: String {
         switch self {
         case .roundCount: return "chart.bar.fill"       // グラフアイコン
@@ -112,11 +149,15 @@ enum GameSetting: String, Identifiable {
     // MARK: - Helper Methods
     
     /// 値が特殊な値（"なし"や"♾️"）かどうかを判定
+    /// - Parameter value: 判定対象の値
+    /// - Returns: 特殊な値の場合true、通常の数値の場合false
     func isSpecialValue(_ value: String) -> Bool {
         return value == "なし" || value == "♾️"
     }
     
     /// 表示用の値を取得（特殊な値の場合は日本語表示に変換）
+    /// - Parameter value: 変換対象の値
+    /// - Returns: UI表示用に変換された値
     func displayValue(for value: String) -> String {
         if value == "♾️" { return "無制限" }
         if value == "なし" { return "なし" }

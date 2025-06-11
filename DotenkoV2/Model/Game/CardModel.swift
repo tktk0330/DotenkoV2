@@ -1,38 +1,92 @@
-/**
- カードの設定
+/*
+ * CardModel.swift
+ * 
+ * ファイル概要:
+ * ドテンコゲームで使用するカードの定義とモデル
+ * - トランプカード52枚とジョーカーの定義
+ * - カードの位置、回転角度の管理
+ * - スート、数値、特殊効果の定義
+ * - ゲームルールに応じたカード判定機能
+ * 
+ * 主要機能:
+ * - カード識別とEquatable/Hashable対応
+ * - 手札での価値計算（ジョーカー対応）
+ * - レートアップ判定（1,2,ジョーカー）
+ * - 逆転判定（黒3効果）
+ * - 最終スコア計算（ダイヤ3特殊効果）
+ * - UIImage取得機能
+ * 
+ * データ構造:
+ * - Card: カード実体（ID、位置、回転角度）
+ * - PlayCard: カード種別（全54種）
+ * - CardLocation: カード位置（手札、デッキ、場）
+ * - Suit: スート（スペード、ハート、ダイヤ、クラブ、ジョーカー）
+ * 
+ * 作成日: 2024年12月
  */
 
 import UIKit
 
-// カードモデル
+// MARK: - Card Model
+/// カードの実体を表すモデル
+/// 一意ID、カード種別、位置、回転角度を管理
 struct Card: Identifiable, Equatable, Hashable{
-    let id = UUID()
-    let card: PlayCard
-    var location: CardLocation
-    var handRotation: Double = 0.0 // 手札での回転角度を保存
     
-    // Hashable conformance
+    /// 一意識別子（UUID）
+    let id = UUID()
+    
+    /// カードの種別（PlayCard）
+    let card: PlayCard
+    
+    /// カードの現在位置
+    var location: CardLocation
+    
+    /// 手札での回転角度（ファンレイアウト用）
+    var handRotation: Double = 0.0
+    
+    /// Hashable プロトコル準拠
+    /// - Parameter hasher: ハッシュ関数
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
     
-    // Equatable conformance
+    /// Equatable プロトコル準拠
+    /// - Parameters:
+    ///   - lhs: 左辺のCard
+    ///   - rhs: 右辺のCard
+    /// - Returns: IDが一致する場合true
     static func == (lhs: Card, rhs: Card) -> Bool {
         return lhs.id == rhs.id
     }
 }
 
-// カードの位置を表す列挙型
+// MARK: - Card Location
+/// カードの位置を表す列挙型
+/// 手札、デッキ、場の3つの位置を管理
 enum CardLocation: Equatable, Hashable{
+    
+    /// 手札に位置（プレイヤーインデックス、カードインデックス）
     case hand(playerIndex: Int, cardIndex: Int)
+    
+    /// デッキ（山札）に位置
     case deck
+    
+    /// 場に位置
     case field
 }
 
+// MARK: - Play Card
+/// プレイ可能なカードの種別を表す列挙型
+/// トランプ52枚＋ジョーカー2枚＋裏面カードを定義
 enum PlayCard: String, CaseIterable {
     
+    /// 裏面カード
     case back = "back-1"
+    
+    /// 白ジョーカー
     case whiteJoker = "jorker-1"
+    
+    /// 黒ジョーカー
     case blackJoker = "jorker-2"
     
     case spade1 = "s01", spade2 = "s02", spade3 = "s03", spade4 = "s04", spade5 = "s05"
