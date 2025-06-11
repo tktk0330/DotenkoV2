@@ -253,4 +253,30 @@ class GameAnnouncementEffectManager: ObservableObject {
         print("   レートアップエフェクト表示中: \(showRateUpEffect)")
         print("   レートアップ倍率: ×\(rateUpMultiplier)")
     }
+    
+    /// チャレンジゾーン開始アナウンスを表示
+    /// - Parameters:
+    ///   - participantCount: 参加者数
+    ///   - completion: アニメーション完了後のコールバック
+    func showChallengeZoneStartAnnouncement(participantCount: Int, completion: (() -> Void)? = nil) {
+        let title = "チャレンジゾーン開始"
+        let subtitle = "\(participantCount)人が参加"
+        
+        print("🎯 チャレンジゾーン開始アナウンス表示: 参加者\(participantCount)人")
+        
+        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+    }
+    
+    /// チャレンジゾーン終了アナウンスを表示
+    /// - Parameters:
+    ///   - winnerName: 勝者名
+    ///   - completion: アニメーション完了後のコールバック
+    func showChallengeZoneEndAnnouncement(winnerName: String, completion: (() -> Void)? = nil) {
+        let title = "チャレンジゾーン終了"
+        let subtitle = "\(winnerName) の勝利"
+        
+        print("🏁 チャレンジゾーン終了アナウンス表示: 勝者\(winnerName)")
+        
+        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+    }
 } 

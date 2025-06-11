@@ -8,12 +8,15 @@ import SwiftUI
 /// - タイムアウト5秒、デフォルト「参加する」
 /// - BOT自動選択（1-3秒遅延）
 /// - 待機中のローディング表示
+/// - 参加条件を満たさないプレイヤーには「参加しない」のみ表示（非活性）
 struct ChallengeZoneParticipationModal: View {
     
     // MARK: - Properties
     let players: [Player]
     let revengeEligiblePlayers: [String]
     let dotenkoWinnerId: String?
+    let fieldCardValue: Int // 場のカード数字を追加
+    let calculateHandTotals: ([Card]) -> [Int] // 手札合計計算関数を追加
     let onPlayerChoice: (String, ParticipationChoice) -> Void
     let onTimeout: () -> Void
     
@@ -217,6 +220,8 @@ struct ChallengeZoneParticipationModal: View {
             } else {
                 // 選択ボタン
                 let availableChoices = getAvailableChoices(for: player)
+                let canParticipate = canPlayerParticipate(player)
+                
                 ForEach(availableChoices, id: \.self) { choice in
                     Button(action: {
                         selectChoice(for: player.id, choice: choice)
@@ -228,10 +233,15 @@ struct ChallengeZoneParticipationModal: View {
                             .padding(.vertical, 3)
                             .background(
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(choice.buttonColor)
+                                    .fill(
+                                        // 参加条件を満たさない場合の「参加しない」ボタンは非活性色
+                                        (!canParticipate && choice == .decline) ? 
+                                        Color.gray.opacity(0.5) : choice.buttonColor
+                                    )
                             )
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .disabled(!canParticipate && choice == .participate) // 参加条件を満たさない場合は「参加する」を無効化
                 }
             }
         }
@@ -291,6 +301,8 @@ struct ChallengeZoneParticipationModal: View {
             return "どてんこ勝者"
         } else if revengeEligiblePlayers.contains(player.id) {
             return "リベンジ可能"
+        } else if !canPlayerParticipate(player) {
+            return "参加条件不適合"
         } else {
             return "通常参加"
         }
@@ -302,6 +314,8 @@ struct ChallengeZoneParticipationModal: View {
             return .yellow
         } else if revengeEligiblePlayers.contains(player.id) {
             return .red
+        } else if !canPlayerParticipate(player) {
+            return .gray
         } else {
             return .cyan
         }
@@ -310,15 +324,35 @@ struct ChallengeZoneParticipationModal: View {
     /// プレイヤーが選択可能な選択肢を取得
     private func getAvailableChoices(for player: Player) -> [ParticipationChoice] {
         if player.id == dotenkoWinnerId {
-            // どてんこ勝者は参加しないのみ
-            return [.decline]
+            // どてんこ勝者は参加強制（参加するのみ）
+            return [.participate]
         } else if revengeEligiblePlayers.contains(player.id) {
             // リベンジ可能プレイヤー
             return [.revenge, .decline]
         } else {
-            // 通常プレイヤー
-            return [.participate, .decline]
+            // 通常プレイヤー: 参加条件をチェック
+            let handTotals = calculateHandTotals(player.hand)
+            let minHandTotal = handTotals.min() ?? 0
+            
+            if minHandTotal < fieldCardValue {
+                // 参加条件を満たす場合
+                return [.participate, .decline]
+            } else {
+                // 参加条件を満たさない場合は「参加しない」のみ
+                return [.decline]
+            }
         }
+    }
+    
+    /// プレイヤーが参加条件を満たすかチェック
+    private func canPlayerParticipate(_ player: Player) -> Bool {
+        if player.id == dotenkoWinnerId {
+            return true // どてんこ勝者は常に参加可能
+        }
+        
+        let handTotals = calculateHandTotals(player.hand)
+        let minHandTotal = handTotals.min() ?? 0
+        return minHandTotal < fieldCardValue
     }
     
     /// 選択を処理
@@ -406,11 +440,14 @@ struct ChallengeZoneParticipationModal: View {
             // リベンジ可能時は必ずリベンジ
             return .revenge
         } else if player.id == dotenkoWinnerId {
-            // どてんこ勝者は参加しない
-            return .decline
-        } else {
-            // 通常時は参加する
+            // どてんこ勝者は参加する
             return .participate
+        } else if canPlayerParticipate(player) {
+            // 参加条件を満たす場合は参加する
+            return .participate
+        } else {
+            // 参加条件を満たさない場合は参加しない
+            return .decline
         }
     }
 }
@@ -432,6 +469,14 @@ struct ChallengeZoneParticipationModal_Previews: PreviewProvider {
                 players: samplePlayers,
                 revengeEligiblePlayers: ["bot2"],
                 dotenkoWinnerId: "bot1",
+                fieldCardValue: 7,
+                calculateHandTotals: { cards in
+                    // サンプル用の簡単な計算（実際のジョーカー計算は省略）
+                    let total = cards.reduce(0) { sum, card in
+                        sum + (card.card.handValue().first ?? 0)
+                    }
+                    return [total]
+                },
                 onPlayerChoice: { playerId, choice in
                     print("Player \(playerId) chose \(choice)")
                 },
@@ -446,6 +491,14 @@ struct ChallengeZoneParticipationModal_Previews: PreviewProvider {
                 players: Array(samplePlayers.prefix(3)),
                 revengeEligiblePlayers: ["bot2"],
                 dotenkoWinnerId: nil,
+                fieldCardValue: 5,
+                calculateHandTotals: { cards in
+                    // サンプル用の簡単な計算（実際のジョーカー計算は省略）
+                    let total = cards.reduce(0) { sum, card in
+                        sum + (card.card.handValue().first ?? 0)
+                    }
+                    return [total]
+                },
                 onPlayerChoice: { playerId, choice in
                     print("Player \(playerId) chose \(choice)")
                 },
@@ -453,9 +506,7 @@ struct ChallengeZoneParticipationModal_Previews: PreviewProvider {
                     print("Modal timeout")
                 }
             )
-            .previewDevice("iPhone SE (3rd generation)")
-            .previewDisplayName("小画面表示")
+            .previewDisplayName("小画面")
         }
-        .background(Color.black)
     }
 } 

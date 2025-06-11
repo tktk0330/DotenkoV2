@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import Combine
 
 // MARK: - Game View Model
@@ -115,11 +116,16 @@ class GameViewModel: ObservableObject {
     private let revengeManager: GameRevengeManager // リベンジ・チャレンジゾーンマネージャー
     private let gameBotManager: GameBotManager // BOT思考システムマネージャー
     private var countdownTimer: Timer?
+    private var cancellables = Set<AnyCancellable>() // Combine用のキャンセル可能オブジェクト
     
     // MARK: - Lifecycle
     deinit {
         // タイマーのクリーンアップ
         countdownTimer?.invalidate()
+        
+        // Combineのクリーンアップ
+        cancellables.removeAll()
+        
         print("🎮 GameViewModel解放")
     }
     
@@ -182,6 +188,9 @@ class GameViewModel: ObservableObject {
         // マネージャーにGameViewModelの参照を設定
         revengeManager.setGameViewModel(self)
         gameBotManager.setGameViewModel(self)
+        
+        // スコア計算マネージャーの状態変更を監視
+        setupScoreCalculationBinding()
     }
     
     // MARK: - Game Initialization
@@ -824,6 +833,8 @@ class GameViewModel: ObservableObject {
             print("🎴 プレイヤーカード出しフラグ: \(hasAnyPlayerPlayedCard)")
             print("🎴 しょてんこボタン表示: \(shouldShowShotenkoButton())")
             print("🎴 どてんこボタン表示: \(shouldShowDotenkoButton())")
+            print("🎴 プレイヤーのしょてんこ条件: \(canPlayerDeclareShotenko(playerId: "player"))")
+            print("🎴 プレイヤーのどてんこ条件: \(canPlayerDeclareDotenko(playerId: "player"))")
             
             // 選択をクリア
             clearPlayerSelectedCards(playerId: player.id)
@@ -1256,7 +1267,6 @@ class GameViewModel: ObservableObject {
     
     /// どてんこ宣言ボタンを表示すべきかチェック
     func shouldShowDotenkoButton() -> Bool {
-        // 🧪 試験用: 常にどてんこボタンを表示（画面確認用）
         // アナウンス中は表示しない
         if announcementEffectManager.isAnnouncementActive() {
             return false
@@ -1267,15 +1277,17 @@ class GameViewModel: ObservableObject {
             return false
         }
         
-        // 試験用: 通常のゲーム進行中は常に表示
+        // 通常のゲーム進行中で、どてんこ条件を満たす場合のみ表示
         if gamePhase == .playing {
-            return true
+            return canPlayerDeclareDotenko(playerId: "player")
         }
         
         // チャレンジゾーン中で自分のターンの場合
         if gamePhase == .challengeZone && isChallengeZone {
             guard let currentPlayer = revengeManager.getCurrentChallengePlayer() else { return false }
-            return currentPlayer.id == "player"
+            if currentPlayer.id == "player" {
+                return canPlayerDeclareDotenko(playerId: "player")
+            }
         }
         
         return false
@@ -1418,10 +1430,18 @@ class GameViewModel: ObservableObject {
             if handTotals.contains(fieldValue) {
                 print("🎊 しょてんこ発生! - プレイヤー \(player.name)")
                 
-                // BOTの場合のみ即座に宣言、人間プレイヤーは手動宣言のみ
+                // BOTの場合は1-3秒の遅延後に宣言、人間プレイヤーは手動宣言のみ
                 if player.id != "player" {
-                    handleShotenkoDeclaration(playerId: player.id)
-                    return // BOTが宣言したら処理終了
+                    let delay = Double.random(in: 1.0...3.0)
+                    print("🤖 BOT \(player.name) のしょてんこ宣言遅延: \(String(format: "%.1f", delay))秒")
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        // 遅延後に条件を再確認（他のプレイヤーが先に宣言していないかチェック）
+                        if !self.isShotenkoRound && self.canPlayerDeclareShotenko(playerId: player.id) {
+                            self.handleShotenkoDeclaration(playerId: player.id)
+                        }
+                    }
+                    return // BOTが宣言予定なら処理終了
                 } else {
                     print("👤 プレイヤーのしょてんこ条件検出 - 手動宣言待ち")
                     // 人間プレイヤーは自動宣言しない（手動宣言のみ）
@@ -1522,7 +1542,6 @@ class GameViewModel: ObservableObject {
     
     /// しょてんこボタンを表示すべきかチェック
     func shouldShowShotenkoButton() -> Bool {
-        // 🧪 試験用: しょてんこボタンの表示条件（画面確認用）
         // アナウンス中は表示しない
         if announcementEffectManager.isAnnouncementActive() {
             return false
@@ -1543,8 +1562,8 @@ class GameViewModel: ObservableObject {
             return false
         }
         
-        // 試験用: 最初の場札が配布されていれば表示
-        return isFirstCardDealt
+        // 最初の場札が配布されていて、プレイヤーがしょてんこ条件を満たす場合のみ表示
+        return isFirstCardDealt && canPlayerDeclareShotenko(playerId: "player")
     }
     
     /// プレイヤーのしょてんこ宣言を処理（手動宣言用）
@@ -1986,5 +2005,35 @@ class GameViewModel: ObservableObject {
                 return self?.cardValidationManager.calculateHandTotals(cards: cards) ?? []
             }
         )
+    }
+    
+    /// スコア計算マネージャーの状態変更監視を設定
+    private func setupScoreCalculationBinding() {
+        // showScoreResultの変更を監視
+        scoreCalculationManager.$showScoreResult
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] showScoreResult in
+                print("🎯 GameViewModel - showScoreResult変更検知: \(showScoreResult)")
+                if showScoreResult {
+                    print("🎯 GameViewModel - スコア確定画面表示要求を受信")
+                    // 必要に応じて追加の処理を実行
+                    self?.objectWillChange.send() // SwiftUIに変更を通知
+                }
+            }
+            .store(in: &cancellables)
+        
+        // scoreResultDataの変更も監視
+        scoreCalculationManager.$scoreResultData
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] scoreResultData in
+                print("🎯 GameViewModel - scoreResultData変更検知: \(scoreResultData != nil ? "データ設定済み" : "nil")")
+                if scoreResultData != nil {
+                    print("🎯 GameViewModel - スコア確定画面データ設定完了")
+                    self?.objectWillChange.send() // SwiftUIに変更を通知
+                }
+            }
+            .store(in: &cancellables)
+        
+        print("🎯 GameViewModel - スコア計算マネージャーの状態監視設定完了")
     }
 } 

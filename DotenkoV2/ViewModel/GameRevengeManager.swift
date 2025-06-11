@@ -279,7 +279,7 @@ class GameRevengeManager: ObservableObject {
         if participants.isEmpty {
             // 参加者がいない場合は勝利確定
             print("🎯 チャレンジゾーン参加者なし - 勝利確定")
-            gameViewModel?.finalizeDotenko()
+            finalizeChallengeZone()
         } else {
             // チャレンジゾーンを開始
             challengeParticipants = participants
@@ -293,8 +293,7 @@ class GameRevengeManager: ObservableObject {
     func startChallengeZone() {
         guard let gameViewModel = gameViewModel else { return }
         guard let fieldCard = gameViewModel.fieldCards.last else {
-            // 場にカードがない場合は直接勝利確定
-            gameViewModel.finalizeDotenko()
+            finalizeChallengeZone()
             return
         }
         
@@ -316,8 +315,8 @@ class GameRevengeManager: ObservableObject {
         }
         
         if challengeParticipants.isEmpty {
-            print("🏁 チャレンジゾーン参加者なし - どてんこ勝利確定")
-            gameViewModel.finalizeDotenko()
+            print("🏁 全参加者がチャレンジ条件を満たさなくなりました")
+            finalizeChallengeZone()
             return
         }
         
@@ -337,12 +336,18 @@ class GameRevengeManager: ObservableObject {
         print("   参加者: \(challengeParticipants.count)人")
         print("   開始プレイヤー: \(getCurrentChallengePlayer()?.name ?? "不明")")
         
-        // 手札公開を開始
-        showHandReveal = true
-        print("👁️ 手札公開表示開始 - 参加者: \(challengeParticipants)")
-        
-        // チャレンジゾーンの進行を開始
-        self.processChallengeZoneTurn()
+        // チャレンジゾーン開始アナウンスを表示
+        gameViewModel.announcementEffectManager.showChallengeZoneStartAnnouncement(participantCount: challengeParticipants.count) {
+            // アナウンス完了後に手札公開とチャレンジゾーン進行を開始
+            DispatchQueue.main.async {
+                // 手札公開を開始
+                self.showHandReveal = true
+                print("👁️ 手札公開表示開始 - 参加者: \(self.challengeParticipants)")
+                
+                // チャレンジゾーンの進行を開始
+                self.processChallengeZoneTurn()
+            }
+        }
     }
     
     /// 現在のチャレンジプレイヤーを取得
@@ -356,7 +361,7 @@ class GameRevengeManager: ObservableObject {
     private func processChallengeZoneTurn() {
         guard let gameViewModel = gameViewModel else { return }
         guard let currentPlayer = getCurrentChallengePlayer() else {
-            gameViewModel.finalizeDotenko()
+            finalizeChallengeZone()
             return
         }
         
@@ -383,7 +388,7 @@ class GameRevengeManager: ObservableObject {
             
             if challengeParticipants.isEmpty {
                 print("🏁 全参加者がチャレンジ条件を満たさなくなりました")
-                gameViewModel.finalizeDotenko()
+                finalizeChallengeZone()
                 return
             }
             
@@ -445,7 +450,7 @@ class GameRevengeManager: ObservableObject {
         
         if challengeParticipants.isEmpty {
             print("🏁 チャレンジゾーン終了 - 全参加者が除外されました")
-            gameViewModel.finalizeDotenko()
+            finalizeChallengeZone()
         } else {
             print("🔄 チャレンジゾーン継続 - 残り参加者: \(challengeParticipants.count)人")
             nextChallengePlayer()
@@ -459,7 +464,7 @@ class GameRevengeManager: ObservableObject {
         // 無限ループ防止（最大100ターン）
         if challengeRoundCount > 100 {
             print("⚠️ チャレンジゾーン強制終了 - 最大ターン数に達しました")
-            gameViewModel?.finalizeDotenko()
+            finalizeChallengeZone()
             return
         }
         
@@ -554,5 +559,31 @@ class GameRevengeManager: ObservableObject {
         isRevengeWaiting = false
         revengeTimer?.invalidate()
         revengeTimer = nil
+    }
+    
+    /// チャレンジゾーンを終了（終了アナウンス付き）
+    private func finalizeChallengeZone() {
+        guard let gameViewModel = gameViewModel else { return }
+        guard let winnerId = dotenkoWinnerId else {
+            // 勝者が不明な場合は直接終了
+            gameViewModel.finalizeDotenko()
+            return
+        }
+        
+        // 勝者名を取得
+        let winnerName = gameViewModel.players.first(where: { $0.id == winnerId })?.name ?? "不明"
+        
+        print("🏁 チャレンジゾーン終了処理開始 - 勝者: \(winnerName)")
+        
+        // 手札公開を終了
+        showHandReveal = false
+        
+        // チャレンジゾーン終了アナウンスを表示
+        gameViewModel.announcementEffectManager.showChallengeZoneEndAnnouncement(winnerName: winnerName) {
+            // アナウンス完了後にスコア確定に進む
+            DispatchQueue.main.async {
+                gameViewModel.finalizeDotenko()
+            }
+        }
     }
 }

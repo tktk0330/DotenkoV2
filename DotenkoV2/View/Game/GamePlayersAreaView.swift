@@ -42,6 +42,10 @@ struct GamePlayersAreaView: View {
                     players: viewModel.players,
                     revengeEligiblePlayers: viewModel.revengeEligiblePlayers,
                     dotenkoWinnerId: viewModel.dotenkoWinnerId,
+                    fieldCardValue: viewModel.fieldCards.last?.card.handValue().first ?? 0,
+                    calculateHandTotals: { cards in
+                        viewModel.calculateHandTotals(cards: cards)
+                    },
                     onPlayerChoice: { playerId, choice in
                         viewModel.handlePlayerParticipationChoice(playerId: playerId, choice: choice)
                     },
