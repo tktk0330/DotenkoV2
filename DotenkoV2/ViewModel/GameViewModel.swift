@@ -47,17 +47,15 @@ class GameViewModel: ObservableObject {
     // カード選択状態
     @Published var selectedCardIndices: Set<Int> = []
     
-    // リベンジシステム
-    @Published var revengeCountdown: Int = 5
-    @Published var isRevengeWaiting: Bool = false
-    @Published var dotenkoWinnerId: String? = nil
-    @Published var revengeEligiblePlayers: [String] = []
-    
-    // チャレンジゾーンシステム
-    @Published var isChallengeZone: Bool = false
-    @Published var challengeParticipants: [String] = []
-    @Published var currentChallengePlayerIndex: Int = 0
-    @Published var challengeRoundCount: Int = 0
+    // リベンジ・チャレンジゾーンシステム（マネージャーに委譲）
+    var revengeCountdown: Int { revengeManager.revengeCountdown }
+    var isRevengeWaiting: Bool { revengeManager.isRevengeWaiting }
+    var dotenkoWinnerId: String? { revengeManager.dotenkoWinnerId }
+    var revengeEligiblePlayers: [String] { revengeManager.revengeEligiblePlayers }
+    var isChallengeZone: Bool { revengeManager.isChallengeZone }
+    var challengeParticipants: [String] { revengeManager.challengeParticipants }
+    var currentChallengePlayerIndex: Int { revengeManager.currentChallengePlayerIndex }
+    var challengeRoundCount: Int { revengeManager.challengeRoundCount }
     
     // しょてんこ・バーストシステム
     @Published var isShotenkoRound: Bool = false
@@ -89,17 +87,17 @@ class GameViewModel: ObservableObject {
     // MARK: - Private Properties
     private let userProfileRepository = UserProfileRepository.shared
     private let botManager: BotManagerProtocol = BotManager()
-    private let cardValidationManager = GameCardValidationManager() // カード出し判定マネージャー
-    private let announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
+    let cardValidationManager = GameCardValidationManager() // カード出し判定マネージャー
+    let announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
     private let scoreCalculationManager: GameScoreCalculationManager // スコア計算マネージャー
+    private let revengeManager: GameRevengeManager // リベンジ・チャレンジゾーンマネージャー
+    private let gameBotManager: GameBotManager // BOT思考システムマネージャー
     private var countdownTimer: Timer?
-    private var revengeTimer: Timer?
     
     // MARK: - Lifecycle
     deinit {
         // タイマーのクリーンアップ
         countdownTimer?.invalidate()
-        revengeTimer?.invalidate()
         print("🎮 GameViewModel解放")
     }
     
@@ -123,6 +121,12 @@ class GameViewModel: ObservableObject {
         
         // スコア計算マネージャーを初期化
         self.scoreCalculationManager = GameScoreCalculationManager(announcementEffectManager: announcementEffectManager)
+        
+        // リベンジ・チャレンジゾーンマネージャーを初期化
+        self.revengeManager = GameRevengeManager(botManager: botManager)
+        
+        // BOT思考システムマネージャーを初期化
+        self.gameBotManager = GameBotManager(botManager: botManager)
         
         // ユーザープロフィールから設定を読み込み
         if case .success(let profile) = userProfileRepository.getOrCreateProfile() {
@@ -152,6 +156,10 @@ class GameViewModel: ObservableObject {
         }
         
         initializeGame()
+        
+        // マネージャーにGameViewModelの参照を設定
+        revengeManager.setGameViewModel(self)
+        gameBotManager.setGameViewModel(self)
     }
     
     // MARK: - Game Initialization
@@ -632,7 +640,7 @@ class GameViewModel: ObservableObject {
     }
     
     /// デッキからカードを引く
-    private func drawCardFromDeck(playerId: String) {
+    func drawCardFromDeck(playerId: String) {
         guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
         
         // デッキが空の場合は山札を再構築
@@ -759,7 +767,7 @@ class GameViewModel: ObservableObject {
     }
     
     /// 選択されたカードをフィールドに移動する共通処理
-    private func moveSelectedCardsToField(playerIndex: Int, player: Player) {
+    func moveSelectedCardsToField(playerIndex: Int, player: Player) {
         withAnimation(.easeOut) {
             let selectedCards = player.selectedCards
             for card in selectedCards {
@@ -1110,15 +1118,15 @@ class GameViewModel: ObservableObject {
         
         // どてんこ状態を更新
         players[playerIndex].dtnk = true
-        dotenkoWinnerId = playerId
+        revengeManager.setDotenkoWinnerId(playerId)
         
         // ゲームフェーズに応じて処理を分岐
         if self.gamePhase == .challengeZone {
             // チャレンジゾーン中の場合
-            self.handleChallengeDotenkoDeclaration(playerId: playerId)
+            self.revengeManager.handleChallengeDotenkoDeclaration(playerId: playerId)
         } else {
             // 通常のゲーム中の場合
-            self.startRevengeWaitingPhase()
+            self.revengeManager.startRevengeWaitingPhase()
         }
     }
     
@@ -1175,7 +1183,7 @@ class GameViewModel: ObservableObject {
         
         // チャレンジゾーン中で自分のターンの場合
         if gamePhase == .challengeZone && isChallengeZone {
-            guard let currentPlayer = getCurrentChallengePlayer() else { return false }
+            guard let currentPlayer = revengeManager.getCurrentChallengePlayer() else { return false }
             return currentPlayer.id == "player" && canPlayerDeclareDotenko(playerId: "player")
         }
         
@@ -1217,342 +1225,10 @@ class GameViewModel: ObservableObject {
             self.checkBotDotenkoDeclarations()
         }
     }
-    
-    // MARK: - Revenge System
-    
-    /// リベンジ待機フェーズを開始
-    private func startRevengeWaitingPhase() {
-        gamePhase = .revengeWaiting
-        isRevengeWaiting = true
-        revengeCountdown = 5
-        
-        // リベンジ可能なプレイヤーを特定
-        updateRevengeEligiblePlayers()
-        
-        print("🔄 リベンジ待機フェーズ開始 - 5秒間待機")
-        print("   リベンジ可能プレイヤー: \(revengeEligiblePlayers)")
-        
-        // リベンジタイマー開始
-        startRevengeTimer()
-        
-        // BOTのリベンジチェック（少し遅延して実行）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.checkBotRevengeDeclarations()
-        }
-    }
-    
-    /// リベンジ可能なプレイヤーを更新
-    private func updateRevengeEligiblePlayers() {
-        guard let fieldCard = fieldCards.last else {
-            revengeEligiblePlayers = []
-            return
-        }
-        
-        let fieldValue = fieldCard.card.handValue().first ?? 0
-        revengeEligiblePlayers = []
-        
-        for player in players {
-            // どてんこした人以外で、リベンジ条件を満たすプレイヤー
-            if player.id != dotenkoWinnerId && !player.dtnk {
-                let handTotals = calculateHandTotals(cards: player.hand)
-                if handTotals.contains(fieldValue) {
-                    revengeEligiblePlayers.append(player.id)
-                }
-            }
-        }
-    }
-    
-    /// リベンジタイマーを開始
-    private func startRevengeTimer() {
-        revengeTimer?.invalidate()
-        
-        revengeTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-            
-            self.revengeCountdown -= 1
-            print("リベンジカウントダウン: \(self.revengeCountdown)")
-            
-            if self.revengeCountdown <= 0 {
-                timer.invalidate()
-                self.finishRevengeWaiting()
-            }
-        }
-    }
-    
-    /// リベンジ待機終了処理
-    private func finishRevengeWaiting() {
-        isRevengeWaiting = false
-        revengeTimer?.invalidate()
-        revengeTimer = nil
-        
-        print("⏰ リベンジ待機終了")
-        
-        // チャレンジゾーンを開始
-        startChallengeZone()
-    }
-    
-    /// プレイヤーがリベンジ宣言できるかチェック
-    func canPlayerDeclareRevenge(playerId: String) -> Bool {
-        guard gamePhase == .revengeWaiting else { 
-            print("🔍 リベンジ判定: ゲームフェーズが異なります (\(gamePhase))")
-            return false 
-        }
-        guard isRevengeWaiting else { 
-            print("🔍 リベンジ判定: リベンジ待機中ではありません")
-            return false 
-        }
-        guard playerId != dotenkoWinnerId else { 
-            print("🔍 リベンジ判定: どてんこした人はリベンジ不可 (\(playerId))")
-            return false 
-        }
-        
-        let canRevenge = revengeEligiblePlayers.contains(playerId)
-        print("🔍 リベンジ判定 - プレイヤー: \(playerId)")
-        print("   リベンジ可能プレイヤー: \(revengeEligiblePlayers)")
-        print("   リベンジ宣言可能: \(canRevenge ? "✅" : "❌")")
-        
-        return canRevenge
-    }
-    
-    /// リベンジ宣言を処理
-    func handleRevengeDeclaration(playerId: String) {
-        guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
-        guard canPlayerDeclareRevenge(playerId: playerId) else {
-            print("⚠️ リベンジ宣言失敗: 条件を満たしていません - プレイヤー \(players[playerIndex].name)")
-            return
-        }
-        
-        print("🔥 リベンジ宣言成功! - プレイヤー \(players[playerIndex].name)")
-        
-        // リベンジ状態を更新
-        players[playerIndex].dtnk = true
-        
-        // 前のどてんこ勝者を敗者に変更
-        if let previousWinnerId = dotenkoWinnerId,
-           let previousWinnerIndex = players.firstIndex(where: { $0.id == previousWinnerId }) {
-            players[previousWinnerIndex].rank = players.count // 最下位
-            print("💀 前のどてんこ勝者が敗者に: \(players[previousWinnerIndex].name)")
-        }
-        
-        // 新しいどてんこ勝者を設定
-        dotenkoWinnerId = playerId
-        
-        // リベンジ待機を再開（連鎖リベンジ対応）
-        self.startRevengeWaitingPhase()
-    }
-    
-    /// BOTプレイヤーのリベンジ宣言チェック（リアルタイム）
-    func checkBotRevengeDeclarations() {
-        let gameState = createBotGameState()
-        botManager.checkRevengeDeclarations(players: players, gameState: gameState) { [weak self] declaringBotIds in
-            for botId in declaringBotIds {
-                self?.handleRevengeDeclaration(playerId: botId)
-            }
-        }
-    }
-    
-    // MARK: - Challenge Zone System
-    
-    /// チャレンジゾーンを開始
-    private func startChallengeZone() {
-        guard let fieldCard = fieldCards.last else {
-            // 場にカードがない場合は直接勝利確定
-            finalizeDotenko()
-            return
-        }
-        
-        let fieldValue = fieldCard.card.handValue().first ?? 0
-        
-        // チャレンジゾーン参加条件をチェック（手札合計 < 場のカード数字）
-        challengeParticipants = []
-        
-        for player in players {
-            // どてんこした人以外で、参加条件を満たすプレイヤー
-            if player.id != dotenkoWinnerId && !player.dtnk {
-                let handTotals = calculateHandTotals(cards: player.hand)
-                let minHandTotal = handTotals.min() ?? 0
-                
-                if minHandTotal < fieldValue {
-                    challengeParticipants.append(player.id)
-                }
-            }
-        }
-        
-        if challengeParticipants.isEmpty {
-            print("🏁 チャレンジゾーン参加者なし - どてんこ勝利確定")
-            finalizeDotenko()
-            return
-        }
-        
-        // チャレンジゾーン開始
-        gamePhase = .challengeZone
-        isChallengeZone = true
-        challengeRoundCount = 0
-        
-        // どてんこした次の人から時計回りで開始
-        if let dotenkoWinnerIndex = players.firstIndex(where: { $0.id == dotenkoWinnerId }) {
-            currentChallengePlayerIndex = (dotenkoWinnerIndex + 1) % players.count
-        } else {
-            currentChallengePlayerIndex = 0
-        }
-        
-        print("🎯 チャレンジゾーン開始!")
-        print("   参加者: \(challengeParticipants.count)人")
-        print("   開始プレイヤー: \(getCurrentChallengePlayer()?.name ?? "不明")")
-        
-        // チャレンジゾーン開始アナウンス
-        // チャレンジゾーンの進行を開始
-        self.processChallengeZoneTurn()
-    }
-    
-    /// 現在のチャレンジプレイヤーを取得
-    func getCurrentChallengePlayer() -> Player? {
-        guard currentChallengePlayerIndex < players.count else { return nil }
-        return players[currentChallengePlayerIndex]
-    }
-    
-    /// チャレンジゾーンのターン処理
-    private func processChallengeZoneTurn() {
-        guard let currentPlayer = getCurrentChallengePlayer() else {
-            finalizeDotenko()
-            return
-        }
-        
-        // 参加者でない場合は次のプレイヤーへ
-        if !challengeParticipants.contains(currentPlayer.id) {
-            nextChallengePlayer()
-            return
-        }
-        
-        // 参加条件を再チェック
-        guard let fieldCard = fieldCards.last else {
-            finalizeDotenko()
-            return
-        }
-        
-        let fieldValue = fieldCard.card.handValue().first ?? 0
-        let handTotals = calculateHandTotals(cards: currentPlayer.hand)
-        let minHandTotal = handTotals.min() ?? 0
-        
-        if minHandTotal >= fieldValue {
-            // 参加条件を満たさなくなった場合は除外
-            challengeParticipants.removeAll { $0 == currentPlayer.id }
-            print("❌ \(currentPlayer.name) はチャレンジ条件を満たさなくなりました")
-            
-            if challengeParticipants.isEmpty {
-                print("🏁 全参加者がチャレンジ条件を満たさなくなりました")
-                finalizeDotenko()
-                return
-            }
-            
-            // 次のプレイヤーへ
-            self.nextChallengePlayer()
-            return
-        }
-        
-        print("🎯 チャレンジターン: \(currentPlayer.name)")
-        
-        // BOTの場合は自動でカードを引く
-        if currentPlayer.id != "player" {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.performBotChallengeAction(player: currentPlayer)
-            }
-        } else {
-            // 人間プレイヤーの場合は手動操作待ち
-            print("👤 プレイヤーのチャレンジターン - カードを引いてください")
-        }
-    }
-    
-    /// BOTのチャレンジアクション
-    private func performBotChallengeAction(player: Player) {
-        let gameState = createBotGameState()
-        botManager.performChallengeAction(player: player, gameState: gameState) { [weak self] action in
-            switch action {
-            case .dotenkoDeclaration(let playerId):
-                self?.handleChallengeDotenkoDeclaration(playerId: playerId)
-            case .drawAndContinue(let playerId):
-                self?.drawCardFromDeck(playerId: playerId)
-                self?.nextChallengePlayer()
-            }
-        }
-    }
-    
-    /// チャレンジゾーンでのどてんこ宣言処理
-    private func handleChallengeDotenkoDeclaration(playerId: String) {
-        guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
-        
-        print("🔥 チャレンジゾーンでどてんこ宣言! - プレイヤー \(players[playerIndex].name)")
-        
-        // 新しいリベンジ勝者を設定
-        players[playerIndex].dtnk = true
-        
-        // 前のどてんこ勝者を敗者に変更
-        if let previousWinnerId = dotenkoWinnerId,
-           let previousWinnerIndex = players.firstIndex(where: { $0.id == previousWinnerId }) {
-            players[previousWinnerIndex].rank = players.count // 最下位
-            print("💀 前のどてんこ勝者が敗者に: \(players[previousWinnerIndex].name)")
-        }
-        
-        // 新しいどてんこ勝者を設定
-        dotenkoWinnerId = playerId
-        
-        // チャレンジゾーンを継続（連鎖対応）
-        challengeParticipants.removeAll { $0 == playerId } // 宣言した人は除外
-        
-        if challengeParticipants.isEmpty {
-            print("🏁 チャレンジゾーン終了 - 全参加者が除外されました")
-            finalizeDotenko()
-        } else {
-            print("🔄 チャレンジゾーン継続 - 残り参加者: \(challengeParticipants.count)人")
-            nextChallengePlayer()
-        }
-    }
-    
-    /// 次のチャレンジプレイヤーに進む
-    private func nextChallengePlayer() {
-        challengeRoundCount += 1
-        
-        // 無限ループ防止（最大100ターン）
-        if challengeRoundCount > 100 {
-            print("⚠️ チャレンジゾーン強制終了 - 最大ターン数に達しました")
-            finalizeDotenko()
-            return
-        }
-        
-        currentChallengePlayerIndex = (currentChallengePlayerIndex + 1) % players.count
-        
-        // 次のターンを処理
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.processChallengeZoneTurn()
-        }
-    }
-    
-    /// プレイヤーがチャレンジゾーンでカードを引く
-    func handleChallengeDrawCard() {
-        guard gamePhase == .challengeZone else { return }
-        guard let currentPlayer = getCurrentChallengePlayer() else { return }
-        guard currentPlayer.id == "player" else { return }
-        
-        // デッキからカードを引く
-        drawCardFromDeck(playerId: currentPlayer.id)
-        
-        // どてんこ判定
-        if canPlayerDeclareDotenko(playerId: currentPlayer.id) {
-            // どてんこボタンを表示（自動宣言はしない）
-            print("✨ チャレンジでどてんこ可能! - どてんこボタンが表示されます")
-        } else {
-            // 次のプレイヤーへ
-            nextChallengePlayer()
-        }
-    }
+
     
     /// どてんこ勝利を確定
-    private func finalizeDotenko() {
-        isChallengeZone = false
-        
+    func finalizeDotenko() {
         // ゲーム終了処理
         gamePhase = .finished
         
@@ -1570,7 +1246,7 @@ class GameViewModel: ObservableObject {
     
     /// 通常のどてんこ勝敗設定
     private func setDotenkoVictoryRanks() {
-        guard let winnerId = dotenkoWinnerId else { return }
+        guard let winnerId = revengeManager.dotenkoWinnerId else { return }
         
         // 勝者の設定
         if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
@@ -1598,13 +1274,30 @@ class GameViewModel: ObservableObject {
     
     /// リベンジボタンを表示すべきかチェック
     func shouldShowRevengeButton(for playerId: String) -> Bool {
-        // アナウンス中は表示しない
-        if announcementEffectManager.isAnnouncementActive() {
-            return false
-        }
-        
-        return canPlayerDeclareRevenge(playerId: playerId)
+        return revengeManager.shouldShowRevengeButton(for: playerId)
     }
+    
+    /// リベンジ宣言を処理
+    func handleRevengeDeclaration(playerId: String) {
+        revengeManager.handleRevengeDeclaration(playerId: playerId)
+    }
+    
+    /// プレイヤーがリベンジ宣言できるかチェック
+    func canPlayerDeclareRevenge(playerId: String) -> Bool {
+        return revengeManager.canPlayerDeclareRevenge(playerId: playerId)
+    }
+    
+    /// 現在のチャレンジプレイヤーを取得
+    func getCurrentChallengePlayer() -> Player? {
+        return revengeManager.getCurrentChallengePlayer()
+    }
+    
+    /// プレイヤーがチャレンジゾーンでカードを引く
+    func handleChallengeDrawCard() {
+        revengeManager.handleChallengeDrawCard()
+    }
+    
+
     
     // MARK: - Shotenko & Burst System
     
@@ -1667,11 +1360,11 @@ class GameViewModel: ObservableObject {
         print("💀 しょてんこ敗者: その他全員")
         
         // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
-        self.startChallengeZone()
+        self.revengeManager.startChallengeZone()
     }
     
     /// バーストイベントを処理
-    private func handleBurstEvent(playerId: String) {
+    func handleBurstEvent(playerId: String) {
         guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
         
         print("💥 バースト発生! - プレイヤー \(players[playerIndex].name)")
@@ -2021,11 +1714,7 @@ class GameViewModel: ObservableObject {
         scoreCalculationManager.consecutiveSpecialCards.removeAll()
         
         // リベンジ・チャレンジ状態をリセット
-        dotenkoWinnerId = nil
-        revengeEligiblePlayers.removeAll()
-        challengeParticipants.removeAll()
-        isChallengeZone = false
-        isRevengeWaiting = false
+        revengeManager.resetRevengeAndChallengeState()
         
         // しょてんこ・バースト状態をリセット
         isShotenkoRound = false
@@ -2123,22 +1812,11 @@ class GameViewModel: ObservableObject {
     
     /// BOTのターンを開始
     func startBotTurn(player: Player) {
-        guard player.id != "player" else { 
-            print("⚠️ BOTターン開始エラー: 人間プレイヤーが指定されました")
-            return 
-        }
-        
-        // BotGameStateを作成
-        let gameState = createBotGameState()
-        
-        // BotManagerに処理を委譲
-        botManager.startBotTurn(player: player, gameState: gameState) { [weak self] action in
-            self?.handleBotAction(action)
-        }
+        gameBotManager.startBotTurn(player: player)
     }
     
     /// BotGameStateを作成
-    private func createBotGameState() -> BotGameState {
+    func createBotGameState() -> BotGameState {
         return BotGameState(
             fieldCards: fieldCards,
             deckCards: deckCards,
@@ -2156,58 +1834,11 @@ class GameViewModel: ObservableObject {
                 return self?.canPlayerDeclareDotenko(playerId: playerId) ?? false
             },
             canPlayerDeclareRevenge: { [weak self] playerId in
-                return self?.canPlayerDeclareRevenge(playerId: playerId) ?? false
+                return self?.revengeManager.canPlayerDeclareRevenge(playerId: playerId) ?? false
             },
             calculateHandTotals: { [weak self] cards in
                 return self?.cardValidationManager.calculateHandTotals(cards: cards) ?? []
             }
         )
-    }
-    
-    /// BOTのアクションを処理
-    private func handleBotAction(_ action: BotAction) {
-        switch action {
-        case .dotenkoDeclaration(let playerId):
-            handleDotenkoDeclaration(playerId: playerId)
-            
-        case .playCards(let playerId, let cards):
-            guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
-            // カードを選択状態にする
-            players[playerIndex].selectedCards = cards
-            // カード出しを実行
-            moveSelectedCardsToField(playerIndex: playerIndex, player: players[playerIndex])
-            nextTurn()
-            
-        case .drawCard(let playerId):
-            drawCardFromDeck(playerId: playerId)
-            // カードを引いた後の行動判定
-            if let player = players.first(where: { $0.id == playerId }) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.performBotActionAfterDraw(player: player)
-                }
-            }
-            
-        case .pass(let playerId):
-            nextTurn()
-            
-        case .burst(let playerId):
-            handleBurstEvent(playerId: playerId)
-        }
-    }
-    
-
-    
-    /// BOTがカードを引いた後の行動判定
-    private func performBotActionAfterDraw(player: Player) {
-        print("🤖 BOT \(player.name) のカード引き後行動判定:")
-        print("   新しい手札: \(player.hand.map { $0.card.rawValue })")
-        
-        // BotGameStateを作成
-        let gameState = createBotGameState()
-        
-        // BotManagerに処理を委譲（カード引き後の判定）
-        botManager.startBotTurn(player: player, gameState: gameState) { [weak self] action in
-            self?.handleBotAction(action)
-        }
     }
 } 
