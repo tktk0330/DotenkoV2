@@ -42,27 +42,18 @@ class GameRevengeManager: ObservableObject {
     
     // MARK: - Revenge System
     
-    /// リベンジ待機フェーズを開始
+    /// リベンジ待機フェーズを開始（即座にモーダル表示）
     func startRevengeWaitingPhase() {
         guard let gameViewModel = gameViewModel else { return }
-        
-        gameViewModel.gamePhase = .revengeWaiting
-        isRevengeWaiting = true
-        revengeCountdown = 5
         
         // リベンジ可能なプレイヤーを特定
         updateRevengeEligiblePlayers()
         
-        print("🔄 リベンジ待機フェーズ開始 - 5秒間待機")
+        print("🔄 リベンジ・チャレンジゾーン判定開始")
         print("   リベンジ可能プレイヤー: \(revengeEligiblePlayers)")
         
-        // リベンジタイマー開始
-        startRevengeTimer()
-        
-        // BOTのリベンジチェック（少し遅延して実行）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.checkBotRevengeDeclarations()
-        }
+        // 5秒待機を廃止し、即座にチャレンジゾーン参加モーダルを表示
+        showChallengeZoneParticipationModal()
     }
     
     /// リベンジ可能なプレイヤーを更新
@@ -180,6 +171,20 @@ class GameRevengeManager: ObservableObject {
                 self?.handleRevengeDeclaration(playerId: botId)
             }
         }
+    }
+    
+    // MARK: - Challenge Zone Participation Modal System
+    
+    /// チャレンジゾーン参加モーダルを表示
+    func showChallengeZoneParticipationModal() {
+        guard let gameViewModel = gameViewModel else { return }
+        
+        print("🎯 チャレンジゾーン参加モーダル表示開始")
+        
+        // TODO: チャレンジゾーン参加モーダルの実装
+        // 現在は仮実装として直接チャレンジゾーンを開始
+        print("⚠️ 仮実装: チャレンジゾーン参加モーダルをスキップしてチャレンジゾーン開始")
+        startChallengeZone()
     }
     
     // MARK: - Challenge Zone System

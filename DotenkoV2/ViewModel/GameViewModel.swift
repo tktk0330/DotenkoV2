@@ -47,6 +47,15 @@ class GameViewModel: ObservableObject {
     // カード選択状態
     @Published var selectedCardIndices: Set<Int> = []
     
+    // 最後にカードを出したプレイヤーID（どてんこ制限用）
+    @Published var lastCardPlayerId: String? = nil
+    
+    // 複数同時宣言処理用（最後の宣言者が勝ち）
+    private var dotenkoDeclarationTimestamps: [String: Date] = [:]
+    
+    // プレイヤーがカードを出したかどうかの追跡（しょてんこボタン制御用）
+    @Published var hasAnyPlayerPlayedCard: Bool = false
+    
     // リベンジ・チャレンジゾーンシステム（マネージャーに委譲）
     var revengeCountdown: Int { revengeManager.revengeCountdown }
     var isRevengeWaiting: Bool { revengeManager.isRevengeWaiting }
@@ -197,6 +206,11 @@ class GameViewModel: ObservableObject {
         
         // 初期ポット計算（プレイヤー数 × 基本レート）
         currentPot = maxPlayers * currentRate
+        
+        // ゲーム状態フラグの初期化
+        hasAnyPlayerPlayedCard = false
+        lastCardPlayerId = nil
+        dotenkoDeclarationTimestamps.removeAll()
         
         // スコア計算システムの初期化
         scoreCalculationManager.initializeScoreSystem()
@@ -787,6 +801,17 @@ class GameViewModel: ObservableObject {
                 }
             }
             
+            // 最後にカードを出したプレイヤーIDを記録（どてんこ制限用）
+            lastCardPlayerId = player.id
+            
+            // プレイヤーがカードを出したフラグを設定（しょてんこボタン制御用）
+            hasAnyPlayerPlayedCard = true
+            
+            print("🎴 カード出し記録: プレイヤー \(player.name) (ID: \(player.id))")
+            print("🎴 プレイヤーカード出しフラグ: \(hasAnyPlayerPlayedCard)")
+            print("🎴 しょてんこボタン表示: \(shouldShowShotenkoButton())")
+            print("🎴 どてんこボタン表示: \(shouldShowDotenkoButton())")
+            
             // 選択をクリア
             clearPlayerSelectedCards(playerId: player.id)
             
@@ -1084,12 +1109,19 @@ class GameViewModel: ObservableObject {
             return false 
         }
         
+        // 自分が出したカードにはどてんこ不可
+        if let lastPlayerId = lastCardPlayerId, lastPlayerId == playerId {
+            print("🔍 どてんこ判定: 自分が出したカードにはどてんこできません - プレイヤー: \(player.name)")
+            return false
+        }
+        
         let fieldValue = fieldCard.card.handValue().first ?? 0
         let handTotals = calculateHandTotals(cards: player.hand)
         
         print("🔍 どてんこ判定 - プレイヤー: \(player.name)")
         print("   場のカード: \(fieldCard.card.rawValue) (値: \(fieldValue))")
         print("   手札の可能な合計値: \(handTotals)")
+        print("   最後にカードを出したプレイヤー: \(lastCardPlayerId ?? "なし")")
         
         // 手札の合計値のいずれかが場のカードと一致するかチェック
         let canDeclare = handTotals.contains(fieldValue)
@@ -1114,11 +1146,17 @@ class GameViewModel: ObservableObject {
             return
         }
         
-        print("🎉 どてんこ宣言成功! - プレイヤー \(players[playerIndex].name)")
+        // 宣言タイムスタンプを記録（複数同時宣言対応）
+        let currentTime = Date()
+        dotenkoDeclarationTimestamps[playerId] = currentTime
+        
+        print("🎉 どてんこ宣言成功! - プレイヤー \(players[playerIndex].name) (時刻: \(currentTime))")
         
         // どてんこ状態を更新
         players[playerIndex].dtnk = true
-        revengeManager.setDotenkoWinnerId(playerId)
+        
+        // 最後の宣言者を勝者に設定（複数同時宣言の場合は最後の人が勝ち）
+        updateDotenkoWinnerToLatest()
         
         // ゲームフェーズに応じて処理を分岐
         if self.gamePhase == .challengeZone {
@@ -1127,6 +1165,30 @@ class GameViewModel: ObservableObject {
         } else {
             // 通常のゲーム中の場合
             self.revengeManager.startRevengeWaitingPhase()
+        }
+    }
+    
+    /// 最後にどてんこ宣言したプレイヤーを勝者に設定
+    private func updateDotenkoWinnerToLatest() {
+        // 宣言したプレイヤーの中で最も遅い時刻の人を勝者に設定
+        let dotenkoPlayers = players.filter { $0.dtnk }
+        guard !dotenkoPlayers.isEmpty else { return }
+        
+        var latestPlayer: Player?
+        var latestTime: Date?
+        
+        for player in dotenkoPlayers {
+            if let timestamp = dotenkoDeclarationTimestamps[player.id] {
+                if latestTime == nil || timestamp > latestTime! {
+                    latestTime = timestamp
+                    latestPlayer = player
+                }
+            }
+        }
+        
+        if let winner = latestPlayer {
+            revengeManager.setDotenkoWinnerId(winner.id)
+            print("🏆 最後のどてんこ宣言者が勝者: \(winner.name)")
         }
     }
     
@@ -1171,20 +1233,26 @@ class GameViewModel: ObservableObject {
     
     /// どてんこ宣言ボタンを表示すべきかチェック
     func shouldShowDotenkoButton() -> Bool {
+        // 🧪 試験用: 常にどてんこボタンを表示（画面確認用）
         // アナウンス中は表示しない
         if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
-        // 通常のゲーム進行中かつ場にカードがある場合
-        if gamePhase == .playing && !fieldCards.isEmpty {
-            return canPlayerDeclareDotenko(playerId: "player")
+        // しょてんこボタンが表示されている場合は表示しない（競合回避）
+        if shouldShowShotenkoButton() {
+            return false
+        }
+        
+        // 試験用: 通常のゲーム進行中は常に表示
+        if gamePhase == .playing {
+            return true
         }
         
         // チャレンジゾーン中で自分のターンの場合
         if gamePhase == .challengeZone && isChallengeZone {
             guard let currentPlayer = revengeManager.getCurrentChallengePlayer() else { return false }
-            return currentPlayer.id == "player" && canPlayerDeclareDotenko(playerId: "player")
+            return currentPlayer.id == "player"
         }
         
         return false
@@ -1309,7 +1377,7 @@ class GameViewModel: ObservableObject {
         let fieldValue = fieldCard.card.handValue().first ?? 0
         print("🎯 しょてんこ判定開始 - 最初の場札: \(fieldCard.card.rawValue) (値: \(fieldValue))")
         
-        // 全プレイヤーのしょてんこ判定（BOT優先）
+        // BOTプレイヤーのしょてんこ判定のみ実行
         for player in players {
             let handTotals = calculateHandTotals(cards: player.hand)
             print("   プレイヤー \(player.name): 手札合計値 \(handTotals)")
@@ -1317,20 +1385,14 @@ class GameViewModel: ObservableObject {
             if handTotals.contains(fieldValue) {
                 print("🎊 しょてんこ発生! - プレイヤー \(player.name)")
                 
-                // BOTの場合は即座に宣言、人間の場合は少し待機
+                // BOTの場合のみ即座に宣言、人間プレイヤーは手動宣言のみ
                 if player.id != "player" {
                     handleShotenkoDeclaration(playerId: player.id)
+                    return // BOTが宣言したら処理終了
                 } else {
-                    // 人間プレイヤーの場合は3秒間ボタン表示
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                        // 3秒後にまだ宣言されていなければ自動宣言
-                        if !self.isShotenkoRound && self.canPlayerDeclareShotenko(playerId: player.id) {
-                            print("⏰ しょてんこ自動宣言 - プレイヤー \(player.name)")
-                            self.handleShotenkoDeclaration(playerId: player.id)
-                        }
-                    }
+                    print("👤 プレイヤーのしょてんこ条件検出 - 手動宣言待ち")
+                    // 人間プレイヤーは自動宣言しない（手動宣言のみ）
                 }
-                return // 最初に見つかったプレイヤーで処理終了
             }
         }
         
@@ -1404,6 +1466,11 @@ class GameViewModel: ObservableObject {
         guard let player = players.first(where: { $0.id == playerId }) else { return false }
         guard let fieldCard = fieldCards.first else { return false }
         
+        // 誰かがカードを出した後はしょてんこ不可
+        if hasAnyPlayerPlayedCard {
+            return false
+        }
+        
         let fieldValue = fieldCard.card.handValue().first ?? 0
         let handTotals = calculateHandTotals(cards: player.hand)
         
@@ -1412,12 +1479,29 @@ class GameViewModel: ObservableObject {
     
     /// しょてんこボタンを表示すべきかチェック
     func shouldShowShotenkoButton() -> Bool {
+        // 🧪 試験用: しょてんこボタンの表示条件（画面確認用）
         // アナウンス中は表示しない
         if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
-        return canPlayerDeclareShotenko(playerId: "player")
+        // しょてんこラウンドが既に発生している場合は表示しない
+        if isShotenkoRound {
+            return false
+        }
+        
+        // 誰かがカードを出した後は表示しない（どてんこボタンに切り替え）
+        if hasAnyPlayerPlayedCard {
+            return false
+        }
+        
+        // 通常のゲーム進行中のみ表示
+        if gamePhase != .playing {
+            return false
+        }
+        
+        // 試験用: 最初の場札が配布されていれば表示
+        return isFirstCardDealt
     }
     
     /// プレイヤーのしょてんこ宣言を処理（手動宣言用）
@@ -1722,6 +1806,11 @@ class GameViewModel: ObservableObject {
         burstPlayerId = nil
         isFirstCardDealt = false
         isBurst = false
+        
+        // ゲーム状態フラグをリセット
+        hasAnyPlayerPlayedCard = false
+        lastCardPlayerId = nil
+        dotenkoDeclarationTimestamps.removeAll()
         
         print("🎮 次のラウンド開始 - ラウンド \(currentRound)")
         

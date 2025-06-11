@@ -269,7 +269,7 @@ struct BottomPlayerAreaView: View {
         .overlay(
             // しょてんこ宣言ボタン（完全独立オーバーレイ）
             shotenkoButtonOverlay,
-            alignment: .bottom
+            alignment: .bottomTrailing
         )
         .overlay(
             // リベンジ宣言ボタン（完全独立オーバーレイ）
@@ -316,7 +316,8 @@ struct BottomPlayerAreaView: View {
                 action: { handleShotenkoDeclaration(for: player) },
                 isEnabled: viewModel.shouldShowShotenkoButton()
             )
-            .padding(.bottom, 180)
+            .padding(.trailing, 20)
+            .padding(.bottom, 120)
             .zIndex(2001)
         }
     }
