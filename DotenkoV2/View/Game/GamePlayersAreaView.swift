@@ -35,6 +35,22 @@ struct GamePlayersAreaView: View {
                     namespace: namespace
                 )
             }
+            
+            // チャレンジゾーン参加モーダル
+            if viewModel.showChallengeParticipationModal {
+                ChallengeZoneParticipationModal(
+                    players: viewModel.players,
+                    revengeEligiblePlayers: viewModel.revengeEligiblePlayers,
+                    dotenkoWinnerId: viewModel.dotenkoWinnerId,
+                    onPlayerChoice: { playerId, choice in
+                        viewModel.handlePlayerParticipationChoice(playerId: playerId, choice: choice)
+                    },
+                    onTimeout: {
+                        viewModel.handleParticipationModalTimeout()
+                    }
+                )
+                .zIndex(3000)
+            }
         }
     }
 }

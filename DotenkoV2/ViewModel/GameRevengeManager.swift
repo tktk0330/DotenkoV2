@@ -19,6 +19,10 @@ class GameRevengeManager: ObservableObject {
     @Published var currentChallengePlayerIndex: Int = 0
     @Published var challengeRoundCount: Int = 0
     
+    // チャレンジゾーン参加モーダル
+    @Published var showChallengeParticipationModal: Bool = false
+    @Published var challengeParticipationChoices: [String: ChallengeZoneParticipationModal.ParticipationChoice] = [:]
+    
     // MARK: - Private Properties
     private var revengeTimer: Timer?
     private weak var gameViewModel: GameViewModel?
@@ -181,10 +185,90 @@ class GameRevengeManager: ObservableObject {
         
         print("🎯 チャレンジゾーン参加モーダル表示開始")
         
-        // TODO: チャレンジゾーン参加モーダルの実装
-        // 現在は仮実装として直接チャレンジゾーンを開始
-        print("⚠️ 仮実装: チャレンジゾーン参加モーダルをスキップしてチャレンジゾーン開始")
-        startChallengeZone()
+        // 参加選択をリセット
+        challengeParticipationChoices.removeAll()
+        
+        // モーダルを表示
+        showChallengeParticipationModal = true
+    }
+    
+    /// プレイヤーの参加選択を処理
+    func handlePlayerParticipationChoice(playerId: String, choice: ChallengeZoneParticipationModal.ParticipationChoice) {
+        challengeParticipationChoices[playerId] = choice
+        
+        print("🎯 プレイヤー \(playerId) の選択: \(choice)")
+        
+        // リベンジ選択の場合は即座に処理
+        if choice == .revenge {
+            handleRevengeDeclaration(playerId: playerId)
+            return
+        }
+        
+        // 全プレイヤーが選択完了したかチェック
+        checkAllPlayersSelectedParticipation()
+    }
+    
+    /// 参加モーダルのタイムアウト処理
+    func handleParticipationModalTimeout() {
+        guard let gameViewModel = gameViewModel else { return }
+        
+        print("⏰ チャレンジゾーン参加モーダル タイムアウト")
+        
+        // 未選択のプレイヤーにデフォルト選択を適用
+        for player in gameViewModel.players {
+            if challengeParticipationChoices[player.id] == nil {
+                let defaultChoice: ChallengeZoneParticipationModal.ParticipationChoice
+                if revengeEligiblePlayers.contains(player.id) {
+                    defaultChoice = .revenge
+                } else if player.id == dotenkoWinnerId {
+                    defaultChoice = .decline
+                } else {
+                    defaultChoice = .participate
+                }
+                challengeParticipationChoices[player.id] = defaultChoice
+                print("🎯 プレイヤー \(player.id) にデフォルト選択適用: \(defaultChoice)")
+            }
+        }
+        
+        // 全選択完了処理
+        finishParticipationSelection()
+    }
+    
+    /// 全プレイヤーの参加選択完了チェック
+    private func checkAllPlayersSelectedParticipation() {
+        guard let gameViewModel = gameViewModel else { return }
+        
+        if challengeParticipationChoices.count >= gameViewModel.players.count {
+            finishParticipationSelection()
+        }
+    }
+    
+    /// 参加選択完了処理
+    private func finishParticipationSelection() {
+        showChallengeParticipationModal = false
+        
+        // リベンジ選択があるかチェック
+        let revengeChoices = challengeParticipationChoices.filter { $0.value == .revenge }
+        if !revengeChoices.isEmpty {
+            // リベンジがある場合は処理済みなので何もしない
+            print("🔥 リベンジ選択があったため、チャレンジゾーンはスキップ")
+            return
+        }
+        
+        // チャレンジゾーン参加者を決定
+        let participants = challengeParticipationChoices.compactMap { (playerId, choice) in
+            choice == .participate ? playerId : nil
+        }
+        
+        if participants.isEmpty {
+            // 参加者がいない場合は勝利確定
+            print("🎯 チャレンジゾーン参加者なし - 勝利確定")
+            gameViewModel?.finalizeDotenko()
+        } else {
+            // チャレンジゾーンを開始
+            challengeParticipants = participants
+            startChallengeZone()
+        }
     }
     
     // MARK: - Challenge Zone System

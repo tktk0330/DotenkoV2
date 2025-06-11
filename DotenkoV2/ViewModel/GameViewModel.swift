@@ -66,6 +66,10 @@ class GameViewModel: ObservableObject {
     var currentChallengePlayerIndex: Int { revengeManager.currentChallengePlayerIndex }
     var challengeRoundCount: Int { revengeManager.challengeRoundCount }
     
+    // チャレンジゾーン参加モーダル
+    var showChallengeParticipationModal: Bool { revengeManager.showChallengeParticipationModal }
+    var challengeParticipationChoices: [String: ChallengeZoneParticipationModal.ParticipationChoice] { revengeManager.challengeParticipationChoices }
+    
     // しょてんこ・バーストシステム
     @Published var isShotenkoRound: Bool = false
     @Published var shotenkoWinnerId: String? = nil
@@ -1365,7 +1369,17 @@ class GameViewModel: ObservableObject {
         revengeManager.handleChallengeDrawCard()
     }
     
-
+    // MARK: - Challenge Zone Participation Modal System
+    
+    /// プレイヤーの参加選択を処理
+    func handlePlayerParticipationChoice(playerId: String, choice: ChallengeZoneParticipationModal.ParticipationChoice) {
+        revengeManager.handlePlayerParticipationChoice(playerId: playerId, choice: choice)
+    }
+    
+    /// 参加モーダルのタイムアウト処理
+    func handleParticipationModalTimeout() {
+        revengeManager.handleParticipationModalTimeout()
+    }
     
     // MARK: - Shotenko & Burst System
     
