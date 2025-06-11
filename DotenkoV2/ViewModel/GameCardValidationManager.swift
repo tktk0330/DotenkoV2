@@ -70,10 +70,45 @@ class GameCardValidationManager: ObservableObject {
         print("   場のカード: \(fieldCard.card.rawValue) (数字:\(fieldCardValue), スート:\(fieldCardSuit.rawValue))")
         print("   選択カード: \(selectedCards.map { "\($0.card.rawValue)" }.joined(separator: ", "))")
         
-        // 🃏 特別ルール: 場のカードがジョーカーの場合は何でも出せる
+        // 🃏 特別ルール: 場のカードがジョーカーの場合
         if fieldCardSuit == .joker {
-            print("   🃏 場のカードがジョーカーのため、何でも出せます")
-            return (true, "場のカードがジョーカーのため、任意のカードを出せます")
+            print("   🃏 場のカードがジョーカー - 特別ルール適用")
+            
+            // 1枚出しの場合は何でも出せる
+            if selectedCards.count == 1 {
+                print("   🃏 1枚出し: 何でも出せます")
+                return (true, "場のカードがジョーカーのため、任意のカードを出せます")
+            }
+            
+            // 複数枚出しの場合は同じ数字のカードのみ出せる
+            if selectedCards.count > 1 {
+                print("   🃏 複数枚出し: 同じ数字のカードのみ出せます")
+                
+                // ジョーカー以外のカードを取得
+                let nonJokerCards = selectedCards.filter { $0.card.suit() != .joker }
+                
+                // 全てジョーカーの場合は出せる
+                if nonJokerCards.isEmpty {
+                    print("   🃏 全てジョーカーのため出せます")
+                    return (true, "全てジョーカーのため出せます")
+                }
+                
+                // ジョーカー以外のカードが全て同じ数字かチェック
+                let firstNonJokerValue = nonJokerCards[0].card.handValue().first ?? 0
+                let allSameNumber = nonJokerCards.allSatisfy { card in
+                    card.card.handValue().contains(firstNonJokerValue)
+                }
+                
+                print("   🃏 ジョーカー以外のカード数字統一: \(allSameNumber)")
+                
+                if allSameNumber {
+                    print("   🃏 ✅ 同じ数字のため出せます")
+                    return (true, "場のカードがジョーカーで、出すカードが全て同じ数字のため出せます")
+                } else {
+                    print("   🃏 ❌ 異なる数字が混在しているため出せません")
+                    return (false, "場のカードがジョーカーの場合、複数枚出しは同じ数字のカードのみ出せます")
+                }
+            }
         }
         
         // ルール1: 同じ数字（1枚）
