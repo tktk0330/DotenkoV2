@@ -70,6 +70,12 @@ class GameCardValidationManager: ObservableObject {
         print("   場のカード: \(fieldCard.card.rawValue) (数字:\(fieldCardValue), スート:\(fieldCardSuit.rawValue))")
         print("   選択カード: \(selectedCards.map { "\($0.card.rawValue)" }.joined(separator: ", "))")
         
+        // 🃏 特別ルール: 場のカードがジョーカーの場合は何でも出せる
+        if fieldCardSuit == .joker {
+            print("   🃏 場のカードがジョーカーのため、何でも出せます")
+            return (true, "場のカードがジョーカーのため、任意のカードを出せます")
+        }
+        
         // ルール1: 同じ数字（1枚）
         if selectedCards.count == 1 {
             let selectedCard = selectedCards[0]
