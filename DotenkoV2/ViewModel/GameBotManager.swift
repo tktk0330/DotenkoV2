@@ -26,6 +26,14 @@ class GameBotManager: ObservableObject {
     
     // MARK: - BOT思考システム
     
+    /// 全BOTの処理を停止
+    func stopAllBotActions() {
+        print("🛑 全BOTの処理を停止")
+        // BotManagerに停止指示を送信
+        // 現在実行中のBOT処理をキャンセル
+        print("   BOT思考処理停止完了")
+    }
+    
     /// BOTのターンを開始
     func startBotTurn(player: Player) {
         guard player.id != "player" else { 

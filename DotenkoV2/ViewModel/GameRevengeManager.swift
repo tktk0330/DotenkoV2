@@ -23,6 +23,9 @@ class GameRevengeManager: ObservableObject {
     @Published var showChallengeParticipationModal: Bool = false
     @Published var challengeParticipationChoices: [String: ChallengeZoneParticipationModal.ParticipationChoice] = [:]
     
+    // 手札公開システム
+    @Published var showHandReveal: Bool = false // 手札公開表示フラグ
+    
     // MARK: - Private Properties
     private var revengeTimer: Timer?
     private weak var gameViewModel: GameViewModel?
@@ -108,6 +111,9 @@ class GameRevengeManager: ObservableObject {
         revengeTimer?.invalidate()
         revengeTimer = nil
         
+        // 手札公開状態をリセット
+        showHandReveal = false
+        
         print("⏰ リベンジ待機終了")
         
         // チャレンジゾーンを開始
@@ -167,6 +173,9 @@ class GameRevengeManager: ObservableObject {
         gameViewModel.announcementEffectManager.showDeclarationAnimation(type: .revenge, playerName: playerName) {
             // アニメーション完了後にリベンジ待機を再開
             DispatchQueue.main.async {
+                // リベンジ宣言時に全プレイヤーの処理を停止
+                gameViewModel.stopAllPlayerActions()
+                
                 // リベンジ待機を再開（連鎖リベンジ対応）
                 self.startRevengeWaitingPhase()
             }
@@ -327,6 +336,10 @@ class GameRevengeManager: ObservableObject {
         print("🎯 チャレンジゾーン開始!")
         print("   参加者: \(challengeParticipants.count)人")
         print("   開始プレイヤー: \(getCurrentChallengePlayer()?.name ?? "不明")")
+        
+        // 手札公開を開始
+        showHandReveal = true
+        print("👁️ 手札公開表示開始 - 参加者: \(challengeParticipants)")
         
         // チャレンジゾーンの進行を開始
         self.processChallengeZoneTurn()

@@ -15,6 +15,12 @@ class GameAnnouncementEffectManager: ObservableObject {
     @Published var announcementSubText: String = ""
     @Published var isAnnouncementBlocking: Bool = false
     
+    // どてんこロゴアニメーションシステム
+    @Published var showDotenkoLogoAnimation: Bool = false
+    @Published var dotenkoAnimationTitle: String = ""
+    @Published var dotenkoAnimationSubtitle: String = ""
+    @Published var dotenkoAnimationColorType: DotenkoAnimationType = .dotenko
+    
     // レートアップエフェクトシステム
     @Published var showRateUpEffect: Bool = false
     @Published var rateUpMultiplier: Int = 1
@@ -136,9 +142,17 @@ class GameAnnouncementEffectManager: ObservableObject {
             case .revenge: return "逆転宣言"
             }
         }
+        
+        var colorType: DotenkoAnimationType {
+            switch self {
+            case .dotenko: return .dotenko
+            case .shotenko: return .shotenko
+            case .revenge: return .revenge
+            }
+        }
     }
     
-    /// 宣言アニメーションを表示
+    /// 宣言アニメーションを表示（TOP画面ロゴアニメーション使用）
     /// - Parameters:
     ///   - type: 宣言の種類
     ///   - playerName: 宣言したプレイヤー名
@@ -149,8 +163,50 @@ class GameAnnouncementEffectManager: ObservableObject {
         
         print("🎊 宣言アニメーション開始: \(type) - プレイヤー: \(playerName)")
         
-        // アナウンスシステムを使用してアニメーション表示
-        showAnnouncementMessage(title: title, subtitle: subtitle, completion: completion)
+        // どてんこロゴアニメーションシステムを使用
+        showDotenkoLogoAnimation(title: title, subtitle: subtitle, colorType: type.colorType, completion: completion)
+    }
+    
+    /// どてんこロゴアニメーションを表示
+    /// - Parameters:
+    ///   - title: メインタイトル
+    ///   - subtitle: サブタイトル
+    ///   - colorType: アニメーションの色タイプ
+    ///   - completion: アニメーション完了後のコールバック
+    func showDotenkoLogoAnimation(title: String, subtitle: String, colorType: DotenkoAnimationType = .dotenko, completion: (() -> Void)? = nil) {
+        dotenkoAnimationTitle = title
+        dotenkoAnimationSubtitle = subtitle
+        dotenkoAnimationColorType = colorType
+        isAnnouncementBlocking = true
+        
+        print("🎭 どてんこロゴアニメーション表示開始: \(title)")
+        if !subtitle.isEmpty {
+            print("   サブタイトル: \(subtitle)")
+        }
+        
+        // アニメーション表示開始
+        showDotenkoLogoAnimation = true
+        
+        // 総アニメーション時間（TOP画面と同じ）
+        let totalDuration = DotenkoAnimationConfig.Logo.totalAnimationDuration
+        
+        print("   総アニメーション時間: \(totalDuration)秒")
+        
+        // アニメーション完了後に処理再開とコールバック実行
+        DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
+            self.hideDotenkoLogoAnimation()
+            completion?()
+        }
+    }
+    
+    /// どてんこロゴアニメーションを非表示
+    func hideDotenkoLogoAnimation() {
+        showDotenkoLogoAnimation = false
+        isAnnouncementBlocking = false
+        dotenkoAnimationTitle = ""
+        dotenkoAnimationSubtitle = ""
+        dotenkoAnimationColorType = .dotenko
+        print("🎭 どてんこロゴアニメーション表示終了")
     }
     
     // MARK: - Special Card Effect System
@@ -184,6 +240,7 @@ class GameAnnouncementEffectManager: ObservableObject {
     /// 全てのエフェクトをリセット
     func resetAllEffects() {
         hideAnnouncement()
+        hideDotenkoLogoAnimation()
         hideRateUpEffect()
         print("🎭 全エフェクトリセット完了")
     }

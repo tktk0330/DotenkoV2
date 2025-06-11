@@ -70,6 +70,9 @@ class GameViewModel: ObservableObject {
     var showChallengeParticipationModal: Bool { revengeManager.showChallengeParticipationModal }
     var challengeParticipationChoices: [String: ChallengeZoneParticipationModal.ParticipationChoice] { revengeManager.challengeParticipationChoices }
     
+    // 手札公開システム
+    var showHandReveal: Bool { revengeManager.showHandReveal }
+    
     // しょてんこ・バーストシステム
     @Published var isShotenkoRound: Bool = false
     @Published var shotenkoWinnerId: String? = nil
@@ -82,6 +85,12 @@ class GameViewModel: ObservableObject {
     var announcementText: String { announcementEffectManager.announcementText }
     var announcementSubText: String { announcementEffectManager.announcementSubText }
     var isAnnouncementBlocking: Bool { announcementEffectManager.isAnnouncementBlocking }
+    
+    // どてんこロゴアニメーションシステム（マネージャーに委譲）
+    var showDotenkoLogoAnimation: Bool { announcementEffectManager.showDotenkoLogoAnimation }
+    var dotenkoAnimationTitle: String { announcementEffectManager.dotenkoAnimationTitle }
+    var dotenkoAnimationSubtitle: String { announcementEffectManager.dotenkoAnimationSubtitle }
+    var dotenkoAnimationColorType: DotenkoAnimationType { announcementEffectManager.dotenkoAnimationColorType }
     var showRateUpEffect: Bool { announcementEffectManager.showRateUpEffect }
     var rateUpMultiplier: Int { announcementEffectManager.rateUpMultiplier }
     
@@ -1167,6 +1176,9 @@ class GameViewModel: ObservableObject {
         announcementEffectManager.showDeclarationAnimation(type: .dotenko, playerName: playerName) {
             // アニメーション完了後にゲーム処理を継続
             DispatchQueue.main.async {
+                // どてんこ宣言時に全プレイヤーの処理を停止
+                self.stopAllPlayerActions()
+                
                 // ゲームフェーズに応じて処理を分岐
                 if self.gamePhase == .challengeZone {
                     // チャレンジゾーン中の場合
@@ -1447,6 +1459,9 @@ class GameViewModel: ObservableObject {
         announcementEffectManager.showDeclarationAnimation(type: .shotenko, playerName: playerName) {
             // アニメーション完了後にチャレンジゾーンを開始
             DispatchQueue.main.async {
+                // しょてんこ宣言時に全プレイヤーの処理を停止
+                self.stopAllPlayerActions()
+                
                 // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
                 self.revengeManager.startChallengeZone()
             }
@@ -1861,6 +1876,20 @@ class GameViewModel: ObservableObject {
         DispatchQueue.main.async {
             NavigationAllViewStateManager.shared.popToRoot()
         }
+    }
+    
+    /// 全プレイヤーの処理を停止（どてんこ宣言時）
+    func stopAllPlayerActions() {
+        print("🛑 全プレイヤーの処理を停止")
+        
+        // BOTの処理を停止
+        gameBotManager.stopAllBotActions()
+        
+        // プレイヤーの操作を無効化（アニメーション中フラグで制御）
+        // isAnnouncementBlocking が true の間は全ての操作が無効化される
+        
+        print("   BOT処理停止完了")
+        print("   プレイヤー操作無効化完了")
     }
     
     /// ゲーム中の上昇レート管理

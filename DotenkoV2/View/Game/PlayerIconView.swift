@@ -296,6 +296,11 @@ private struct HandCardsView: View {
             return true
         }
         
+        // チャレンジゾーン参加者の手札は表面を表示
+        if viewModel.showHandReveal && viewModel.challengeParticipants.contains(player.id) {
+            return true
+        }
+        
         // 他のプレイヤーの手札は設定に応じて表示
         // DEBUG時またはisCardOpenがtrueの場合は表面を表示
         return Config.GameConfig.isCardOpen

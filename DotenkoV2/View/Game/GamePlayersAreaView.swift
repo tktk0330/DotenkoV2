@@ -51,6 +51,8 @@ struct GamePlayersAreaView: View {
                 )
                 .zIndex(3000)
             }
+            
+
         }
     }
 }

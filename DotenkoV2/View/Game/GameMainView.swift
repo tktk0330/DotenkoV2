@@ -58,6 +58,20 @@ struct GameMainView: View {
                 .allowsHitTesting(false)
             }
             
+            // どてんこロゴアニメーション表示
+            if viewModel.showDotenkoLogoAnimation {
+                DotenkoLogoAnimationView(
+                    title: viewModel.dotenkoAnimationTitle,
+                    subtitle: viewModel.dotenkoAnimationSubtitle,
+                    isVisible: viewModel.showDotenkoLogoAnimation,
+                    colorType: viewModel.dotenkoAnimationColorType,
+                    onComplete: {
+                        // アニメーション完了時の処理は既にマネージャー内で実行済み
+                    }
+                )
+                .allowsHitTesting(false)
+            }
+            
             // レートアップエフェクト表示
             if viewModel.showRateUpEffect {
                 RateUpEffectView(
