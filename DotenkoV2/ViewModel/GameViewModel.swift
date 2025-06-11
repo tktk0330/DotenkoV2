@@ -66,16 +66,13 @@ class GameViewModel: ObservableObject {
     @Published var isFirstCardDealt: Bool = false
     @Published var isBurst: Bool = false
     
-    // アナウンスシステム
-    @Published var showAnnouncement: Bool = false
-    @Published var announcementText: String = ""
-    @Published var announcementSubText: String = ""
-    @Published var isAnnouncementBlocking: Bool = false
-    
-    // レートアップエフェクトシステム
-    @Published var showRateUpEffect: Bool = false
-    @Published var rateUpMultiplier: Int = 1
-    private var rateUpEffectTimer: Timer?
+    // アナウンス・エフェクトシステム（マネージャーに委譲）
+    var showAnnouncement: Bool { announcementEffectManager.showAnnouncement }
+    var announcementText: String { announcementEffectManager.announcementText }
+    var announcementSubText: String { announcementEffectManager.announcementSubText }
+    var isAnnouncementBlocking: Bool { announcementEffectManager.isAnnouncementBlocking }
+    var showRateUpEffect: Bool { announcementEffectManager.showRateUpEffect }
+    var rateUpMultiplier: Int { announcementEffectManager.rateUpMultiplier }
     
     // 中間結果画面システム
     @Published var showInterimResult: Bool = false
@@ -93,6 +90,7 @@ class GameViewModel: ObservableObject {
     private let userProfileRepository = UserProfileRepository.shared
     private let botManager: BotManagerProtocol = BotManager()
     private let cardValidationManager = GameCardValidationManager() // カード出し判定マネージャー
+    private let announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
     private var countdownTimer: Timer?
     private var revengeTimer: Timer?
     
@@ -101,7 +99,6 @@ class GameViewModel: ObservableObject {
         // タイマーのクリーンアップ
         countdownTimer?.invalidate()
         revengeTimer?.invalidate()
-        rateUpEffectTimer?.invalidate()
         print("🎮 GameViewModel解放")
     }
     
@@ -162,7 +159,7 @@ class GameViewModel: ObservableObject {
         gamePhase = .playing
         
         // ラウンド開始アナウンス
-        showAnnouncementMessage(
+        announcementEffectManager.showAnnouncementMessage(
             title: "Round \(currentRound) Start",
             subtitle: ""
         ) {
@@ -553,7 +550,7 @@ class GameViewModel: ObservableObject {
             resetRoundInfo()
             
             // 次のラウンド開始アナウンス
-            showAnnouncementMessage(
+            announcementEffectManager.showAnnouncementMessage(
                 title: "Round \(currentRound) Start",
                 subtitle: ""
             ) {
@@ -1004,7 +1001,7 @@ class GameViewModel: ObservableObject {
     /// プレイヤーがアクションを実行できるかチェック
     func canPlayerPerformAction(playerId: String) -> Bool {
         // アナウンス中は操作不可
-        if isAnnouncementBlocking {
+        if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
@@ -1166,7 +1163,7 @@ class GameViewModel: ObservableObject {
     /// どてんこ宣言ボタンを表示すべきかチェック
     func shouldShowDotenkoButton() -> Bool {
         // アナウンス中は表示しない
-        if isAnnouncementBlocking {
+        if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
@@ -1571,7 +1568,7 @@ class GameViewModel: ObservableObject {
     /// リベンジボタンを表示すべきかチェック
     func shouldShowRevengeButton(for playerId: String) -> Bool {
         // アナウンス中は表示しない
-        if isAnnouncementBlocking {
+        if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
@@ -1664,7 +1661,7 @@ class GameViewModel: ObservableObject {
         print("🏆 バースト勝者: その他全員")
         
         // バースト発生アナウンス
-        showAnnouncementMessage(
+        announcementEffectManager.showAnnouncementMessage(
             title: "バースト発生！",
             subtitle: "\(players[playerIndex].name) の敗北"
         ) {
@@ -1692,7 +1689,7 @@ class GameViewModel: ObservableObject {
     /// しょてんこボタンを表示すべきかチェック
     func shouldShowShotenkoButton() -> Bool {
         // アナウンス中は表示しない
-        if isAnnouncementBlocking {
+        if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
@@ -1709,79 +1706,7 @@ class GameViewModel: ObservableObject {
         handleShotenkoDeclaration(playerId: playerId)
     }
     
-    // MARK: - Announcement System
-    
-    /// アナウンスを表示（右から流れて中央で停止して左に完全に流れ切る）
-    /// - Parameters:
-    ///   - title: メインタイトルテキスト
-    ///   - subtitle: サブタイトルテキスト（オプション）
-    ///   - completion: アニメーション完了後のコールバック
-    func showAnnouncementMessage(title: String, subtitle: String = "", completion: (() -> Void)? = nil) {
-        announcementText = title
-        announcementSubText = subtitle
-        isAnnouncementBlocking = true
-        
-        print("📢 アナウンス表示開始: \(title)")
-        if !subtitle.isEmpty {
-            print("   サブタイトル: \(subtitle)")
-        }
-        
-        // アナウンス表示開始
-        showAnnouncement = true
-        
-        // 総アニメーション時間を定数から取得
-        // 構成: 開始遅延(0.1秒) + 右→中央(0.8秒) + 中央停止(1.5秒) + 中央→左(1.2秒) = 3.6秒
-        let totalDuration = LayoutConstants.AnnouncementAnimation.totalDuration
-        
-        print("   総アニメーション時間: \(totalDuration)秒")
-        print("   - 右→中央: \(LayoutConstants.AnnouncementAnimation.enteringDuration)秒")
-        print("   - 中央停止: \(LayoutConstants.AnnouncementAnimation.stayingDuration)秒")
-        print("   - 中央→左: \(LayoutConstants.AnnouncementAnimation.exitingDuration)秒")
-        
-        // アニメーション完了後に処理再開とコールバック実行
-        DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
-            self.hideAnnouncement()
-            completion?()
-        }
-    }
-    
-    /// アナウンスを非表示
-    func hideAnnouncement() {
-        showAnnouncement = false
-        isAnnouncementBlocking = false
-        announcementText = ""
-        announcementSubText = ""
-        print("📢 アナウンス表示終了")
-    }
-    
-    // MARK: - Rate Up Effect System
-    
-    /// レートアップエフェクトを表示
-    /// - Parameter multiplier: 現在の倍率
-    func showRateUpEffect(multiplier: Int) {
-        // 既存のタイマーをキャンセル
-        rateUpEffectTimer?.invalidate()
-        
-        rateUpMultiplier = multiplier
-        showRateUpEffect = true
-        
-        print("📈 レートアップエフェクト表示: ×\(multiplier)")
-        
-        // 5.0秒後にエフェクトを非表示（5回発射 + スローアニメーション完了時間に合わせて調整）
-        rateUpEffectTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            self.hideRateUpEffect()
-        }
-    }
-    
-    /// レートアップエフェクトを非表示
-    func hideRateUpEffect() {
-        rateUpEffectTimer?.invalidate()
-        rateUpEffectTimer = nil
-        showRateUpEffect = false
-        rateUpMultiplier = 1
-        print("📈 レートアップエフェクト終了")
-    }
+
     
     // MARK: - Score Calculation System
     
@@ -1804,7 +1729,7 @@ class GameViewModel: ObservableObject {
         print("💰 スコア計算開始")
         
         // デッキの裏確認演出を開始
-        showAnnouncementMessage(
+        announcementEffectManager.showAnnouncementMessage(
             title: "スコア計算",
             subtitle: "デッキの裏を確認します"
         ) {
@@ -1924,7 +1849,7 @@ class GameViewModel: ObservableObject {
                 print("🗑️ 連続特殊カードを実際のデッキからも削除: \(nextCard.card.rawValue)")
             }
             
-            showAnnouncementMessage(
+            announcementEffectManager.showAnnouncementMessage(
                 title: "連続特殊カード！",
                 subtitle: "\(nextCard.card.rawValue) - さらに2倍"
             ) {
@@ -2318,24 +2243,15 @@ class GameViewModel: ObservableObject {
                 print("📈 上昇レート発生! 現在の倍率: \(currentUpRate)")
                 
                 // 上昇レート演出（矢印エフェクト）
-                showRateUpEffect(multiplier: currentUpRate)
+                announcementEffectManager.showRateUpEffect(multiplier: currentUpRate)
             }
         }
     }
     
-    /// 特殊カード演出の種類
-    enum SpecialCardEffectType {
-        case multiplier50
-        case diamond3
-        case black3Reverse
-        case heart3
-    }
-    
     /// 特殊カード演出を表示
-    private func showSpecialCardEffect(title: String, subtitle: String, effectType: SpecialCardEffectType, completion: @escaping () -> Void) {
-        // 特殊カード演出（アナウンス削除）
-        print("🎴 特殊カード演出: \(title) - \(subtitle)")
-        completion()
+    private func showSpecialCardEffect(title: String, subtitle: String, effectType: GameAnnouncementEffectManager.SpecialCardEffectType, completion: @escaping () -> Void) {
+        // アナウンス・エフェクトマネージャーに委譲
+        announcementEffectManager.showSpecialCardEffect(title: title, subtitle: subtitle, effectType: effectType, completion: completion)
     }
     
     /// ゲーム開始時の上昇レート判定（1、2、ジョーカー）
@@ -2346,7 +2262,7 @@ class GameViewModel: ObservableObject {
             print("🎯 ゲーム開始時上昇レート発生! カード: \(card.card.rawValue), 倍率: ×\(currentUpRate)")
             
             // 上昇レート演出（矢印エフェクト）
-            showRateUpEffect(multiplier: currentUpRate)
+            announcementEffectManager.showRateUpEffect(multiplier: currentUpRate)
             
             // 連続確認（現在のカードは既に処理済みなので、次のカードから開始）
             checkConsecutiveGameStartCardsAfterProcessing(processedCard: card)
@@ -2378,7 +2294,7 @@ class GameViewModel: ObservableObject {
             print("🎯 連続特殊カード発生! カード: \(nextCard.card.rawValue), 新倍率: ×\(currentUpRate)")
             
             // 連続ボーナス演出（矢印エフェクト）
-            showRateUpEffect(multiplier: currentUpRate)
+            announcementEffectManager.showRateUpEffect(multiplier: currentUpRate)
             
             // 連続確認を継続（次のカードで再帰）
             checkConsecutiveGameStartCardsAfterProcessing(processedCard: nextCard)
