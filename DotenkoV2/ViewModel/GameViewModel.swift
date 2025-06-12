@@ -37,7 +37,7 @@ class GameViewModel: ObservableObject {
     @Published var showCountdown: Bool = false
     
     // ターン管理情報
-    @Published var currentTurnPlayerIndex: Int = 0
+    @Published var currentTurnPlayerIndex: Int = -1 // -1は「誰のターンでもない」状態
     @Published var isWaitingForFirstCard: Bool = false
     
     // デッキ情報
@@ -198,6 +198,10 @@ class GameViewModel: ObservableObject {
         setupGameInfo()
         setupPlayers()
         setupDeck()
+        
+        // ターンを誰のターンでもない状態に初期化
+        resetTurn()
+        
         // 初期カード配布はアニメーション付きで実行
         gamePhase = .playing
         
@@ -1072,7 +1076,13 @@ class GameViewModel: ObservableObject {
             players[index].hasDrawnCardThisTurn = false
         }
         
-        currentTurnPlayerIndex = (currentTurnPlayerIndex + 1) % players.count
+        // ターンインデックスを進める（-1の場合は0から開始）
+        if currentTurnPlayerIndex == -1 {
+            currentTurnPlayerIndex = 0
+        } else {
+            currentTurnPlayerIndex = (currentTurnPlayerIndex + 1) % players.count
+        }
+        
         let currentPlayer = getCurrentTurnPlayer()
         print("ターン変更: プレイヤー\(currentTurnPlayerIndex + 1) (\(currentPlayer?.name ?? "不明")) のターン")
         print("   プレイヤーID: \(currentPlayer?.id ?? "不明")")
@@ -1089,7 +1099,7 @@ class GameViewModel: ObservableObject {
     
     /// 現在のターンのプレイヤーを取得
     func getCurrentTurnPlayer() -> Player? {
-        guard currentTurnPlayerIndex < players.count else { return nil }
+        guard currentTurnPlayerIndex >= 0 && currentTurnPlayerIndex < players.count else { return nil }
         return players[currentTurnPlayerIndex]
     }
     
@@ -1114,8 +1124,8 @@ class GameViewModel: ObservableObject {
             players[index].hasDrawnCardThisTurn = false
         }
         
-        currentTurnPlayerIndex = 0
-        print("ターンリセット: プレイヤー1から開始")
+        currentTurnPlayerIndex = -1 // 誰のターンでもない状態
+        print("ターンリセット: 誰のターンでもない状態（早い者勝ち待機）")
     }
     
     /// 現在のターンプレイヤーのインデックスを取得
