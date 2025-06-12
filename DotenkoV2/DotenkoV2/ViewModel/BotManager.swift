@@ -68,6 +68,18 @@ class BotManager: BotManagerProtocol {
             return
         }
         
+        // 🔥 どてんこ処理中は全ての処理を停止
+        if gameState.gamePhase == .dotenkoProcessing {
+            print("🛑 BOTターン停止: どてんこ処理中のため処理をキャンセル - \(player.name)")
+            return
+        }
+        
+        // アナウンス中は処理しない
+        if gameState.isAnnouncementBlocking {
+            print("🛑 BOTターン停止: アナウンス中のため処理をキャンセル - \(player.name)")
+            return
+        }
+        
         print("🤖 BOTターン開始: \(player.name)")
         print("   プレイヤーID: \(player.id)")
         print("   現在のゲームフェーズ: \(gameState.gamePhase)")
@@ -80,6 +92,12 @@ class BotManager: BotManagerProtocol {
         print("🤖 BOT思考時間: \(String(format: "%.1f", thinkingTime))秒")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + thinkingTime) {
+            // 🔥 遅延実行時にも再度状態をチェック
+            if gameState.gamePhase == .dotenkoProcessing {
+                print("🛑 BOT思考完了時停止: どてんこ処理中のため処理をキャンセル - \(player.name)")
+                return
+            }
+            
             print("🤖 BOT思考完了 - 行動実行開始: \(player.name)")
             self.performBotAction(player: player, gameState: gameState, completion: completion)
         }
@@ -90,6 +108,12 @@ class BotManager: BotManagerProtocol {
         guard gameState.gamePhase == .playing else { 
             completion([])
             return 
+        }
+        
+        // 🔥 どてんこ処理中は処理しない
+        if gameState.gamePhase == .dotenkoProcessing {
+            completion([])
+            return
         }
         
         // アナウンス中は処理しない
@@ -106,6 +130,13 @@ class BotManager: BotManagerProtocol {
                 // BOTは見逃しなしで即座に宣言（少し遅延を入れて人間らしく）
                 let delay = Double.random(in: realtimeDelayRange)
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    // 🔥 遅延実行時にも再度状態をチェック
+                    if gameState.gamePhase == .dotenkoProcessing {
+                        print("🛑 BOTリアルタイムどてんこ停止: どてんこ処理中のため処理をキャンセル - \(bot.name)")
+                        completion([])
+                        return
+                    }
+                    
                     if gameState.canPlayerDeclareDotenko(bot.id) && !bot.dtnk {
                         print("🤖 BOT \(bot.name) がリアルタイムどてんこ宣言!")
                         completion([bot.id])

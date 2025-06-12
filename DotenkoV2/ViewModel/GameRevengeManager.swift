@@ -53,6 +53,12 @@ class GameRevengeManager: ObservableObject {
     func startRevengeWaitingPhase() {
         guard let gameViewModel = gameViewModel else { return }
         
+        // 🔄 BOT処理を再開（リベンジ・チャレンジ処理のため）
+        gameViewModel.gameBotManager.resumeBotActions()
+        
+        // ゲームフェーズをリベンジ待機に変更
+        gameViewModel.gamePhase = .revengeWaiting
+        
         // リベンジ可能なプレイヤーを特定
         updateRevengeEligiblePlayers()
         
@@ -296,6 +302,9 @@ class GameRevengeManager: ObservableObject {
             finalizeChallengeZone()
             return
         }
+        
+        // 🔄 BOT処理を再開（チャレンジゾーン処理のため）
+        gameViewModel.gameBotManager.resumeBotActions()
         
         let fieldValue = fieldCard.card.handValue().first ?? 0
         

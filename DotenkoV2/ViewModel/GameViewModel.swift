@@ -114,7 +114,7 @@ class GameViewModel: ObservableObject {
     let announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
     private let scoreCalculationManager: GameScoreCalculationManager // スコア計算マネージャー
     private let revengeManager: GameRevengeManager // リベンジ・チャレンジゾーンマネージャー
-    private let gameBotManager: GameBotManager // BOT思考システムマネージャー
+    let gameBotManager: GameBotManager // BOT思考システムマネージャー
     private var countdownTimer: Timer?
     private var cancellables = Set<AnyCancellable>() // Combine用のキャンセル可能オブジェクト
     
@@ -677,6 +677,12 @@ class GameViewModel: ObservableObject {
     
     /// デッキからカードを引く
     func drawCardFromDeck(playerId: String) {
+        // 🔥 どてんこ処理中は通常のカード引きを停止（チャレンジゾーンは除く）
+        if gamePhase == .dotenkoProcessing {
+            print("🛑 カード引き停止: どてんこ処理中のため処理をキャンセル")
+            return
+        }
+        
         guard let playerIndex = players.firstIndex(where: { $0.id == playerId }) else { return }
         
         // デッキが空の場合は山札を再構築
@@ -729,6 +735,12 @@ class GameViewModel: ObservableObject {
     
     /// 出すアクションを処理
     func handlePlayAction() {
+        // 🔥 どてんこ処理中は通常のカード出しを停止
+        if gamePhase == .dotenkoProcessing {
+            print("🛑 カード出し停止: どてんこ処理中のため処理をキャンセル")
+            return
+        }
+        
         guard let currentPlayer = getCurrentPlayer() else { return }
         
         // 早い者勝ちの場合（カウントダウン中）

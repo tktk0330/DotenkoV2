@@ -20,6 +20,7 @@ enum PlayerPosition {
 enum GamePhase {
     case waiting        // 待機中
     case playing        // プレイ中
+    case dotenkoProcessing // どてんこ処理中（全操作停止）
     case dotenkoWaiting // どてんこ宣言待機中
     case revengeWaiting // リベンジ宣言待機中
     case challengeZone  // チャレンジゾーン

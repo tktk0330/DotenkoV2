@@ -8,6 +8,7 @@ class GameBotManager: ObservableObject {
     // MARK: - Private Properties
     private weak var gameViewModel: GameViewModel?
     private let botManager: BotManagerProtocol
+    private var isBotActionsStopped: Bool = false // BOT処理停止フラグ
     
     // MARK: - Initialization
     init(botManager: BotManagerProtocol) {
@@ -29,9 +30,21 @@ class GameBotManager: ObservableObject {
     /// 全BOTの処理を停止
     func stopAllBotActions() {
         print("🛑 全BOTの処理を停止")
+        
+        // BOT処理停止フラグを設定
+        isBotActionsStopped = true
+        
         // BotManagerに停止指示を送信
         // 現在実行中のBOT処理をキャンセル
         print("   BOT思考処理停止完了")
+        print("   BOT処理停止フラグ設定: \(isBotActionsStopped)")
+    }
+    
+    /// BOT処理停止状態をリセット
+    func resumeBotActions() {
+        print("🔄 BOT処理を再開")
+        isBotActionsStopped = false
+        print("   BOT処理停止フラグリセット: \(isBotActionsStopped)")
     }
     
     /// BOTのターンを開始
@@ -41,12 +54,24 @@ class GameBotManager: ObservableObject {
             return 
         }
         
+        // 🔥 BOT処理停止フラグをチェック
+        if isBotActionsStopped {
+            print("🛑 BOTターン停止: BOT処理が停止中のため処理をキャンセル - \(player.name)")
+            return
+        }
+        
         // BotGameStateを作成
         let gameState = createBotGameState()
         
         // BotManagerに処理を委譲
         botManager.startBotTurn(player: player, gameState: gameState) { [weak self] action in
-            self?.handleBotAction(action)
+            // 🔥 アクション実行時にも停止フラグをチェック
+            guard let self = self, !self.isBotActionsStopped else {
+                print("🛑 BOTアクション停止: BOT処理が停止中のため処理をキャンセル")
+                return
+            }
+            
+            self.handleBotAction(action)
         }
     }
     
