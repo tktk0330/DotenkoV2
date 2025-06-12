@@ -12,6 +12,7 @@ protocol BotManagerProtocol {
     func checkRealtimeDotenkoDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void)
     func checkRevengeDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void)
     func performChallengeAction(player: Player, gameState: BotGameState, completion: @escaping (BotChallengeAction) -> Void)
+    func checkRealtimeCardPlay(player: Player, gameState: BotGameState, completion: @escaping ([Card]) -> Void)
 }
 
 // MARK: - BOT Game State
@@ -366,5 +367,29 @@ class BotManager: BotManagerProtocol {
         
         // 通常のパス
         completion(.pass(playerId: player.id))
+    }
+    
+    /// BOTの早い者勝ちカード出しチェック
+    func checkRealtimeCardPlay(player: Player, gameState: BotGameState, completion: @escaping ([Card]) -> Void) {
+        guard gameState.isWaitingForFirstCard else {
+            completion([])
+            return
+        }
+        
+        print("🏁 BOT \(player.name) の早い者勝ちカード出し判定:")
+        print("   手札: \(player.hand.map { $0.card.rawValue })")
+        
+        // BOTが出せるカードの組み合わせを取得
+        let playableCardSets = getBotPlayableCards(player: player, gameState: gameState)
+        
+        if !playableCardSets.isEmpty {
+            // 最適なカードを選択
+            let bestCards = selectBestCards(from: playableCardSets, gameState: gameState)
+            print("🏁 BOT \(player.name) が早い者勝ちでカードを出します: \(bestCards.map { $0.card.rawValue })")
+            completion(bestCards)
+        } else {
+            print("🏁 BOT \(player.name) は早い者勝ちで出せるカードがありません")
+            completion([])
+        }
     }
 } 

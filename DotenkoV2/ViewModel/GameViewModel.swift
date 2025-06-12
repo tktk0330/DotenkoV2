@@ -385,6 +385,11 @@ class GameViewModel: ObservableObject {
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         self.checkShotenkoDeclarations()
+                        
+                        // 🏁 強制確定の場合も早い者勝ちモードを開始
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            self.startFirstCardRace()
+                        }
                     }
                 }
                 return
@@ -408,7 +413,7 @@ class GameViewModel: ObservableObject {
                 
                 // 特殊カード判定（1、2、ジョーカー）
                 if isSpecialCard(drawnCard) {
-                    print("🎯 特殊カード発生: \(drawnCard.card.rawValue) - レートアップ後に引き直し")
+                    print("🎯 特殊カード発生: \(drawnCard.card.rawValue) - レートアップ後に引き直し（早い者勝ちなし）")
                     
                     // ゲーム開始時の上昇レート判定とアニメーション
                     checkGameStartUpRate(card: drawnCard)
@@ -423,11 +428,17 @@ class GameViewModel: ObservableObject {
                 
                 // 特殊カードでない場合は場札として確定
                 isFirstCardDealt = true
-                print("✅ 最初の場札確定: \(fieldCards.last?.card.rawValue ?? "なし") (試行回数: \(attempts))")
+                print("✅ 最初の場札確定（通常カード）: \(fieldCards.last?.card.rawValue ?? "なし") (試行回数: \(attempts))")
                 
-                // しょてんこ判定を実行
+                // 🏁 通常カード（3-13）の場合は早い者勝ちモードを開始
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     self.checkShotenkoDeclarations()
+                    
+                    // しょてんこ判定後、早い者勝ちモードを開始
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("🏁 通常カード確定 - 早い者勝ちモード開始")
+                        self.startFirstCardRace()
+                    }
                 }
             }
         }
@@ -976,24 +987,13 @@ class GameViewModel: ObservableObject {
     private func finishCountdown() {
         isCountdownActive = false
         showCountdown = false
-        isWaitingForFirstCard = false
         
         print("カウントダウン終了 - 最初の場札をめくります")
         
         // 最初の場札を1枚めくる
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dealInitialFieldCard()
-            
-            // 場札配布後、ターンシステムを開始
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.resetTurn() // プレイヤー1からターン開始
-                print("ターンシステム開始 - \(self.getCurrentTurnPlayer()?.name ?? "不明") のターンです")
-                
-                // 最初のプレイヤーがBOTの場合は自動処理を開始
-                if let currentPlayer = self.getCurrentTurnPlayer(), currentPlayer.id != "player" {
-                    self.startBotTurn(player: currentPlayer)
-                }
-            }
+            // 🎯 早い者勝ちモードは dealNonSpecialFieldCard() 内で通常カード確定時に開始
         }
     }
     
@@ -1006,6 +1006,62 @@ class GameViewModel: ObservableObject {
         isWaitingForFirstCard = false
         
         print("カウントダウンキャンセル - 早い者勝ちでゲーム開始")
+    }
+    
+    /// 早い者勝ちモードを開始（場札配布後）
+    private func startFirstCardRace() {
+        isWaitingForFirstCard = true
+        
+        print("🏁 早い者勝ちモード開始 - 誰でも場のカードに対してカードを出せます")
+        print("   場のカード: \(fieldCards.last?.card.rawValue ?? "なし")")
+        
+        // BOTも早い者勝ちに参加
+        startBotFirstCardRace()
+    }
+    
+    /// BOTの早い者勝ち処理を開始
+    private func startBotFirstCardRace() {
+        // 各BOTに対して早い者勝ちの判定を行う
+        let botPlayers = players.filter { $0.id != "player" }
+        
+        for bot in botPlayers {
+            // BOTごとに異なる遅延時間で判定（1-3秒のランダム）
+            let delay = Double.random(in: 1.0...3.0)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                // 🔥 早い者勝ちが既に終了している場合は処理しない
+                if !self.isWaitingForFirstCard {
+                    return
+                }
+                
+                self.checkBotFirstCardPlay(bot: bot)
+            }
+        }
+    }
+    
+    /// BOTの早い者勝ちカード出し判定
+    private func checkBotFirstCardPlay(bot: Player) {
+        guard isWaitingForFirstCard else { return }
+        guard let fieldCard = fieldCards.last else { return }
+        
+        // BotGameStateを作成
+        let gameState = createBotGameState()
+        
+        // BOTが出せるカードがあるかチェック
+        botManager.checkRealtimeCardPlay(player: bot, gameState: gameState) { [weak self] playableCards in
+            guard let self = self, self.isWaitingForFirstCard else { return }
+            
+            if !playableCards.isEmpty {
+                // BOTが最初にカードを出す
+                print("🤖 BOT \(bot.name) が早い者勝ちでカードを出します: \(playableCards.map { $0.card.rawValue })")
+                
+                // BOTのカードを選択状態にして出す
+                if let botIndex = self.players.firstIndex(where: { $0.id == bot.id }) {
+                    self.players[botIndex].selectedCards = playableCards
+                    self.handleFirstCardPlay(player: bot)
+                }
+            }
+        }
     }
     
     // MARK: - Turn Management System
@@ -1070,17 +1126,27 @@ class GameViewModel: ObservableObject {
     // MARK: - Player Action Validation
     /// プレイヤーがアクションを実行できるかチェック
     func canPlayerPerformAction(playerId: String) -> Bool {
+        // 🔥 どてんこ処理中は全ての操作を無効化
+        if gamePhase == .dotenkoProcessing {
+            return false
+        }
+        
         // アナウンス中は操作不可
         if announcementEffectManager.isAnnouncementActive() {
             return false
         }
         
-        // カウントダウン中や待機中は操作不可
-        if isCountdownActive || isWaitingForFirstCard {
+        // カウントダウン中は操作不可
+        if isCountdownActive {
             return false
         }
         
-        // 現在のターンのプレイヤーのみアクション可能
+        // 🏁 早い者勝ち中は全プレイヤーがアクション可能
+        if isWaitingForFirstCard {
+            return true
+        }
+        
+        // 通常のターン制では現在のターンのプレイヤーのみアクション可能
         return isPlayerTurn(playerId: playerId)
     }
     
