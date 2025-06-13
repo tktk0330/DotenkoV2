@@ -1483,9 +1483,7 @@ class GameViewModel: ObservableObject {
     }
     
     /// プレイヤーがチャレンジゾーンでカードを引く
-    func handleChallengeDrawCard() {
-        revengeManager.handleChallengeDrawCard()
-    }
+
     
     // MARK: - Challenge Zone Participation Modal System
     

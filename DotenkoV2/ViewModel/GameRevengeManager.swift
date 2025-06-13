@@ -388,8 +388,11 @@ class GameRevengeManager: ObservableObject {
                 self.performBotChallengeAction(player: currentPlayer)
             }
         } else {
-            // 人間プレイヤーの場合は手動操作待ち
-            print("👤 プレイヤーのチャレンジターン - カードを引いてください")
+            // 人間プレイヤーの場合も自動でカードを引く
+            print("👤 プレイヤーのチャレンジターン - 自動でカードを引きます")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.performPlayerChallengeAction(player: currentPlayer)
+            }
         }
     }
     
@@ -404,6 +407,33 @@ class GameRevengeManager: ObservableObject {
             case .drawAndContinue(let playerId):
                 gameViewModel.drawCardFromDeck(playerId: playerId)
                 self?.nextChallengePlayer()
+            }
+        }
+    }
+    
+    /// プレイヤーのチャレンジアクション（自動処理）
+    private func performPlayerChallengeAction(player: Player) {
+        guard let gameViewModel = gameViewModel else { return }
+        
+        print("🎯 プレイヤー \(player.name) のチャレンジアクション開始")
+        
+        // どてんこ可能かチェック
+        if gameViewModel.canPlayerDeclareDotenko(playerId: player.id) {
+            print("✨ プレイヤーがどてんこ宣言可能 - 自動宣言します")
+            handleChallengeDotenkoDeclaration(playerId: player.id)
+        } else {
+            // カードを引いて次のプレイヤーへ
+            print("📥 プレイヤーがカードを引きます")
+            gameViewModel.drawCardFromDeck(playerId: player.id)
+            
+            // カードを引いた後、再度どてんこ判定
+            if gameViewModel.canPlayerDeclareDotenko(playerId: player.id) {
+                print("✨ カード引き後にどてんこ可能 - どてんこボタンが表示されます")
+                // どてんこボタンが表示されるので、プレイヤーの判断に委ねる
+                // 次のプレイヤーには進まない
+            } else {
+                // 次のプレイヤーへ
+                nextChallengePlayer()
             }
         }
     }
@@ -459,25 +489,7 @@ class GameRevengeManager: ObservableObject {
         }
     }
     
-    /// プレイヤーがチャレンジゾーンでカードを引く
-    func handleChallengeDrawCard() {
-        guard let gameViewModel = gameViewModel else { return }
-        guard gameViewModel.gamePhase == .challengeZone else { return }
-        guard let currentPlayer = getCurrentChallengePlayer() else { return }
-        guard currentPlayer.id == "player" else { return }
-        
-        // デッキからカードを引く
-        gameViewModel.drawCardFromDeck(playerId: currentPlayer.id)
-        
-        // どてんこ判定
-        if gameViewModel.canPlayerDeclareDotenko(playerId: currentPlayer.id) {
-            // どてんこボタンを表示（自動宣言はしない）
-            print("✨ チャレンジでどてんこ可能! - どてんこボタンが表示されます")
-        } else {
-            // 次のプレイヤーへ
-            nextChallengePlayer()
-        }
-    }
+
     
     /// リベンジボタンを表示すべきかチェック
     func shouldShowRevengeButton(for playerId: String) -> Bool {
