@@ -35,9 +35,8 @@ struct GameMainView: View {
                     // メインゲーム画面レイアウト
                     gameMainLayout(geometry: geometry)
                     
-                    // UI オーバーレイ（戻るボタンなど）
+                    // UI オーバーレイ（設定ボタンなど）
                     GameUIOverlayView(
-                        onBackAction: { allViewNavigator.pop() },
                         onSettingsAction: viewModel.handleSettingsAction
                     )
                     
@@ -59,6 +58,29 @@ struct GameMainView: View {
                 .allowsHitTesting(false)
             }
             
+            // どてんこロゴアニメーション表示
+            if viewModel.showDotenkoLogoAnimation {
+                DotenkoLogoAnimationView(
+                    title: viewModel.dotenkoAnimationTitle,
+                    subtitle: viewModel.dotenkoAnimationSubtitle,
+                    isVisible: viewModel.showDotenkoLogoAnimation,
+                    colorType: viewModel.dotenkoAnimationColorType,
+                    onComplete: {
+                        // アニメーション完了時の処理は既にマネージャー内で実行済み
+                    }
+                )
+                .allowsHitTesting(false)
+            }
+            
+            // レートアップエフェクト表示
+            if viewModel.showRateUpEffect {
+                RateUpEffectView(
+                    isVisible: viewModel.showRateUpEffect,
+                    multiplier: viewModel.rateUpMultiplier
+                )
+                .allowsHitTesting(false)
+            }
+            
             // スコア確定画面
             if viewModel.showScoreResult, let scoreData = viewModel.scoreResultData {
                 ScoreResultView(
@@ -71,6 +93,10 @@ struct GameMainView: View {
                     upRate: scoreData.upRate,
                     finalMultiplier: scoreData.finalMultiplier,
                     totalScore: scoreData.totalScore,
+                    isShotenkoRound: scoreData.isShotenkoRound,
+                    isBurstRound: scoreData.isBurstRound,
+                    shotenkoWinnerId: scoreData.shotenkoWinnerId,
+                    burstPlayerId: scoreData.burstPlayerId,
                     onOKAction: viewModel.onScoreResultOK
                 )
             }
@@ -87,6 +113,13 @@ struct GameMainView: View {
                     onOKAction: viewModel.handleFinalResultOK
                 )
             }
+        }
+        // ⭐ 設定モーダルの表示を追加
+        .sheet(isPresented: $viewModel.showGameSettingsModal) {
+            GameSettingsModal(onExitGame: {
+                allViewNavigator.popToRoot()
+            })
+            .presentationBackground(.clear)
         }
     }
 }

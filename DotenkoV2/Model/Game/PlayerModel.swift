@@ -11,6 +11,7 @@ import SwiftUI
 ///   - score: ゲームスコア
 ///   - rank: 順位
 ///   - dtnk: どてんこ可能フラグ
+///   - hasDrawnCardThisTurn: このターンでカードを引いたかどうか
 struct Player: Identifiable {
     let id: String
     let side: Int
@@ -21,5 +22,6 @@ struct Player: Identifiable {
     var score = 0
     var rank = 0
     var dtnk: Bool
+    var hasDrawnCardThisTurn: Bool = false
 }
 

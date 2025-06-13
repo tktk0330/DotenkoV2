@@ -17,30 +17,36 @@ struct GameRuleView: View {
     // MARK: - View Body
     
     var body: some View {
-        VStack(spacing: 24) {
-            // 設定項目グリッド
-            VStack(spacing: 20) {
-                // 1段目: ゲーム数とジョーカー
-                HStack(spacing: 20) {
-                    makeSettingCard(.roundCount)
-                    makeSettingCard(.jokerCount)
-                }
+        ScrollView {
+            VStack(spacing: 32) {
                 
-                // 2段目: レートと最大掛け金
-                HStack(spacing: 20) {
-                    makeSettingCard(.gameRate)
-                    makeSettingCard(.maxScore)
+                // 設定項目グリッド
+                VStack(spacing: 24) {
+                    // 1段目: ゲーム数とジョーカー
+                    HStack(spacing: 16) {
+                        makeSettingCard(.roundCount)
+                        makeSettingCard(.jokerCount)
+                    }
+                    
+                    // 2段目: レートと最大掛け金
+                    HStack(spacing: 16) {
+                        makeSettingCard(.gameRate)
+                        makeSettingCard(.maxScore)
+                    }
+                    
+                    // 3段目: アップレートとデッキ
+                    HStack(spacing: 16) {
+                        makeSettingCard(.upRate)
+                        makeSettingCard(.deckCycle)
+                    }
                 }
+                .padding(.horizontal, 20)
                 
-                // 3段目: アップレートとデッキ
-                HStack(spacing: 20) {
-                    makeSettingCard(.upRate)
-                    makeSettingCard(.deckCycle)
-                }
+                Spacer(minLength: 100) // 下部余白
             }
-            .padding(.horizontal, 20)
+            .padding(.top, 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .background(CasinoBackground())
         .sheet(item: $selectedSetting) { setting in
             GameRuleSettingModal(
                 title: setting.title,
@@ -59,13 +65,13 @@ struct GameRuleView: View {
     /// - Parameter setting: 設定項目の種類
     /// - Returns: 設定カードのView
     private func makeSettingCard(_ setting: GameSetting) -> some View {
-        SettingCard(
+        CasinoSettingCard(
             icon: setting.icon,
             title: setting.title,
             value: getDisplayValue(for: setting),
-            isEnabled: true
+            isEnabled: true,
+            onTap: { selectedSetting = setting }
         )
-        .onTapGesture { selectedSetting = setting }
     }
     
     // MARK: - Helper Methods
@@ -108,6 +114,136 @@ struct GameRuleView: View {
     }
 }
 
+// MARK: - Casino Setting Card
+struct CasinoSettingCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    let isEnabled: Bool
+    let onTap: () -> Void
+    
+    @State private var isPressed = false
+    @State private var isGlowing = false
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // アイコンとタイトル
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.blue,
+                                    Color.cyan,
+                                    Color.blue.opacity(0.8)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                        )
+                        .shadow(color: Color.blue.opacity(0.4), radius: 6, x: 0, y: 3)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+            
+            // 値表示
+            Text(value)
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.yellow,
+                            Color.orange
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 140)
+        .padding(16)
+        .background(casinoCardBackground)
+        .scaleEffect(isPressed ? 0.95 : (isGlowing ? 1.02 : 1.0))
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isGlowing)
+        .onTapGesture {
+            onTap()
+        }
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
+        .onAppear {
+            isGlowing = true
+        }
+    }
+    
+    private var casinoCardBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black.opacity(0.8),
+                        Color.black.opacity(0.6)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.blue.opacity(0.6),
+                                Color.cyan.opacity(0.6)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+            )
+            .overlay(
+                // 内側の光る効果
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.1),
+                                Color.clear,
+                                Color.white.opacity(0.1)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                    .padding(1)
+            )
+            .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.blue.opacity(0.2), radius: 12, x: 0, y: 0)
+    }
+}
+
+// MARK: - Legacy Support
 struct SettingCard: View {
     let icon: String
     let title: String
@@ -115,28 +251,12 @@ struct SettingCard: View {
     let isEnabled: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.white)
-                
-                Text(title)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            
-            Text(value)
-                .font(.system(size: 32, weight: .heavy))
-                .foregroundColor(.white)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 120)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(uiColor: Appearance.Color.mossGreen))
-                .shadow(color: .black.opacity(0.3), radius: 8, x: 4, y: 4)
+        CasinoSettingCard(
+            icon: icon,
+            title: title,
+            value: value,
+            isEnabled: isEnabled,
+            onTap: {}
         )
     }
 }
