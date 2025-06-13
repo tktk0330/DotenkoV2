@@ -134,14 +134,14 @@ class GameRevengeManager: ObservableObject {
         // 新しいどてんこ勝者を設定
         dotenkoWinnerId = playerId
         
+        // リベンジ宣言時に即座に全プレイヤーの処理を停止
+        gameViewModel.stopAllPlayerActions()
+        
         // リベンジアニメーションを表示
         let playerName = gameViewModel.players[playerIndex].name
         gameViewModel.announcementEffectManager.showDeclarationAnimation(type: .revenge, playerName: playerName) {
             // アニメーション完了後にリベンジ待機を再開
             DispatchQueue.main.async {
-                // リベンジ宣言時に全プレイヤーの処理を停止
-                gameViewModel.stopAllPlayerActions()
-                
                 // チャレンジゾーン参加判定を再開（連鎖リベンジ対応）
                 self.startChallengeZoneParticipation()
             }

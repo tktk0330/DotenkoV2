@@ -1269,14 +1269,14 @@ class GameViewModel: ObservableObject {
         // 最後の宣言者を勝者に設定（複数同時宣言の場合は最後の人が勝ち）
         updateDotenkoWinnerToLatest()
         
+        // どてんこ宣言時に即座に全プレイヤーの処理を停止
+        stopAllPlayerActions()
+        
         // どてんこアニメーションを表示
         let playerName = players[playerIndex].name
         announcementEffectManager.showDeclarationAnimation(type: .dotenko, playerName: playerName) {
             // アニメーション完了後にゲーム処理を継続
             DispatchQueue.main.async {
-                // どてんこ宣言時に全プレイヤーの処理を停止
-                self.stopAllPlayerActions()
-                
                 // ゲームフェーズに応じて処理を分岐
                 if self.gamePhase == .challengeZone {
                     // チャレンジゾーン中の場合
@@ -1561,14 +1561,14 @@ class GameViewModel: ObservableObject {
         print("🏆 しょてんこ勝者: \(players[playerIndex].name)")
         print("💀 しょてんこ敗者: その他全員")
         
+        // しょてんこ宣言時に即座に全プレイヤーの処理を停止
+        stopAllPlayerActions()
+        
         // しょてんこアニメーションを表示
         let playerName = players[playerIndex].name
         announcementEffectManager.showDeclarationAnimation(type: .shotenko, playerName: playerName) {
             // アニメーション完了後にチャレンジゾーンを開始
             DispatchQueue.main.async {
-                // しょてんこ宣言時に全プレイヤーの処理を停止
-                self.stopAllPlayerActions()
-                
                 // チャレンジゾーンを開始（しょてんこでもチャレンジゾーン発生）
                 self.revengeManager.startChallengeZone()
             }
