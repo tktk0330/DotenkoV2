@@ -363,15 +363,10 @@ struct BottomPlayerAreaView: View {
     private var revengeWaitingOverlay: some View {
         if viewModel.isRevengeWaiting {
             VStack(spacing: 10) {
-                Text("リベンジ待機中")
+                Text("リベンジ可能")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(Appearance.Color.commonWhite)
                     .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                Text("\(viewModel.revengeCountdown)")
-                    .font(.system(size: 32, weight: .black))
-                    .foregroundColor(Color.red)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 2)
                 
                 Text("リベンジ可能なプレイヤーがいます")
                     .font(.system(size: 14, weight: .medium))
