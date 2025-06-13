@@ -142,6 +142,9 @@ class GameRevengeManager: ObservableObject {
         gameViewModel.announcementEffectManager.showDeclarationAnimation(type: .revenge, playerName: playerName) {
             // アニメーション完了後にリベンジ待機を再開
             DispatchQueue.main.async {
+                // 重複実行防止フラグをリセット（リベンジ後の再判定のため）
+                self.isProcessingChallengeParticipation = false
+                
                 // チャレンジゾーン参加判定を再開（連鎖リベンジ対応）
                 self.startChallengeZoneParticipation()
             }
@@ -157,6 +160,7 @@ class GameRevengeManager: ObservableObject {
         guard let gameViewModel = gameViewModel else { return }
         
         print("🎯 チャレンジゾーン参加モーダル表示開始")
+        print("   現在のモーダル状態: \(showChallengeParticipationModal)")
         
         // 参加選択をリセット
         challengeParticipationChoices.removeAll()
@@ -166,6 +170,7 @@ class GameRevengeManager: ObservableObject {
             // モーダルを表示
             self.showChallengeParticipationModal = true
             print("🎯 モーダル表示設定完了: \(self.showChallengeParticipationModal)")
+            print("   リベンジ可能プレイヤー: \(self.revengeEligiblePlayers)")
             
             // SwiftUIに状態変更を強制通知
             self.objectWillChange.send()
@@ -183,6 +188,13 @@ class GameRevengeManager: ObservableObject {
         
         // リベンジ選択の場合は即座に処理
         if choice == .revenge {
+            // リベンジ宣言時にモーダルを一度消す
+            showChallengeParticipationModal = false
+            print("🎯 リベンジ宣言のためモーダルを一時非表示")
+            
+            // SwiftUIに状態変更を強制通知
+            objectWillChange.send()
+            
             handleRevengeDeclaration(playerId: playerId)
             return
         }
