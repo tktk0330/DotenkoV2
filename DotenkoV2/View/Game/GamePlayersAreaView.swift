@@ -299,11 +299,7 @@ struct BottomPlayerAreaView: View {
             alignment: .bottomLeading
         )
 
-        .overlay(
-            // チャレンジゾーン表示
-            challengeZoneOverlay,
-            alignment: .center
-        )
+
         .overlay(
             // バースト表示
             burstOverlay,
@@ -356,49 +352,7 @@ struct BottomPlayerAreaView: View {
     
 
     
-    // MARK: - Challenge Zone Overlay
-    @ViewBuilder
-    private var challengeZoneOverlay: some View {
-        if viewModel.isChallengeZone {
-            VStack(spacing: 15) {
-                Text("チャレンジゾーン")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                if let currentPlayer = viewModel.getCurrentChallengePlayer() {
-                    Text("\(currentPlayer.name) のターン")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color.cyan)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                }
-                
-                Text("参加者: \(viewModel.challengeParticipants.count)人")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
-                    .shadow(color: Appearance.Color.commonBlack, radius: 1, x: 0, y: 1)
-                
-                // プレイヤーのターンの場合はカード引きボタンを表示
-                if let currentPlayer = viewModel.getCurrentChallengePlayer(),
-                   currentPlayer.id == "player" {
-                    ChallengeDrawCardButton(
-                        action: { viewModel.handleChallengeDrawCard() },
-                        isEnabled: true
-                    )
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Appearance.Color.commonBlack.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.blue, lineWidth: 2)
-                    )
-            )
-            .zIndex(1500)
-        }
-    }
+
     
     // MARK: - Burst Overlay
     @ViewBuilder

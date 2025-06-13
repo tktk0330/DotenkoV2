@@ -456,65 +456,7 @@ struct ShotenkoDeclarationButton: View {
 }
 
 // MARK: - Challenge Zone Draw Card Button
-/// チャレンジゾーン用カード引きボタン
-struct ChallengeDrawCardButton: View {
-    let action: () -> Void
-    let isEnabled: Bool
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: "plus.rectangle.on.rectangle")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                
-                Text("カードを引く")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-            }
-            .frame(width: 100, height: 80)
-            .background(challengeButtonBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(challengeButtonBorder)
-            .shadow(color: challengeButtonShadowColor, radius: 6, x: 0, y: 3)
-            .scaleEffect(isEnabled ? 1.0 : 0.9)
-            .opacity(isEnabled ? 1.0 : 0.6)
-        }
-        .disabled(!isEnabled)
-        .animation(.easeInOut(duration: 0.2), value: isEnabled)
-    }
-    
-    private var challengeButtonBackground: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color.blue.opacity(0.8),
-                Color.blue.opacity(0.6),
-                Color.blue.opacity(0.9)
-            ]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-    
-    private var challengeButtonBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.cyan.opacity(0.8),
-                        Color.blue.opacity(0.6)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: 2
-            )
-    }
-    
-    private var challengeButtonShadowColor: Color {
-        Color.blue.opacity(0.4)
-    }
-}
+
 
 // MARK: - Game Announcement View
 /// ゲームアナウンス表示コンポーネント（右から流れて中央で1秒停止して左に流れる）
