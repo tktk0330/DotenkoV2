@@ -53,6 +53,8 @@ enum Appearance {
         // ゲームアクションボタン色
         /// パスボタンの背景色 - 赤色
         static let passButtonBackground = SwiftUI.Color(red: 0.8, green: 0.2, blue: 0.2)
+        /// 引くボタンの背景色 - 青色
+        static let drawButtonBackground = SwiftUI.Color(red: 0.2, green: 0.4, blue: 0.8)
         /// プレイボタンの背景色 - 緑色
         static let playButtonBackground = SwiftUI.Color(red: 0.2, green: 0.6, blue: 0.2)
         
@@ -73,6 +75,32 @@ enum Appearance {
         static let upDisplayDarkBrown = SwiftUI.Color(red: 0.2, green: 0.1, blue: 0.0)
         /// UP表示の明るい茶色背景
         static let upDisplayLightBrown = SwiftUI.Color(red: 0.4, green: 0.2, blue: 0.0)
+        
+        // FinalResult専用色
+        /// 1位ゴールド色（カジノ風）
+        static let rankGold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// 2位シルバー色（カジノ風）
+        static let rankSilver = SwiftUI.Color(red: 0.9, green: 0.9, blue: 0.9)
+        /// 3位ブロンズ色（カジノ風）
+        static let rankBronze = SwiftUI.Color(red: 0.9, green: 0.6, blue: 0.3)
+        /// 4位以下グレー色
+        static let rankGray = SwiftUI.Color(red: 0.6, green: 0.6, blue: 0.6)
+        /// 背景の黒色（透明度付き）
+        static let finalResultBackground = SwiftUI.Color.black
+        /// タイトル区切り線の金色
+        static let finalResultDivider = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// ホームボタンの金色グラデーション
+        static let homeButtonGold = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
+        /// ホームボタンの暗い金色
+        static let homeButtonDarkGold = SwiftUI.Color(red: 0.8, green: 0.6, blue: 0.0)
+        /// 影の色
+        static let finalResultShadow = SwiftUI.Color.black
+        /// カジノ風ゴールドグロー
+        static let casinoGoldGlow = SwiftUI.Color(red: 1.0, green: 0.9, blue: 0.3)
+        /// カジノ風背景グラデーション上部
+        static let casinoBackgroundTop = SwiftUI.Color(red: 0.05, green: 0.15, blue: 0.05)
+        /// カジノ風背景グラデーション下部
+        static let casinoBackgroundBottom = SwiftUI.Color(red: 0.02, green: 0.08, blue: 0.02)
         
         // 背景色グラデーション
         /// メイン背景グラデーション - カジノ風の深緑グラデーション

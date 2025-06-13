@@ -10,9 +10,9 @@ struct DeckView: View {
     
     var body: some View {
         ZStack {
-            // デッキカード表示（重ねて表示）
+            // デッキカード表示（裏面で重ねて表示）
             ForEach(deckCards.prefix(5), id: \.id) { card in
-                CardView(card: card, size: 80)
+                DeckCardBackView(size: 80)
                     .matchedGeometryEffect(id: card.id, in: namespace)
             }
             
@@ -42,6 +42,23 @@ struct DeckView: View {
         }
         .onTapGesture {
             viewModel.handleDeckTap()
+        }
+    }
+}
+
+// MARK: - Deck Card Back View
+/// デッキカードの裏面表示View
+struct DeckCardBackView: View {
+    let size: CGFloat
+    
+    var body: some View {
+        ZStack {
+            // カード裏面画像
+            Image("back-1")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size * 0.9, height: size * 1.26)
+                .clipped()
         }
     }
 }

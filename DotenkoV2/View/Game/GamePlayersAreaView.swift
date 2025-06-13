@@ -35,6 +35,28 @@ struct GamePlayersAreaView: View {
                     namespace: namespace
                 )
             }
+            
+            // チャレンジゾーン参加モーダル
+            if viewModel.showChallengeParticipationModal {
+                ChallengeZoneParticipationModal(
+                    players: viewModel.players,
+                    revengeEligiblePlayers: viewModel.revengeEligiblePlayers,
+                    dotenkoWinnerId: viewModel.dotenkoWinnerId,
+                    fieldCardValue: viewModel.fieldCards.last?.card.handValue().first ?? 0,
+                    calculateHandTotals: { cards in
+                        viewModel.calculateHandTotals(cards: cards)
+                    },
+                    onPlayerChoice: { playerId, choice in
+                        viewModel.handlePlayerParticipationChoice(playerId: playerId, choice: choice)
+                    },
+                    onTimeout: {
+                        viewModel.handleParticipationModalTimeout()
+                    }
+                )
+                .zIndex(3000)
+            }
+            
+
         }
     }
 }
@@ -228,16 +250,16 @@ struct BottomPlayerAreaView: View {
             
             if let player = player {
                 HStack(spacing: -20) {
-                    // 左側：パス/引くボタン
+                    // 左側：引く/パスボタン
                     GameActionButton(
-                        icon: Appearance.Icon.arrowDownCircleFill,
-                        label: "パス",
+                        icon: hasDrawnCard ? Appearance.Icon.arrowDownCircleFill : "plus.rectangle.on.rectangle",
+                        label: hasDrawnCard ? "パス" : "引く",
                         action: onPassAction,
-                        backgroundColor: Appearance.Color.passButtonBackground,
+                        backgroundColor: hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground,
                         size: 75,
                         isEnabled: canPlayerPerformActions
                     )
-                    .offset(x: 20, y: 50)
+                    .offset(x: 20, y: 70)
                     
                     // 中央：プレイヤーアイコン
                     VStack(spacing: 10) {
@@ -255,7 +277,7 @@ struct BottomPlayerAreaView: View {
                         size: 75,
                         isEnabled: canPlayCards
                     )
-                    .offset(x: -20, y: 50)
+                    .offset(x: -20, y: 70)
                 }
                 .zIndex(1001)
                 .offset(y: -CGFloat(Constant.BANNER_HEIGHT) - GameLayoutConfig.bottomPlayerBottomPadding)
@@ -269,28 +291,21 @@ struct BottomPlayerAreaView: View {
         .overlay(
             // しょてんこ宣言ボタン（完全独立オーバーレイ）
             shotenkoButtonOverlay,
-            alignment: .bottom
+            alignment: .bottomTrailing
         )
         .overlay(
             // リベンジ宣言ボタン（完全独立オーバーレイ）
             revengeButtonOverlay,
             alignment: .bottomLeading
         )
-        .overlay(
-            // リベンジ待機中の表示
-            revengeWaitingOverlay,
-            alignment: .center
-        )
-        .overlay(
-            // チャレンジゾーン表示
-            challengeZoneOverlay,
-            alignment: .center
-        )
+
+
         .overlay(
             // バースト表示
             burstOverlay,
             alignment: .center
         )
+
     }
     
     // MARK: - Dotenko Button Overlay
@@ -315,7 +330,8 @@ struct BottomPlayerAreaView: View {
                 action: { handleShotenkoDeclaration(for: player) },
                 isEnabled: viewModel.shouldShowShotenkoButton()
             )
-            .padding(.bottom, 180)
+            .padding(.trailing, 20)
+            .padding(.bottom, 120)
             .zIndex(2001)
         }
     }
@@ -334,82 +350,9 @@ struct BottomPlayerAreaView: View {
         }
     }
     
-    // MARK: - Revenge Waiting Overlay
-    @ViewBuilder
-    private var revengeWaitingOverlay: some View {
-        if viewModel.isRevengeWaiting {
-            VStack(spacing: 10) {
-                Text("リベンジ待機中")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                Text("\(viewModel.revengeCountdown)")
-                    .font(.system(size: 32, weight: .black))
-                    .foregroundColor(Color.red)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 2)
-                
-                Text("リベンジ可能なプレイヤーがいます")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
-                    .shadow(color: Appearance.Color.commonBlack, radius: 1, x: 0, y: 1)
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Appearance.Color.commonBlack.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.red, lineWidth: 2)
-                    )
-            )
-            .zIndex(1500)
-        }
-    }
+
     
-    // MARK: - Challenge Zone Overlay
-    @ViewBuilder
-    private var challengeZoneOverlay: some View {
-        if viewModel.isChallengeZone {
-            VStack(spacing: 15) {
-                Text("チャレンジゾーン")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                if let currentPlayer = viewModel.getCurrentChallengePlayer() {
-                    Text("\(currentPlayer.name) のターン")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color.cyan)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                }
-                
-                Text("参加者: \(viewModel.challengeParticipants.count)人")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
-                    .shadow(color: Appearance.Color.commonBlack, radius: 1, x: 0, y: 1)
-                
-                // プレイヤーのターンの場合はカード引きボタンを表示
-                if let currentPlayer = viewModel.getCurrentChallengePlayer(),
-                   currentPlayer.id == "player" {
-                    ChallengeDrawCardButton(
-                        action: { viewModel.handleChallengeDrawCard() },
-                        isEnabled: true
-                    )
-                }
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Appearance.Color.commonBlack.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.blue, lineWidth: 2)
-                    )
-            )
-            .zIndex(1500)
-        }
-    }
+
     
     // MARK: - Burst Overlay
     @ViewBuilder
@@ -439,12 +382,20 @@ struct BottomPlayerAreaView: View {
         }
     }
     
+
+    
     // MARK: - Computed Properties
     
     /// プレイヤーがアクションを実行できるかチェック
     private var canPlayerPerformActions: Bool {
         guard let player = player else { return false }
         return viewModel.canPlayerPerformAction(playerId: player.id)
+    }
+    
+    /// プレイヤーがこのターンでカードを引いたかチェック
+    private var hasDrawnCard: Bool {
+        guard let player = player else { return false }
+        return viewModel.hasPlayerDrawnCardThisTurn(playerId: player.id)
     }
     
     /// カードを出せるかチェック

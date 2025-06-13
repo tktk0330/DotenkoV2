@@ -35,9 +35,8 @@ struct GameMainView: View {
                     // メインゲーム画面レイアウト
                     gameMainLayout(geometry: geometry)
                     
-                    // UI オーバーレイ（戻るボタンなど）
+                    // UI オーバーレイ（設定ボタンなど）
                     GameUIOverlayView(
-                        onBackAction: { allViewNavigator.pop() },
                         onSettingsAction: viewModel.handleSettingsAction
                     )
                     
@@ -58,6 +57,69 @@ struct GameMainView: View {
                 )
                 .allowsHitTesting(false)
             }
+            
+            // どてんこロゴアニメーション表示
+            if viewModel.showDotenkoLogoAnimation {
+                DotenkoLogoAnimationView(
+                    title: viewModel.dotenkoAnimationTitle,
+                    subtitle: viewModel.dotenkoAnimationSubtitle,
+                    isVisible: viewModel.showDotenkoLogoAnimation,
+                    colorType: viewModel.dotenkoAnimationColorType,
+                    onComplete: {
+                        // アニメーション完了時の処理は既にマネージャー内で実行済み
+                    }
+                )
+                .allowsHitTesting(false)
+            }
+            
+            // レートアップエフェクト表示
+            if viewModel.showRateUpEffect {
+                RateUpEffectView(
+                    isVisible: viewModel.showRateUpEffect,
+                    multiplier: viewModel.rateUpMultiplier
+                )
+                .allowsHitTesting(false)
+            }
+            
+            // スコア確定画面
+            if viewModel.showScoreResult, let scoreData = viewModel.scoreResultData {
+                ScoreResultView(
+                    winner: scoreData.winner,
+                    loser: scoreData.loser,
+                    deckBottomCard: scoreData.deckBottomCard,
+                    consecutiveCards: scoreData.consecutiveCards,
+                    winnerHand: scoreData.winnerHand,
+                    baseRate: scoreData.baseRate,
+                    upRate: scoreData.upRate,
+                    finalMultiplier: scoreData.finalMultiplier,
+                    totalScore: scoreData.totalScore,
+                    isShotenkoRound: scoreData.isShotenkoRound,
+                    isBurstRound: scoreData.isBurstRound,
+                    shotenkoWinnerId: scoreData.shotenkoWinnerId,
+                    burstPlayerId: scoreData.burstPlayerId,
+                    onOKAction: viewModel.onScoreResultOK
+                )
+            }
+            
+            // 中間結果画面
+            if viewModel.showInterimResult {
+                InterimResultView(viewModel: viewModel)
+            }
+            
+            // 最終結果画面
+            if viewModel.showFinalResult {
+                FinalResultView(
+                    viewModel: viewModel,
+                    onOKAction: viewModel.handleFinalResultOK
+                )
+            }
+        }
+        // ⭐ 設定モーダルの表示を追加
+        .sheet(isPresented: $viewModel.showGameSettingsModal) {
+            GameSettingsModal(onExitGame: {
+                allViewNavigator.popToRoot()
+            })
+            .presentationBackground(.clear)
         }
     }
 }
@@ -112,7 +174,8 @@ private extension GameMainView {
                 currentRound: viewModel.currentRound,
                 totalRounds: viewModel.totalRounds,
                 upRate: viewModel.upRate,
-                currentRate: viewModel.currentRate
+                currentRate: viewModel.currentRate,
+                viewModel: viewModel
             )
             .frame(height: geometry.size.height * GameLayoutConfig.headerAreaHeightRatio)
             

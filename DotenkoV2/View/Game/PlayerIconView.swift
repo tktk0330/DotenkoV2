@@ -4,62 +4,13 @@ import SwiftUI
 private struct PlayerImageView: View {
     let player: Player
     let size: CGFloat
-    @StateObject private var imageLoader = ImageLoader()
     
     var body: some View {
-        Group {
-            if let imageUrl = player.icon_url, !imageUrl.isEmpty {
-                if player.id.hasPrefix("bot-") {
-                    localImageView(imageUrl: imageUrl)
-                } else if imageUrl.hasPrefix("http") {
-                    remoteImageView(imageUrl: imageUrl)
-                } else {
-                    localImageView(imageUrl: imageUrl)
-                }
-            } else {
-                defaultImageView
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func localImageView(imageUrl: String) -> some View {
-        if let image = UIImage(named: imageUrl) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
-            defaultImageView
-        }
-    }
-    
-    @ViewBuilder
-    private func remoteImageView(imageUrl: String) -> some View {
-        if let uiImage = imageLoader.image {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-        } else if imageLoader.isLoading {
-            ProgressView()
-                .onAppear {
-                    imageLoader.loadImage(from: imageUrl)
-                }
-        } else {
-            defaultImageView
-                .onAppear {
-                    if imageLoader.image == nil && !imageLoader.isLoading {
-                        imageLoader.loadImage(from: imageUrl)
-                    }
-                }
-        }
-    }
-    
-    private var defaultImageView: some View {
-        Image(systemName: Appearance.Icon.personFill)
-            .resizable()
-            .scaledToFit()
-            .padding(8)
-            .foregroundColor(Appearance.Color.commonWhite)
+        CachedImageView(
+            imageUrl: player.icon_url,
+            size: size,
+            isBot: player.id.hasPrefix("bot-")
+        )
     }
 }
 
@@ -120,7 +71,7 @@ private struct PlayerScoreView: View {
     private var botPlayerScore: some View {
         Text(score)
             .font(.system(size: 10, weight: .medium))
-            .foregroundColor(Appearance.Color.commonGray)
+            .foregroundColor(Appearance.Color.commonWhite)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(
@@ -203,17 +154,25 @@ private struct PlayerIconContainer: View {
     
     @ViewBuilder
     private var handCountBadgeOverlay: some View {
-        if player.hand.count > 0 {
-            HandCountBadgeView(handCount: player.hand.count, position: position)
-                .offset(x: 0, y: badgeTopOffset)
-        }
+        // ⭐ 手札数字バッジの配置調整ポイント
+        // - badgeTopOffsetで縦位置を調整
+        // - .offset(x: 0, y: badgeTopOffset) のx値を変更すると横位置が調整可能
+        // - 例: .offset(x: 10, y: badgeTopOffset) で右に10pt移動
+        HandCountBadgeView(handCount: player.hand.count, position: position)
+            .offset(x: 0, y: badgeTopOffset) // ← ここで位置調整
     }
     
+    // ⭐ 手札数字バッジの縦位置計算
+    // この関数を修正することで、バッジとアイコンの距離を調整できます
     private var badgeTopOffset: CGFloat {
         let badgeSize: CGFloat = position == .bottom ? PlayerIconConstants.HandCountBadge.playerBadgeSize : PlayerIconConstants.HandCountBadge.botBadgeSize
         let iconRadius = config.size / 2
         
-        // バッジをアイコンにより近く配置（間隔を調整可能）
+        // ⭐ バッジ位置の調整ポイント
+        // PlayerIconConstants.HandCountBadge.iconSpacing の値を変更すると
+        // バッジとアイコンの間隔を調整できます
+        // 正の値：バッジがアイコンから離れる
+        // 負の値：バッジがアイコンに近づく
         return -iconRadius - badgeSize / 2 + PlayerIconConstants.HandCountBadge.iconSpacing
     }
     
@@ -326,7 +285,25 @@ private struct HandCardsView: View {
     var body: some View {
         // すべてのプレイヤーに扇形配置を適用
         fanLayoutHandCards
-            .offset(adjustedGlobalOffset) // 人数に応じて位置を動的調整
+            .offset(handOffset) // 位置に応じた適切なオフセットを適用
+    }
+    
+    // MARK: - Card Display Control
+    /// カードの表面を表示するかどうかを判定
+    private var shouldShowCardFront: Bool {
+        // 自分（bottom）の手札は常に表面を表示
+        if position == .bottom {
+            return true
+        }
+        
+        // チャレンジゾーン中は全プレイヤーの手札を表面表示
+        if viewModel.showHandReveal {
+            return true
+        }
+        
+        // 他のプレイヤーの手札は設定に応じて表示
+        // DEBUG時またはisCardOpenがtrueの場合は表面を表示
+        return Config.GameConfig.isCardOpen
     }
     
     // MARK: - Fan Layout (扇形配置)
@@ -339,7 +316,11 @@ private struct HandCardsView: View {
                 let cardPosition = calculateFanPosition(index: index, total: total)
                 let cardAngle = calculateFanAngle(index: index, total: total)
                 
-                CardView(card: card, size: adaptiveCardSize)
+                CardView(
+                    card: card, 
+                    size: adaptiveCardSize,
+                    showFront: shouldShowCardFront
+                )
                     .matchedGeometryEffect(id: card.id, in: namespace)
                     .rotationEffect(.degrees(cardAngle))
                     .offset(cardPosition)
@@ -359,6 +340,7 @@ private struct HandCardsView: View {
             }
         }
         .frame(width: fixedHandAreaWidth, height: fixedHandAreaHeight)
+        // ⭐ 中心対称配置は calculateFanPosition と calculateFanAngle で実現
     }
     
     // MARK: - Fan Layout Calculations
@@ -382,14 +364,16 @@ private struct HandCardsView: View {
             curveCoefficient = PlayerLayoutConstants.FanLayout.botCurveCoefficient
         }
         
-        // 中心を基準にしたインデックス計算
-        let centerOffset = Double(index) - Double(total - 1) / 2
+        // ⭐ 完全中心対称配置のための精密計算
+        // 中心インデックスを小数点精度で計算
+        let centerIndex = Double(total - 1) / 2.0
+        let centerOffset = Double(index) - centerIndex
         
-        // X座標：角度に基づく横方向の位置
+        // X座標：中心からの距離に基づく横方向の位置（完全対称）
         let x = CGFloat(cardSpacingDegrees * centerOffset)
         
-        // Y座標：放物線的な配置
-        let y = CGFloat(pow(centerOffset, 2) * cardSpacingDegrees * curveCoefficient)
+        // Y座標：放物線的な配置（中心からの距離の二乗に比例）
+        let y = CGFloat(pow(abs(centerOffset), 2) * cardSpacingDegrees * curveCoefficient)
         
         return CGSize(width: x, height: y)
     }
@@ -410,8 +394,10 @@ private struct HandCardsView: View {
             cardTiltDegrees = PlayerLayoutConstants.Angle.botCardTilt
         }
         
-        // 中心を基準にしたインデックス計算
-        let centerOffset = Double(index) - Double(total - 1) / 2
+        // ⭐ 中心対称角度計算のための精密計算
+        // 完全に中心を基準とした対称角度を実現
+        let centerIndex = Double(total - 1) / 2.0  // 中心インデックス（小数点対応）
+        let centerOffset = Double(index) - centerIndex  // 中心からの距離
         
         return cardTiltDegrees * centerOffset
     }
@@ -608,6 +594,19 @@ private struct HandCardsView: View {
             return baseOffset
         }
     }
+    
+    // MARK: - Hand Offset Calculation
+    /// 手札の位置オフセットを計算（中心対称配置を保証）
+    private var handOffset: CGSize {
+        // 下部プレイヤー（自分）の場合は中心対称配置を保証するため、
+        // 動的調整を行わず基本オフセットのみを使用
+        if position == .bottom {
+            return config.globalOffset
+        }
+        
+        // 他のプレイヤーは人数に応じた動的調整を適用
+        return adjustedGlobalOffset
+    }
 }
 
 // MARK: - Main Player Icon View
@@ -621,8 +620,25 @@ struct PlayerIconView: View {
         PlayerLayoutConfig.configuration(for: position)
     }
     
+    /// スコアをカンマ区切りでフォーマット
+    private func formatScore(_ score: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: score)) ?? "\(score)"
+    }
+    
     var body: some View {
         ZStack {
+            // スポットライト効果（最背面）- 自分以外のプレイヤーのみ表示
+            if position != .bottom {
+                WaterRippleSpotlightView(
+                    isActive: viewModel.isPlayerTurn(playerId: player.id),
+                    size: spotlightSize
+                )
+                .offset(config.icon.offset) // アイコンと同じ位置に配置
+                .zIndex(-1) // 最背面に配置
+            }
+            
             // 手札を配置（アイコンの後ろに来るようにzIndex調整）
             HandCardsView(
                 player: player,
@@ -631,7 +647,10 @@ struct PlayerIconView: View {
                 viewModel: viewModel,
                 namespace: namespace
             )
-            .offset(config.hand.globalOffset)
+            // ⭐ 手札全体の位置調整ポイント
+            // config.hand.globalOffset で手札の位置を調整
+            // GameLayoutConfig.swift の PlayerLayoutConfig で設定値を変更可能
+            .offset(config.hand.globalOffset) // ← 手札の位置調整
             .zIndex(position == .bottom ? 1 : 0)
             
             // プレイヤーアイコンとUI要素
@@ -643,12 +662,29 @@ struct PlayerIconView: View {
                 }
                 
                 PlayerScoreView(
-                    score: position == .bottom ? "100,000" : "50,000",
+                    score: formatScore(player.score),
                     isMainPlayer: position == .bottom
                 )
             }
-            .offset(config.icon.offset)
+            // ⭐ プレイヤーアイコン全体の位置調整ポイント
+            // config.icon.offset でアイコン全体の位置を調整
+            // GameLayoutConfig.swift の PlayerLayoutConfig で設定値を変更可能
+            .offset(config.icon.offset) // ← アイコン全体の位置調整
             .zIndex(position == .bottom ? 2 : 1)
+        }
+    }
+    
+    /// スポットライトのサイズを計算
+    private var spotlightSize: CGFloat {
+        let baseSize = config.icon.size
+        
+        switch position {
+        case .bottom:
+            // プレイヤー自身：スポットライト非表示のため0
+            return 0
+        case .top, .left, .right:
+            // Bot：適度なサイズのスポットライト
+            return baseSize * 3.2
         }
     }
 }

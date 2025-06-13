@@ -1,539 +1,462 @@
 import SwiftUI
 
+// MARK: - Common Animation Manager
+/// 宣言ボタン共通のアニメーション管理
+class DeclarationButtonAnimationManager: ObservableObject {
+    @Published var isPressed = false
+    @Published var isBlinking = false
+    @Published var heartbeatAnimation = false
+    
+    private var isEnabled: Bool = false
+    
+    /// アニメーション開始
+    func startAnimations(isEnabled: Bool) {
+        self.isEnabled = isEnabled
+        isBlinking = isEnabled
+        if isEnabled {
+            startHeartbeatAnimation()
+        } else {
+            heartbeatAnimation = false
+        }
+    }
+    
+    /// 押下状態更新
+    func updatePressedState(_ pressed: Bool) {
+        if isEnabled {
+            isPressed = pressed
+        }
+    }
+    
+    /// 心臓の鼓動のようなリズムアニメーションを開始
+    /// ドクン、ドクンという2回の拍動パターンを繰り返す
+    private func startHeartbeatAnimation() {
+        guard isEnabled else { return }
+        
+        // 心臓の鼓動パターン: ドクン（0.15秒）→ 休憩（0.1秒）→ ドクン（0.15秒）→ 長い休憩（0.8秒）
+        func performHeartbeat() {
+            // 1回目の鼓動
+            withAnimation(.easeInOut(duration: 0.15)) {
+                heartbeatAnimation = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    self.heartbeatAnimation = false
+                }
+                
+                // 短い休憩後、2回目の鼓動
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        self.heartbeatAnimation = true
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            self.heartbeatAnimation = false
+                        }
+                        
+                        // 長い休憩後、次のサイクル
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            if self.isEnabled {
+                                performHeartbeat()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        performHeartbeat()
+    }
+}
+
+// MARK: - Common Button Configuration
+/// 宣言ボタンの共通設定
+struct DeclarationButtonConfig {
+    static let size: CGFloat = 100
+    static let fontSize: CGFloat = 13
+    static let dotenkoFontSize: CGFloat = 14
+    static let tracking: CGFloat = 1.0
+    static let dotenkoTracking: CGFloat = 1.2
+    
+    // アニメーション設定
+    static let pressedScale: CGFloat = 0.88
+    static let blinkingScale: CGFloat = 1.15
+    static let heartbeatScale: CGFloat = 1.12
+    static let pressAnimationDuration: Double = 0.1
+    static let blinkAnimationDuration: Double = 0.5
+}
+
+// MARK: - Common Text Style
+/// カジノ風立体テキストスタイル
+struct CasinoTextStyle: View {
+    let text: String
+    let fontSize: CGFloat
+    let tracking: CGFloat
+    let gradient: LinearGradient
+    let glowColor: Color
+    
+    var body: some View {
+        ZStack {
+            // テキストの深い影（立体感の基盤）
+            Text(text)
+                .font(.system(size: fontSize, weight: .black, design: .rounded))
+                .foregroundColor(Appearance.Color.commonBlack.opacity(0.8))
+                .tracking(tracking)
+                .offset(x: 2, y: 3)
+            
+            // メインテキスト（カジノ風グラデーション）
+            Text(text)
+                .font(.system(size: fontSize, weight: .black, design: .rounded))
+                .foregroundStyle(gradient)
+                .tracking(tracking)
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.9), radius: 2, x: 1, y: 2)
+                .shadow(color: glowColor.opacity(0.8), radius: 4, x: 0, y: 0)
+                .multilineTextAlignment(.center)
+            
+            // カジノ風の輝きエフェクト
+            Text(text)
+                .font(.system(size: fontSize, weight: .black, design: .rounded))
+                .foregroundColor(Appearance.Color.commonWhite.opacity(0.6))
+                .tracking(tracking)
+                .blur(radius: 1)
+                .offset(x: -1, y: -1)
+                .multilineTextAlignment(.center)
+        }
+    }
+}
+
+// MARK: - Common Circular Background
+/// 円形パチンコボタン背景
+struct CircularPachinkoBackground: View {
+    let centerColor: Color
+    let midColor: Color
+    let outerColor: Color
+    let edgeColor: Color
+    let glowColor: Color
+    let borderColors: [Color]
+    let ringColors: [Color]
+    let isEnabled: Bool
+    
+    var body: some View {
+        ZStack {
+            // 最下層: 深い影（立体感の基盤）
+            Circle()
+                .fill(Appearance.Color.commonBlack.opacity(0.9))
+                .offset(x: 0, y: 8)
+                .blur(radius: 6)
+            
+            // ベース背景（放射状グラデーション）
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: centerColor, location: 0.0),
+                            .init(color: midColor, location: 0.3),
+                            .init(color: outerColor, location: 0.7),
+                            .init(color: edgeColor, location: 1.0)
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
+                    )
+                )
+                .shadow(color: glowColor.opacity(0.9), radius: 15, x: 0, y: 0)
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 10, x: 0, y: 6)
+            
+            // 上部ハイライト（光沢感）
+            Circle()
+                .fill(
+                    RadialGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: Appearance.Color.commonWhite.opacity(0.6), location: 0.0),
+                            .init(color: Appearance.Color.commonWhite.opacity(0.3), location: 0.4),
+                            .init(color: Appearance.Color.commonClear, location: 0.8)
+                        ]),
+                        center: UnitPoint(x: 0.3, y: 0.3),
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .scaleEffect(0.8)
+                .offset(x: -8, y: -8)
+            
+            // 装飾枠線
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: borderColors),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 4.0
+                )
+                .shadow(color: glowColor.opacity(0.8), radius: 3, x: 0, y: 0)
+            
+            // 内側の細い枠線
+            Circle()
+                .stroke(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.8 : 0.3),
+                            Appearance.Color.commonWhite.opacity(isEnabled ? 0.4 : 0.1),
+                            Appearance.Color.commonClear
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 35
+                    ),
+                    lineWidth: 2.0
+                )
+                .scaleEffect(0.85)
+            
+            // 中央の光沢効果
+            if isEnabled {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: Appearance.Color.commonWhite.opacity(0.4), location: 0.0),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.2), location: 0.3),
+                                .init(color: Appearance.Color.commonWhite.opacity(0.1), location: 0.6),
+                                .init(color: Appearance.Color.commonClear, location: 1.0)
+                            ]),
+                            center: UnitPoint(x: 0.4, y: 0.4),
+                            startRadius: 0,
+                            endRadius: 25
+                        )
+                    )
+                    .scaleEffect(0.6)
+                    .offset(x: -5, y: -5)
+            }
+            
+            // 外側のリング装飾
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: ringColors),
+                        center: .center
+                    ),
+                    lineWidth: 1.5
+                )
+                .scaleEffect(1.05)
+                .opacity(isEnabled ? 0.7 : 0.3)
+        }
+    }
+}
+
+// MARK: - Base Declaration Button
+/// 宣言ボタンの基底構造
+struct BaseDeclarationButton: View {
+    let text: String
+    let fontSize: CGFloat
+    let tracking: CGFloat
+    let textGradient: LinearGradient
+    let glowColor: Color
+    let backgroundConfig: CircularPachinkoBackground
+    let action: () -> Void
+    let isEnabled: Bool
+    
+    @StateObject private var animationManager = DeclarationButtonAnimationManager()
+    
+    var body: some View {
+        Button(action: {
+            if isEnabled {
+                action()
+            }
+        }) {
+            ZStack {
+                // 背景
+                backgroundConfig
+                
+                // テキスト
+                CasinoTextStyle(
+                    text: text,
+                    fontSize: fontSize,
+                    tracking: tracking,
+                    gradient: textGradient,
+                    glowColor: glowColor
+                )
+                
+                // 押下時のオーバーレイ
+                if animationManager.isPressed && isEnabled {
+                    Circle()
+                        .fill(Appearance.Color.commonBlack.opacity(0.4))
+                        .scaleEffect(0.9)
+                }
+            }
+            .frame(width: DeclarationButtonConfig.size, height: DeclarationButtonConfig.size)
+            .scaleEffect(animationManager.isPressed && isEnabled ? DeclarationButtonConfig.pressedScale : 1.0)
+            .scaleEffect(animationManager.isBlinking ? DeclarationButtonConfig.blinkingScale : 1.0)
+            .scaleEffect(animationManager.heartbeatAnimation ? DeclarationButtonConfig.heartbeatScale : 1.0)
+            .animation(.easeInOut(duration: DeclarationButtonConfig.pressAnimationDuration), value: animationManager.isPressed)
+            .animation(.easeInOut(duration: DeclarationButtonConfig.blinkAnimationDuration).repeatForever(autoreverses: true), value: animationManager.isBlinking)
+            .opacity(isEnabled ? 1.0 : 0.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .zIndex(2000)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            animationManager.updatePressedState(pressing)
+        }, perform: {})
+        .disabled(!isEnabled)
+        .onAppear {
+            animationManager.startAnimations(isEnabled: isEnabled)
+        }
+        .onChange(of: isEnabled) { enabled in
+            animationManager.startAnimations(isEnabled: enabled)
+        }
+    }
+}
+
 // MARK: - Dotenko Declaration Button
-/// どてんこ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// どてんこ宣言専用ボタンコンポーネント（円形パチンコ風赤ボタンデザイン）
 struct DotenkoDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
-    @State private var isPressed = false
-    @State private var isBlinking = false
-    
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
-    
     var body: some View {
-        Button(action: {
-            if isEnabled {
-                action()
-            }
-        }) {
-            ZStack {
-                // カジノ風背景
-                casinoBackground
-                
-                // メインテキスト
-                VStack(spacing: 2) {
-                    Text("DOTENKO")
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundColor(textColor)
-                        .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
-                    
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
-                }
-                
-                // 押下時のオーバーレイ
-                if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
-                }
-            }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
-            .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
-        }
-        .buttonStyle(PlainButtonStyle())
-        .zIndex(2000)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            if isEnabled {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .disabled(!isEnabled)
-        .onAppear {
-            // 有効な時のみ点滅
-            isBlinking = isEnabled
-        }
-        .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
-            isBlinking = enabled
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var textColor: Color {
-        isEnabled ? Appearance.Color.commonWhite : Appearance.Color.commonGray
-    }
-    
-    @ViewBuilder
-    private var casinoBackground: some View {
-        ZStack {
-            // ベース背景（深い紫のグラデーション）
-            RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.95), location: 0.0),
-                            .init(color: Appearance.Color.dotenkoButtonBackground, location: 0.3),
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.8), location: 0.7),
-                            .init(color: Appearance.Color.dotenkoButtonBackground.opacity(0.9), location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Appearance.Color.dotenkoButtonBackground.opacity(0.6), radius: 8, x: 0, y: 4)
-            
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Appearance.Color.dotenkoButtonAccent,
-                            Appearance.Color.playerGold,
-                            Appearance.Color.dotenkoButtonAccent,
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2.5
-                )
-            
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
-            
-            // カジノ風の光沢エフェクト
-            if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
-                        )
-                    )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
-            }
-            
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    casinoCornerDecoration
-                    Spacer()
-                    casinoCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    casinoCornerDecoration
-                    Spacer()
-                    casinoCornerDecoration
-                }
-            }
-            .padding(4)
-        }
-    }
-    
-    @ViewBuilder
-    private var casinoCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
+        BaseDeclarationButton(
+            text: "DOTENKO",
+            fontSize: DeclarationButtonConfig.dotenkoFontSize,
+            tracking: DeclarationButtonConfig.dotenkoTracking,
+            textGradient: LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 1.0, green: 0.9, blue: 0.3),  // 明るいゴールド
+                    Color(red: 1.0, green: 0.84, blue: 0.0), // ゴールド
+                    Color(red: 0.8, green: 0.6, blue: 0.0),  // 深いゴールド
+                    Color(red: 1.0, green: 0.84, blue: 0.0)  // ゴールド
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            glowColor: Color(red: 1.0, green: 0.84, blue: 0.0),
+            backgroundConfig: CircularPachinkoBackground(
+                centerColor: Color(red: 1.0, green: 0.2, blue: 0.2),
+                midColor: Color(red: 0.9, green: 0.1, blue: 0.1),
+                outerColor: Color(red: 0.7, green: 0.0, blue: 0.0),
+                edgeColor: Color(red: 0.4, green: 0.0, blue: 0.0),
+                glowColor: Appearance.Color.commonRed,
+                borderColors: [
+                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                    Color(red: 1.0, green: 0.6, blue: 0.0),
+                    Color(red: 1.0, green: 0.9, blue: 0.2),
+                    Color(red: 1.0, green: 0.84, blue: 0.0),
+                    Color(red: 1.0, green: 0.6, blue: 0.0)
+                ],
+                ringColors: [
+                    Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8),
+                    Color(red: 1.0, green: 0.6, blue: 0.0).opacity(0.6),
+                    Color(red: 1.0, green: 0.9, blue: 0.2).opacity(0.9),
+                    Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.8)
+                ],
+                isEnabled: isEnabled
+            ),
+            action: action,
+            isEnabled: isEnabled
+        )
     }
 }
 
 // MARK: - Revenge Declaration Button
-/// リベンジ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// リベンジ宣言専用ボタンコンポーネント（円形パチンコ風黄色ボタンデザイン）
 struct RevengeDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
-    @State private var isPressed = false
-    @State private var isBlinking = false
-    
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
-    
     var body: some View {
-        Button(action: {
-            if isEnabled {
-                action()
-            }
-        }) {
-            ZStack {
-                // カジノ風背景（リベンジ用カラー）
-                revengeBackground
-                
-                // メインテキスト
-                VStack(spacing: 2) {
-                    Text("REVENGE")
-                        .font(.system(size: 14, weight: .black))
-                        .foregroundColor(textColor)
-                        .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
-                    
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
-                }
-                
-                // 押下時のオーバーレイ
-                if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
-                }
-            }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
-            .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
-        }
-        .buttonStyle(PlainButtonStyle())
-        .zIndex(2000)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            if isEnabled {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .disabled(!isEnabled)
-        .onAppear {
-            // 有効な時のみ点滅
-            isBlinking = isEnabled
-        }
-        .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
-            isBlinking = enabled
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var textColor: Color {
-        isEnabled ? Appearance.Color.commonWhite : Appearance.Color.commonGray
-    }
-    
-    @ViewBuilder
-    private var revengeBackground: some View {
-        ZStack {
-            // ベース背景（深い赤のグラデーション）
-            RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Color.red.opacity(0.95), location: 0.0),
-                            .init(color: Color.red, location: 0.3),
-                            .init(color: Color.red.opacity(0.8), location: 0.7),
-                            .init(color: Color.red.opacity(0.9), location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Color.red.opacity(0.6), radius: 8, x: 0, y: 4)
-            
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.orange,
-                            Appearance.Color.playerGold,
-                            Color.orange,
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2.5
-                )
-            
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
-            
-            // カジノ風の光沢エフェクト
-            if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
-                        )
-                    )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
-            }
-            
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    revengeCornerDecoration
-                    Spacer()
-                    revengeCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    revengeCornerDecoration
-                    Spacer()
-                    revengeCornerDecoration
-                }
-            }
-            .padding(4)
-        }
-    }
-    
-    @ViewBuilder
-    private var revengeCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
+        BaseDeclarationButton(
+            text: "REVENGE",
+            fontSize: DeclarationButtonConfig.fontSize,
+            tracking: DeclarationButtonConfig.tracking,
+            textGradient: LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 1.0, green: 0.9, blue: 0.1), // 明るい黄金
+                    Color(red: 1.0, green: 0.7, blue: 0.0), // オレンジゴールド
+                    Color(red: 0.8, green: 0.5, blue: 0.0), // 深いブロンズ
+                    Color(red: 1.0, green: 0.7, blue: 0.0)  // オレンジゴールド
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            glowColor: Color.orange,
+            backgroundConfig: CircularPachinkoBackground(
+                centerColor: Color(red: 1.0, green: 0.9, blue: 0.1),
+                midColor: Color(red: 1.0, green: 0.7, blue: 0.0),
+                outerColor: Color(red: 0.8, green: 0.5, blue: 0.0),
+                edgeColor: Color(red: 0.6, green: 0.3, blue: 0.0),
+                glowColor: Color.orange,
+                borderColors: [
+                    Color(red: 1.0, green: 0.7, blue: 0.0),
+                    Color(red: 1.0, green: 0.9, blue: 0.1),
+                    Color(red: 0.8, green: 0.5, blue: 0.0),
+                    Color(red: 1.0, green: 0.7, blue: 0.0),
+                    Color(red: 1.0, green: 0.9, blue: 0.1)
+                ],
+                ringColors: [
+                    Color.orange.opacity(0.8),
+                    Color.yellow.opacity(0.6),
+                    Color(red: 1.0, green: 0.7, blue: 0.0).opacity(0.9),
+                    Color.orange.opacity(0.8)
+                ],
+                isEnabled: isEnabled
+            ),
+            action: action,
+            isEnabled: isEnabled
+        )
     }
 }
 
 // MARK: - Shotenko Declaration Button
-/// しょてんこ宣言専用ボタンコンポーネント（カジノ風デザイン）
+/// しょてんこ宣言専用ボタンコンポーネント（円形パチンコ風青ボタンデザイン）
 struct ShotenkoDeclarationButton: View {
     let action: () -> Void
     let isEnabled: Bool
     
-    @State private var isPressed = false
-    @State private var isBlinking = false
-    
-    private let width: CGFloat = 120
-    private let height: CGFloat = 50
-    
     var body: some View {
-        Button(action: {
-            if isEnabled {
-                action()
-            }
-        }) {
-            ZStack {
-                // カジノ風背景（しょてんこ用カラー）
-                shotenkoBackground
-                
-                // メインテキスト
-                VStack(spacing: 2) {
-                    Text("SHOTENKO")
-                        .font(.system(size: 13, weight: .black))
-                        .foregroundColor(textColor)
-                        .tracking(1.0)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.8), radius: 1, x: 0, y: 1)
-                    
-                    Text("宣言")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(textColor.opacity(0.9))
-                        .tracking(0.5)
-                        .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 1, x: 0, y: 1)
-                }
-                
-                // 押下時のオーバーレイ
-                if isPressed && isEnabled {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Appearance.Color.commonWhite.opacity(0.2))
-                }
-            }
-            .frame(width: width, height: height)
-            .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
-            .scaleEffect(isBlinking ? 1.08 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
-            .opacity(isEnabled ? 1.0 : 0.0) // 無効時は非表示
-        }
-        .buttonStyle(PlainButtonStyle())
-        .zIndex(2000)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            if isEnabled {
-                isPressed = pressing
-            }
-        }, perform: {})
-        .disabled(!isEnabled)
-        .onAppear {
-            // 有効な時のみ点滅
-            isBlinking = isEnabled
-        }
-        .onChange(of: isEnabled) { enabled in
-            // 有効状態に応じて点滅制御
-            isBlinking = enabled
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var textColor: Color {
-        isEnabled ? Appearance.Color.commonWhite : Appearance.Color.commonGray
-    }
-    
-    @ViewBuilder
-    private var shotenkoBackground: some View {
-        ZStack {
-            // ベース背景（深いオレンジのグラデーション）
-            RoundedRectangle(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Color.orange.opacity(0.95), location: 0.0),
-                            .init(color: Color.orange, location: 0.3),
-                            .init(color: Color.orange.opacity(0.8), location: 0.7),
-                            .init(color: Color.orange.opacity(0.9), location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .shadow(color: Color.orange.opacity(0.6), radius: 8, x: 0, y: 4)
-            
-            // ゴールドの装飾枠線（二重枠）
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.yellow,
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2.5
-                )
-            
-            // 内側の細い枠線
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Appearance.Color.commonWhite.opacity(isEnabled ? 0.3 : 0.1), lineWidth: 1)
-                .scaleEffect(0.92)
-            
-            // カジノ風の光沢エフェクト
-            if isEnabled {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: Appearance.Color.commonWhite.opacity(0.25), location: 0.0),
-                                .init(color: Appearance.Color.commonClear, location: 0.4)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .center
-                        )
-                    )
-                    .scaleEffect(0.8)
-                    .offset(x: -8, y: -4)
-            }
-            
-            // カジノ風の装飾パターン（角の装飾）
-            VStack {
-                HStack {
-                    shotenkoCornerDecoration
-                    Spacer()
-                    shotenkoCornerDecoration
-                }
-                Spacer()
-                HStack {
-                    shotenkoCornerDecoration
-                    Spacer()
-                    shotenkoCornerDecoration
-                }
-            }
-            .padding(4)
-        }
-    }
-    
-    @ViewBuilder
-    private var shotenkoCornerDecoration: some View {
-        Circle()
-            .fill(Appearance.Color.playerGold.opacity(isEnabled ? 0.6 : 0.2))
-            .frame(width: 4, height: 4)
+        BaseDeclarationButton(
+            text: "SHOTENKO",
+            fontSize: DeclarationButtonConfig.fontSize,
+            tracking: DeclarationButtonConfig.tracking,
+            textGradient: LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.95, green: 0.95, blue: 1.0), // 明るいシルバー
+                    Color(red: 0.9, green: 0.9, blue: 0.9),   // シルバー
+                    Color(red: 0.7, green: 0.7, blue: 0.8),   // 深いシルバー
+                    Color(red: 0.9, green: 0.9, blue: 0.9)    // シルバー
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            glowColor: Color.cyan,
+            backgroundConfig: CircularPachinkoBackground(
+                centerColor: Color(red: 0.2, green: 0.4, blue: 1.0),
+                midColor: Color(red: 0.1, green: 0.3, blue: 0.9),
+                outerColor: Color(red: 0.0, green: 0.2, blue: 0.7),
+                edgeColor: Color(red: 0.0, green: 0.1, blue: 0.4),
+                glowColor: Color.cyan,
+                borderColors: [
+                    Color(red: 0.9, green: 0.9, blue: 0.9),
+                    Color(red: 0.7, green: 0.8, blue: 1.0),
+                    Color(red: 0.95, green: 0.95, blue: 1.0),
+                    Color(red: 0.9, green: 0.9, blue: 0.9),
+                    Color(red: 0.7, green: 0.8, blue: 1.0)
+                ],
+                ringColors: [
+                    Color.cyan.opacity(0.8),
+                    Color.blue.opacity(0.6),
+                    Color(red: 0.7, green: 0.8, blue: 1.0).opacity(0.9),
+                    Color.cyan.opacity(0.8)
+                ],
+                isEnabled: isEnabled
+            ),
+            action: action,
+            isEnabled: isEnabled
+        )
     }
 }
 
 // MARK: - Challenge Zone Draw Card Button
-/// チャレンジゾーン用カード引きボタン
-struct ChallengeDrawCardButton: View {
-    let action: () -> Void
-    let isEnabled: Bool
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: "plus.rectangle.on.rectangle")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                
-                Text("カードを引く")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-            }
-            .frame(width: 100, height: 80)
-            .background(challengeButtonBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(challengeButtonBorder)
-            .shadow(color: challengeButtonShadowColor, radius: 6, x: 0, y: 3)
-            .scaleEffect(isEnabled ? 1.0 : 0.9)
-            .opacity(isEnabled ? 1.0 : 0.6)
-        }
-        .disabled(!isEnabled)
-        .animation(.easeInOut(duration: 0.2), value: isEnabled)
-    }
-    
-    private var challengeButtonBackground: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color.blue.opacity(0.8),
-                Color.blue.opacity(0.6),
-                Color.blue.opacity(0.9)
-            ]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-    
-    private var challengeButtonBorder: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .stroke(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.cyan.opacity(0.8),
-                        Color.blue.opacity(0.6)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: 2
-            )
-    }
-    
-    private var challengeButtonShadowColor: Color {
-        Color.blue.opacity(0.4)
-    }
-}
+
 
 // MARK: - Game Announcement View
 /// ゲームアナウンス表示コンポーネント（右から流れて中央で1秒停止して左に流れる）
@@ -543,7 +466,6 @@ struct GameAnnouncementView: View {
     let isVisible: Bool
     
     @State private var animationPhase: AnnouncementPhase = .hidden
-    @State private var sparkleAnimation: Bool = false
     @State private var glowAnimation: Bool = false
     
     enum AnnouncementPhase {
@@ -558,17 +480,13 @@ struct GameAnnouncementView: View {
             // 絶対位置指定でレイアウトに影響しないオーバーレイ
             GeometryReader { geometry in
                 VStack(spacing: 16) {
-                    // 装飾的なトップライン
-                    decorativeTopLine
-                    
                     // メインタイトル
                     Text(title)
-                        .font(.system(size: 32, weight: .black))
+                        .font(.system(size: 36, weight: .black))
                         .foregroundColor(Appearance.Color.commonWhite)
-                        .tracking(3.0)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 4, x: 0, y: 2)
-                        .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 8, x: 0, y: 0)
-                        .scaleEffect(glowAnimation ? 1.05 : 1.0)
+                        .tracking(4.0)
+                        .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 2)
+                        .scaleEffect(glowAnimation ? 1.08 : 1.0)
                     
                     // サブタイトル
                     if !subtitle.isEmpty {
@@ -576,21 +494,16 @@ struct GameAnnouncementView: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(Appearance.Color.commonWhite.opacity(0.95))
                             .tracking(1.5)
-                            .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 1)
-                            .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 6, x: 0, y: 0)
+                            .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
                     }
-                    
-                    // 装飾的なボトムライン
-                    decorativeBottomLine
                 }
                 .padding(.horizontal, 50)
                 .padding(.vertical, 40)
                 .background(luxuryAnnouncementBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 25))
                 .overlay(luxuryAnnouncementBorder)
-                .overlay(sparkleOverlay)
-                .shadow(color: Appearance.Color.commonBlack.opacity(0.7), radius: 15, x: 0, y: 8)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.4), radius: 20, x: 0, y: 0)
+
+                .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 8, x: 0, y: 4)
                 .scaleEffect(animationPhase == .staying ? (glowAnimation ? 1.02 : 1.0) : 1.0)
                 .position(
                     x: geometry.size.width / 2 + offsetX(for: geometry),
@@ -610,284 +523,35 @@ struct GameAnnouncementView: View {
                     startContinuousAnimations()
                 } else {
                     animationPhase = .hidden
-                    sparkleAnimation = false
                     glowAnimation = false
                 }
             }
         }
     }
     
-    // MARK: - Decorative Elements
-    
-    @ViewBuilder
-    private var decorativeTopLine: some View {
-        HStack(spacing: 12) {
-            luxuryDecorationCluster
-            
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonClear,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.commonClear
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 3)
-                .overlay(
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonClear,
-                                    Appearance.Color.commonWhite.opacity(0.6),
-                                    Appearance.Color.commonClear
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 1)
-                        .offset(y: -1)
-                )
-            
-            luxuryDecorationCluster
-        }
-    }
-    
-    @ViewBuilder
-    private var decorativeBottomLine: some View {
-        HStack(spacing: 12) {
-            luxuryDecorationCluster
-            
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonClear,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold,
-                            Appearance.Color.playerGold.opacity(0.3),
-                            Appearance.Color.commonClear
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 3)
-                .overlay(
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonClear,
-                                    Appearance.Color.commonWhite.opacity(0.6),
-                                    Appearance.Color.commonClear
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(height: 1)
-                        .offset(y: -1)
-                )
-            
-            luxuryDecorationCluster
-        }
-    }
-    
-    @ViewBuilder
-    private var luxuryDecorationCluster: some View {
-        HStack(spacing: 4) {
-            // 大きなダイヤモンド
-            Diamond()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.orange.opacity(0.8)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 2,
-                        endRadius: 10
-                    )
-                )
-                .frame(width: 16, height: 16)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 6, x: 0, y: 0)
-                .overlay(
-                    Diamond()
-                        .fill(Appearance.Color.commonWhite.opacity(0.4))
-                        .frame(width: 6, height: 6)
-                        .offset(x: -2, y: -2)
-                )
-            
-            // 小さなダイヤモンド
-            Diamond()
-                .fill(Appearance.Color.playerGold)
-                .frame(width: 8, height: 8)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 3, x: 0, y: 0)
-            
-            // 装飾的な円
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite.opacity(0.8),
-                            Appearance.Color.playerGold.opacity(0.6),
-                            Color.orange.opacity(0.4)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: 6
-                    )
-                )
-                .frame(width: 6, height: 6)
-                .shadow(color: Appearance.Color.playerGold.opacity(0.5), radius: 2, x: 0, y: 0)
-        }
-    }
-    
-    @ViewBuilder
-    private var sparkleOverlay: some View {
-        if sparkleAnimation {
-            ZStack {
-                // 左上のスパークル（大）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonWhite,
-                                    Color.yellow.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 6
-                            )
-                        )
-                        .frame(width: 8, height: 8)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite)
-                        .frame(width: 3, height: 3)
-                }
-                .offset(x: -90, y: -45)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 右上のスパークル（中）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.playerGold,
-                                    Color.orange.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 8
-                            )
-                        )
-                        .frame(width: 10, height: 10)
-                    
-                    Circle()
-                        .fill(Color.yellow)
-                        .frame(width: 4, height: 4)
-                }
-                .offset(x: 85, y: -35)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 左下のスパークル（小）
-                ZStack {
-                    Circle()
-                        .fill(Appearance.Color.commonWhite.opacity(0.9))
-                        .frame(width: 5, height: 5)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite)
-                        .frame(width: 2, height: 2)
-                }
-                .offset(x: -70, y: 40)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 右下のスパークル（中）
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    Color.yellow,
-                                    Appearance.Color.playerGold.opacity(0.8),
-                                    Appearance.Color.commonClear
-                                ]),
-                                center: .center,
-                                startRadius: 1,
-                                endRadius: 7
-                            )
-                        )
-                        .frame(width: 9, height: 9)
-                    
-                    Circle()
-                        .fill(Appearance.Color.commonWhite.opacity(0.8))
-                        .frame(width: 3, height: 3)
-                }
-                .offset(x: 95, y: 30)
-                .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                // 追加の装飾スパークル
-                Circle()
-                    .fill(Appearance.Color.playerGold.opacity(0.7))
-                    .frame(width: 4, height: 4)
-                    .offset(x: -40, y: -20)
-                    .opacity(sparkleAnimation ? 0.8 : 0.0)
-                
-                Circle()
-                    .fill(Color.yellow.opacity(0.6))
-                    .frame(width: 3, height: 3)
-                    .offset(x: 50, y: 10)
-                    .opacity(sparkleAnimation ? 0.9 : 0.0)
-                
-                Circle()
-                    .fill(Appearance.Color.commonWhite.opacity(0.8))
-                    .frame(width: 2, height: 2)
-                    .offset(x: 20, y: -40)
-                    .opacity(sparkleAnimation ? 1.0 : 0.0)
-                
-                Circle()
-                    .fill(Appearance.Color.playerGold.opacity(0.5))
-                    .frame(width: 3, height: 3)
-                    .offset(x: -20, y: 25)
-                    .opacity(sparkleAnimation ? 0.7 : 0.0)
-            }
-            .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: sparkleAnimation)
-        }
-    }
+    // MARK: - Decorative Elements (削除済み)
     
     // MARK: - Animation Properties
     
+    /// アニメーションフェーズに応じたX軸オフセットを計算
+    /// - Parameter geometry: 画面サイズ情報
+    /// - Returns: X軸オフセット値
     private func offsetX(for geometry: GeometryProxy) -> CGFloat {
         let screenWidth = geometry.size.width
         
         switch animationPhase {
         case .hidden:
-            return screenWidth // 画面右端の外側
+            // 画面右端の外側（定数で定義された余裕を持って）
+            return screenWidth + LayoutConstants.AnnouncementAnimation.screenOffsetMargin
         case .entering:
-            return 0 // 画面中央
+            // 画面中央
+            return 0
         case .staying:
-            return 0 // 画面中央で停止
+            // 画面中央で停止
+            return 0
         case .exiting:
-            return -screenWidth // 画面左端の外側
+            // 画面左端の外側（テキスト幅を考慮して完全に流れ切る）
+            return -screenWidth - LayoutConstants.AnnouncementAnimation.textWidthMargin
         }
     }
     
@@ -902,203 +566,78 @@ struct GameAnnouncementView: View {
     
     // MARK: - Animation Control
     
+    /// アナウンスアニメーションを開始（3フェーズ構成）
+    /// フェーズ1: 右から中央へ高速移動 → フェーズ2: 中央で停止 → フェーズ3: 中央から左へ高速移動
     private func startAnimation() {
         // 初期状態: 画面右端の外側
         animationPhase = .hidden
         
-        // フェーズ1: 右から中央へ移動（1秒）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeOut(duration: 1.0)) {
-                animationPhase = .entering
+        // フェーズ1: 右から中央へ移動（高速化: 0.8秒）
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.startDelay) {
+            withAnimation(.easeOut(duration: LayoutConstants.AnnouncementAnimation.enteringDuration)) {
+                self.animationPhase = .entering
             }
         }
         
-        // フェーズ2: 中央で停止（1秒間）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-            animationPhase = .staying
+        // フェーズ2: 中央で停止（1.5秒間）
+        let stayingStartTime = LayoutConstants.AnnouncementAnimation.startDelay + LayoutConstants.AnnouncementAnimation.enteringDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + stayingStartTime) {
+            self.animationPhase = .staying
         }
         
-        // フェーズ3: 中央から左へ移動（1秒）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
-            withAnimation(.easeIn(duration: 1.0)) {
-                animationPhase = .exiting
+        // フェーズ3: 中央から左へ完全に流れ切る（高速化: 1.2秒）
+        let exitingStartTime = stayingStartTime + LayoutConstants.AnnouncementAnimation.stayingDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + exitingStartTime) {
+            withAnimation(.easeIn(duration: LayoutConstants.AnnouncementAnimation.exitingDuration)) {
+                self.animationPhase = .exiting
             }
         }
     }
     
+    /// 継続的なアニメーション効果を開始（グロー効果）
+    /// 中央停止フェーズで視覚的インパクトを最大化
     private func startContinuousAnimations() {
-        // スパークルアニメーション開始
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            sparkleAnimation = true
-        }
-        
-        // グローアニメーション開始
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
-                glowAnimation = true
+        // グローアニメーション開始（中央停止時に開始）
+        DispatchQueue.main.asyncAfter(deadline: .now() + LayoutConstants.AnnouncementAnimation.glowStartDelay) {
+            withAnimation(.easeInOut(duration: LayoutConstants.AnnouncementAnimation.glowDuration).repeatForever(autoreverses: true)) {
+                self.glowAnimation = true
             }
         }
     }
     
     @ViewBuilder
     private var luxuryAnnouncementBackground: some View {
-        ZStack {
-            // ベース背景（深いグラデーション）
-            RoundedRectangle(cornerRadius: 25)
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Color(red: 0.05, green: 0.02, blue: 0.1), location: 0.0),
-                            .init(color: Appearance.Color.commonBlack.opacity(0.98), location: 0.3),
-                            .init(color: Color(red: 0.1, green: 0.05, blue: 0.2).opacity(0.95), location: 0.6),
-                            .init(color: Appearance.Color.commonBlack.opacity(0.99), location: 1.0)
-                        ]),
-                        center: .center,
-                        startRadius: 50,
-                        endRadius: 200
-                    )
+        // キリッとしたシンプルな背景
+        RoundedRectangle(cornerRadius: 25)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Appearance.Color.commonBlack.opacity(0.95),
+                        Appearance.Color.commonBlack.opacity(0.85)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-            
-            // 金箔効果レイヤー
-            RoundedRectangle(cornerRadius: 25)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.playerGold.opacity(0.15), location: 0.0),
-                            .init(color: Color.yellow.opacity(0.08), location: 0.2),
-                            .init(color: Appearance.Color.commonClear, location: 0.4),
-                            .init(color: Color.orange.opacity(0.06), location: 0.6),
-                            .init(color: Appearance.Color.playerGold.opacity(0.12), location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .scaleEffect(0.98)
-            
-            // 内側の光沢エフェクト
-            RoundedRectangle(cornerRadius: 23)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(stops: [
-                            .init(color: Appearance.Color.commonWhite.opacity(0.08), location: 0.0),
-                            .init(color: Appearance.Color.commonClear, location: 0.3),
-                            .init(color: Appearance.Color.playerGold.opacity(0.05), location: 0.7),
-                            .init(color: Appearance.Color.commonClear, location: 1.0)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .center
-                    )
-                )
-                .scaleEffect(0.95)
-            
-            // 宝石風装飾パターン
-            VStack {
-                HStack {
-                    luxuryCornerGem
-                    Spacer()
-                    luxuryCornerGem
-                }
-                Spacer()
-                HStack {
-                    luxuryCornerGem
-                    Spacer()
-                    luxuryCornerGem
-                }
-            }
-            .padding(15)
-        }
+            )
     }
     
-    @ViewBuilder
-    private var luxuryCornerGem: some View {
-        ZStack {
-            // 宝石のベース
-            Circle()
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.8),
-                            Appearance.Color.playerGold.opacity(0.6)
-                        ]),
-                        center: .topLeading,
-                        startRadius: 2,
-                        endRadius: 8
-                    )
-                )
-                .frame(width: 8, height: 8)
-            
-            // 宝石の光沢
-            Circle()
-                .fill(Appearance.Color.commonWhite.opacity(0.6))
-                .frame(width: 3, height: 3)
-                .offset(x: -1, y: -1)
-        }
-        .shadow(color: Appearance.Color.playerGold.opacity(0.8), radius: 4, x: 0, y: 0)
-    }
+
     
     @ViewBuilder
     private var luxuryAnnouncementBorder: some View {
-        ZStack {
-            // 最外側の太いゴールドボーダー（光沢効果付き）
-            RoundedRectangle(cornerRadius: 25)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.9),
-                            Color.yellow,
-                            Appearance.Color.playerGold,
-                            Color.orange.opacity(0.8),
-                            Appearance.Color.playerGold,
-                            Color.yellow.opacity(0.9),
-                            Appearance.Color.playerGold.opacity(0.8),
-                            Color.orange,
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 5
-                )
-                .shadow(color: Appearance.Color.playerGold.opacity(0.6), radius: 8, x: 0, y: 0)
-            
-            // 中間のシルバーボーダー
-            RoundedRectangle(cornerRadius: 23)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite.opacity(0.8),
-                            Color.gray.opacity(0.6),
-                            Appearance.Color.commonWhite.opacity(0.9),
-                            Color.gray.opacity(0.4),
-                            Appearance.Color.commonWhite.opacity(0.7)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2.5
-                )
-                .scaleEffect(0.94)
-            
-            // 内側の細いゴールドボーダー
-            RoundedRectangle(cornerRadius: 21)
-                .stroke(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.6),
-                            Color.yellow.opacity(0.4),
-                            Appearance.Color.playerGold.opacity(0.8),
-                            Color.orange.opacity(0.5),
-                            Appearance.Color.playerGold.opacity(0.6)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-                .scaleEffect(0.88)
-        }
+        // キリッとしたシンプルなボーダー
+        RoundedRectangle(cornerRadius: 25)
+            .stroke(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Appearance.Color.playerGold,
+                        Appearance.Color.playerGold.opacity(0.8)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 3
+            )
     }
 }
 
@@ -1118,5 +657,193 @@ struct Diamond: Shape {
         path.closeSubpath()
         
         return path
+    }
+}
+
+// MARK: - SwiftUI Previews
+/// DOTENKOボタンのプレビュー（パチンコ風赤ボタンデザイン）
+struct DotenkoDeclarationButton_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // 有効状態のDOTENKOボタン
+            VStack(spacing: 30) {
+                Text("パチンコ風DOTENKOボタン")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                DotenkoDeclarationButton(
+                    action: {
+                        print("DOTENKO宣言！")
+                    },
+                    isEnabled: true
+                )
+                
+                Text("有効状態 - 赤い立体ボタン")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("DOTENKO有効")
+            
+            // 無効状態のDOTENKOボタン
+            VStack(spacing: 30) {
+                Text("無効状態")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                DotenkoDeclarationButton(
+                    action: {
+                        print("無効状態")
+                    },
+                    isEnabled: false
+                )
+                
+                Text("無効状態 - 非表示")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("DOTENKO無効")
+            
+            // 複数ボタン比較プレビュー
+            VStack(spacing: 40) {
+                Text("宣言ボタン比較")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 30) {
+                    VStack(spacing: 10) {
+                        DotenkoDeclarationButton(
+                            action: { print("DOTENKO!") },
+                            isEnabled: true
+                        )
+                        Text("DOTENKO")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 10) {
+                        RevengeDeclarationButton(
+                            action: { print("REVENGE!") },
+                            isEnabled: true
+                        )
+                        Text("REVENGE")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 10) {
+                        ShotenkoDeclarationButton(
+                            action: { print("SHOTENKO!") },
+                            isEnabled: true
+                        )
+                        Text("SHOTENKO")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black,
+                        Color(red: 0.1, green: 0.2, blue: 0.1)
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .previewDisplayName("ボタン比較")
+            
+            // アニメーション確認用プレビュー
+            AnimationPreviewView()
+                .previewDisplayName("アニメーション確認")
+        }
+    }
+}
+
+/// アニメーション確認用プレビュー
+struct AnimationPreviewView: View {
+    @State private var isPressed = false
+    @State private var showButton = true
+    
+    var body: some View {
+        VStack(spacing: 40) {
+            Text("アニメーション確認")
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            DotenkoDeclarationButton(
+                action: {
+                    // ボタンを一時的に無効化してアニメーション確認
+                    showButton = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        showButton = true
+                    }
+                },
+                isEnabled: showButton
+            )
+            
+            VStack(spacing: 15) {
+                Text("特徴:")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("• 赤ベースの立体的デザイン")
+                    Text("• パチンコボタン風の光沢感")
+                    Text("• 金色装飾枠線")
+                    Text("• 常時グローアニメーション")
+                    Text("• 強い押し込み効果")
+                    Text("• 赤いグロー効果")
+                }
+                .font(.caption)
+                .foregroundColor(.gray)
+            }
+            
+            Button("リセット") {
+                showButton = true
+            }
+            .padding()
+            .background(Color.blue.opacity(0.3))
+            .foregroundColor(.white)
+            .cornerRadius(8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black,
+                    Color(red: 0.1, green: 0.2, blue: 0.1)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 } 

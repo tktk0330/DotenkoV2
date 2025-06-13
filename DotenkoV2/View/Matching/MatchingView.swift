@@ -82,75 +82,17 @@ struct MatchingView: View {
 struct PlayerSlotView: View {
     let player: Player?
     let isLoading: Bool
-    @StateObject private var imageLoader = ImageLoader()
     
     var body: some View {
         HStack(spacing: 16) {
             // プレイヤーアイコン
             ZStack {
                 if let player = player {
-                    if let imageUrl = player.icon_url, !imageUrl.isEmpty {
-                        if player.id.hasPrefix("bot-") {
-                            // Botの場合は内部の画像を使用
-                            if let image = UIImage(named: imageUrl) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                // ローカル画像が見つからない場合はデフォルトアイコン
-                                Image(systemName: Appearance.Icon.personFill)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(12)
-                                    .foregroundColor(Appearance.Color.commonGray)
-                            }
-                        } else if imageUrl.hasPrefix("http") {
-                            // ユーザーの場合でHTTP/HTTPSのURLの場合はURLから読み込み
-                            if let uiImage = imageLoader.image {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else if imageLoader.isLoading {
-                                ProgressView()
-                                    .onAppear {
-                                        imageLoader.loadImage(from: imageUrl)
-                                    }
-                            } else {
-                                // ロードに失敗した場合はデフォルトアイコン
-                                Image(systemName: Appearance.Icon.personFill)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(12)
-                                    .foregroundColor(Appearance.Color.commonGray)
-                                    .onAppear {
-                                        // まだロードを試していない場合は開始
-                                        if imageLoader.image == nil && !imageLoader.isLoading {
-                                            imageLoader.loadImage(from: imageUrl)
-                                        }
-                                    }
-                            }
-                        } else {
-                            // URLではないがローカル画像名の可能性がある場合
-                            if let image = UIImage(named: imageUrl) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                            } else {
-                                // ローカル画像も見つからない場合はデフォルトアイコン
-                                Image(systemName: Appearance.Icon.personFill)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(12)
-                                    .foregroundColor(Appearance.Color.commonGray)
-                            }
-                        }
-                    } else {
-                        Image(systemName: Appearance.Icon.personFill)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(12)
-                            .foregroundColor(Appearance.Color.commonGray)
-                    }
+                    CachedImageView(
+                        imageUrl: player.icon_url,
+                        size: 50,
+                        isBot: player.id.hasPrefix("bot-")
+                    )
                 } else {
                     if isLoading {
                         ProgressView()
