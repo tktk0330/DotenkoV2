@@ -27,6 +27,7 @@ class GameRevengeManager: ObservableObject {
     // MARK: - Private Properties
     private weak var gameViewModel: GameViewModel?
     private let botManager: BotManagerProtocol
+    private var isProcessingChallengeParticipation: Bool = false // 重複実行防止フラグ
     
     // MARK: - Initialization
     init(botManager: BotManagerProtocol) {
@@ -48,6 +49,13 @@ class GameRevengeManager: ObservableObject {
     /// チャレンジゾーン参加判定を開始（即座にモーダル表示）
     func startChallengeZoneParticipation() {
         guard let gameViewModel = gameViewModel else { return }
+        
+        // 重複実行防止チェック
+        guard !isProcessingChallengeParticipation else {
+            print("🛑 チャレンジゾーン参加判定重複実行防止")
+            return
+        }
+        isProcessingChallengeParticipation = true
         
         // 🔄 BOT処理を再開（リベンジ・チャレンジ処理のため）
         gameViewModel.gameBotManager.resumeBotActions()
@@ -153,8 +161,18 @@ class GameRevengeManager: ObservableObject {
         // 参加選択をリセット
         challengeParticipationChoices.removeAll()
         
-        // モーダルを表示
-        showChallengeParticipationModal = true
+        // メインスレッドでUI更新を確実に実行
+        DispatchQueue.main.async {
+            // モーダルを表示
+            self.showChallengeParticipationModal = true
+            print("🎯 モーダル表示設定完了: \(self.showChallengeParticipationModal)")
+            
+            // SwiftUIに状態変更を強制通知
+            self.objectWillChange.send()
+            
+            // GameViewModelにも状態変更を通知
+            gameViewModel.objectWillChange.send()
+        }
     }
     
     /// プレイヤーの参加選択を処理
@@ -211,6 +229,7 @@ class GameRevengeManager: ObservableObject {
     /// 参加選択完了処理
     private func finishParticipationSelection() {
         showChallengeParticipationModal = false
+        isProcessingChallengeParticipation = false // 処理完了フラグをリセット
         
         // リベンジ選択があるかチェック
         let revengeChoices = challengeParticipationChoices.filter { $0.value == .revenge }
@@ -508,6 +527,11 @@ class GameRevengeManager: ObservableObject {
         revengeEligiblePlayers.removeAll()
         challengeParticipants.removeAll()
         isChallengeZone = false
+        showChallengeParticipationModal = false
+        challengeParticipationChoices.removeAll()
+        showHandReveal = false
+        isProcessingChallengeParticipation = false // 重複実行防止フラグもリセット
+        print("🔄 リベンジ・チャレンジゾーン状態リセット完了")
     }
     
     /// チャレンジゾーンを終了（終了アナウンス付き）

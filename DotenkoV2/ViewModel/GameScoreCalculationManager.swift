@@ -30,8 +30,13 @@ class GameScoreCalculationManager: ObservableObject {
     private weak var announcementEffectManager: GameAnnouncementEffectManager?
     
     // MARK: - Initialization
-    init(announcementEffectManager: GameAnnouncementEffectManager) {
-        self.announcementEffectManager = announcementEffectManager
+    init() {
+        // announcementEffectManagerは後から設定
+    }
+    
+    /// アナウンス・エフェクトマネージャーを設定
+    func setAnnouncementEffectManager(_ manager: GameAnnouncementEffectManager) {
+        self.announcementEffectManager = manager
     }
     
     // MARK: - Lifecycle

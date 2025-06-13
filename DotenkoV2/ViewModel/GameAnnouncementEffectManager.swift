@@ -27,6 +27,7 @@ class GameAnnouncementEffectManager: ObservableObject {
     
     // MARK: - Private Properties
     private var rateUpEffectTimer: Timer?
+    private var animationCompletionExecuted: Bool = false // アニメーション完了コールバックの重複実行防止
     
     // MARK: - Lifecycle
     deinit {
@@ -178,6 +179,7 @@ class GameAnnouncementEffectManager: ObservableObject {
         dotenkoAnimationSubtitle = subtitle
         dotenkoAnimationColorType = colorType
         isAnnouncementBlocking = true
+        animationCompletionExecuted = false // 重複実行防止フラグをリセット
         
         print("🎭 どてんこロゴアニメーション表示開始: \(title)")
         if !subtitle.isEmpty {
@@ -194,6 +196,13 @@ class GameAnnouncementEffectManager: ObservableObject {
         
         // アニメーション完了後に処理再開とコールバック実行
         DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration) {
+            // 重複実行防止チェック
+            guard !self.animationCompletionExecuted else {
+                print("🎭 アニメーション完了コールバック重複実行防止")
+                return
+            }
+            self.animationCompletionExecuted = true
+            
             self.hideDotenkoLogoAnimation()
             completion?()
         }

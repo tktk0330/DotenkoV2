@@ -109,9 +109,9 @@ class GameViewModel: ObservableObject {
     private let userProfileRepository = UserProfileRepository.shared
     private let botManager: BotManagerProtocol = BotManager()
     let cardValidationManager = GameCardValidationManager() // カード出し判定マネージャー
-    let announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
+    @ObservedObject var announcementEffectManager = GameAnnouncementEffectManager() // アナウンス・エフェクトマネージャー
     private let scoreCalculationManager: GameScoreCalculationManager // スコア計算マネージャー
-    private let revengeManager: GameRevengeManager // リベンジ・チャレンジゾーンマネージャー
+    @ObservedObject var revengeManager: GameRevengeManager // リベンジ・チャレンジゾーンマネージャー
     let gameBotManager: GameBotManager // BOT思考システムマネージャー
     private var countdownTimer: Timer?
     private var cancellables = Set<AnyCancellable>() // Combine用のキャンセル可能オブジェクト
@@ -146,7 +146,7 @@ class GameViewModel: ObservableObject {
         self.gameType = gameType
         
         // スコア計算マネージャーを初期化
-        self.scoreCalculationManager = GameScoreCalculationManager(announcementEffectManager: announcementEffectManager)
+        self.scoreCalculationManager = GameScoreCalculationManager()
         
         // リベンジ・チャレンジゾーンマネージャーを初期化
         self.revengeManager = GameRevengeManager(botManager: botManager)
@@ -186,6 +186,7 @@ class GameViewModel: ObservableObject {
         // マネージャーにGameViewModelの参照を設定
         revengeManager.setGameViewModel(self)
         gameBotManager.setGameViewModel(self)
+        scoreCalculationManager.setAnnouncementEffectManager(announcementEffectManager)
         
         // スコア計算マネージャーの状態変更を監視
         setupScoreCalculationBinding()
@@ -1590,7 +1591,7 @@ class GameViewModel: ObservableObject {
             if players[index].id != playerId {
                 players[index].rank = 1 // 勝者
             }
-        }
+                }
         
         print("💀 バースト敗者: \(players[playerIndex].name)")
         print("🏆 バースト勝者: その他全員")
