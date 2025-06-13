@@ -62,5 +62,8 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 
 
-
 .DS_Store
+
+# 個別ファイルの除外
+DotenkoV2/DotenkoV2/Config/Config.swift
+DotenkoV2/DotenkoV2/GoogleService-Info.plist
