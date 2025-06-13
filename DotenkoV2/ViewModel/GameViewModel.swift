@@ -58,8 +58,6 @@ class GameViewModel: ObservableObject {
     @Published var hasAnyPlayerPlayedCard: Bool = false
     
     // リベンジ・チャレンジゾーンシステム（マネージャーに委譲）
-    var revengeCountdown: Int { revengeManager.revengeCountdown }
-    var isRevengeWaiting: Bool { revengeManager.isRevengeWaiting }
     var dotenkoWinnerId: String? { revengeManager.dotenkoWinnerId }
     var revengeEligiblePlayers: [String] { revengeManager.revengeEligiblePlayers }
     var isChallengeZone: Bool { revengeManager.isChallengeZone }
@@ -1284,7 +1282,7 @@ class GameViewModel: ObservableObject {
                     self.revengeManager.handleChallengeDotenkoDeclaration(playerId: playerId)
                 } else {
                     // 通常のゲーム中の場合
-                    self.revengeManager.startRevengeWaitingPhase()
+                    self.revengeManager.startChallengeZoneParticipation()
                 }
             }
         }

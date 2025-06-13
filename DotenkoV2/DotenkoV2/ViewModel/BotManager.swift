@@ -10,7 +10,6 @@ import SwiftUI
 protocol BotManagerProtocol {
     func startBotTurn(player: Player, gameState: BotGameState, completion: @escaping (BotAction) -> Void)
     func checkRealtimeDotenkoDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void)
-    func checkRevengeDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void)
     func performChallengeAction(player: Player, gameState: BotGameState, completion: @escaping (BotChallengeAction) -> Void)
     func checkRealtimeCardPlay(player: Player, gameState: BotGameState, completion: @escaping ([Card]) -> Void)
 }
@@ -150,38 +149,7 @@ class BotManager: BotManagerProtocol {
         completion([])
     }
     
-    /// BOTのリベンジ宣言チェック
-    func checkRevengeDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void) {
-        guard gameState.gamePhase == .revengeWaiting else {
-            completion([])
-            return
-        }
-        
-        // アナウンス中は処理しない
-        if gameState.isAnnouncementBlocking {
-            completion([])
-            return
-        }
-        
-        // BOTプレイヤーのみをチェック
-        let botPlayers = players.filter { $0.id != "player" }
-        
-        for bot in botPlayers {
-            if gameState.canPlayerDeclareRevenge(bot.id) {
-                // BOTは見逃しなしで即座にリベンジ宣言（少し遅延を入れて人間らしく）
-                let delay = Double.random(in: revengeDelayRange)
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                    if gameState.canPlayerDeclareRevenge(bot.id) {
-                        print("🤖 BOT \(bot.name) がリベンジ宣言!")
-                        completion([bot.id])
-                    }
-                }
-                return // 最初に宣言したBOTで処理終了
-            }
-        }
-        
-        completion([])
-    }
+
     
     /// BOTのチャレンジアクション
     func performChallengeAction(player: Player, gameState: BotGameState, completion: @escaping (BotChallengeAction) -> Void) {

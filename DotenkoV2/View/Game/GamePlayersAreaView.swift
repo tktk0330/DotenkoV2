@@ -298,11 +298,7 @@ struct BottomPlayerAreaView: View {
             revengeButtonOverlay,
             alignment: .bottomLeading
         )
-        .overlay(
-            // リベンジ待機中の表示
-            revengeWaitingOverlay,
-            alignment: .center
-        )
+
         .overlay(
             // チャレンジゾーン表示
             challengeZoneOverlay,
@@ -358,33 +354,7 @@ struct BottomPlayerAreaView: View {
         }
     }
     
-    // MARK: - Revenge Waiting Overlay
-    @ViewBuilder
-    private var revengeWaitingOverlay: some View {
-        if viewModel.isRevengeWaiting {
-            VStack(spacing: 10) {
-                Text("リベンジ可能")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                Text("リベンジ可能なプレイヤーがいます")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
-                    .shadow(color: Appearance.Color.commonBlack, radius: 1, x: 0, y: 1)
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Appearance.Color.commonBlack.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.red, lineWidth: 2)
-                    )
-            )
-            .zIndex(1500)
-        }
-    }
+
     
     // MARK: - Challenge Zone Overlay
     @ViewBuilder

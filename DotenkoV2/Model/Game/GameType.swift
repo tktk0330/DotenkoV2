@@ -22,7 +22,6 @@ enum GamePhase {
     case playing        // プレイ中
     case dotenkoProcessing // どてんこ処理中（全操作停止）
     case dotenkoWaiting // どてんこ宣言待機中
-    case revengeWaiting // リベンジ宣言待機中
     case challengeZone  // チャレンジゾーン
     case finished       // 終了
 }

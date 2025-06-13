@@ -8,8 +8,6 @@ class GameRevengeManager: ObservableObject {
     // MARK: - Published Properties
     
     // リベンジシステム
-    @Published var revengeCountdown: Int = 5
-    @Published var isRevengeWaiting: Bool = false
     @Published var dotenkoWinnerId: String? = nil
     @Published var revengeEligiblePlayers: [String] = []
     
@@ -27,7 +25,6 @@ class GameRevengeManager: ObservableObject {
     @Published var showHandReveal: Bool = false // 手札公開表示フラグ
     
     // MARK: - Private Properties
-    private var revengeTimer: Timer?
     private weak var gameViewModel: GameViewModel?
     private let botManager: BotManagerProtocol
     
@@ -38,7 +35,6 @@ class GameRevengeManager: ObservableObject {
     
     // MARK: - Lifecycle
     deinit {
-        revengeTimer?.invalidate()
         print("🔄 GameRevengeManager解放")
     }
     
@@ -49,15 +45,12 @@ class GameRevengeManager: ObservableObject {
     
     // MARK: - Revenge System
     
-    /// リベンジ待機フェーズを開始（即座にモーダル表示）
-    func startRevengeWaitingPhase() {
+    /// チャレンジゾーン参加判定を開始（即座にモーダル表示）
+    func startChallengeZoneParticipation() {
         guard let gameViewModel = gameViewModel else { return }
         
         // 🔄 BOT処理を再開（リベンジ・チャレンジ処理のため）
         gameViewModel.gameBotManager.resumeBotActions()
-        
-        // ゲームフェーズをリベンジ待機に変更
-        gameViewModel.gamePhase = .revengeWaiting
         
         // リベンジ可能なプレイヤーを特定
         updateRevengeEligiblePlayers()
@@ -65,7 +58,7 @@ class GameRevengeManager: ObservableObject {
         print("🔄 リベンジ・チャレンジゾーン判定開始")
         print("   リベンジ可能プレイヤー: \(revengeEligiblePlayers)")
         
-        // 5秒待機を廃止し、即座にチャレンジゾーン参加モーダルを表示
+        // 即座にチャレンジゾーン参加モーダルを表示
         showChallengeZoneParticipationModal()
     }
     
@@ -91,52 +84,11 @@ class GameRevengeManager: ObservableObject {
         }
     }
     
-    /// リベンジタイマーを開始
-    private func startRevengeTimer() {
-        revengeTimer?.invalidate()
-        
-        revengeTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-            
-            self.revengeCountdown -= 1
-            print("リベンジカウントダウン: \(self.revengeCountdown)")
-            
-            if self.revengeCountdown <= 0 {
-                timer.invalidate()
-                self.finishRevengeWaiting()
-            }
-        }
-    }
-    
-    /// リベンジ待機終了処理
-    private func finishRevengeWaiting() {
-        isRevengeWaiting = false
-        revengeTimer?.invalidate()
-        revengeTimer = nil
-        
-        // 手札公開状態をリセット
-        showHandReveal = false
-        
-        print("⏰ リベンジ待機終了")
-        
-        // チャレンジゾーンを開始
-        startChallengeZone()
-    }
+
     
     /// プレイヤーがリベンジ宣言できるかチェック
     func canPlayerDeclareRevenge(playerId: String) -> Bool {
         guard let gameViewModel = gameViewModel else { return false }
-        guard gameViewModel.gamePhase == .revengeWaiting else { 
-            print("🔍 リベンジ判定: ゲームフェーズが異なります (\(gameViewModel.gamePhase))")
-            return false 
-        }
-        guard isRevengeWaiting else { 
-            print("🔍 リベンジ判定: リベンジ待機中ではありません")
-            return false 
-        }
         guard playerId != dotenkoWinnerId else { 
             print("🔍 リベンジ判定: どてんこした人はリベンジ不可 (\(playerId))")
             return false 
@@ -182,22 +134,13 @@ class GameRevengeManager: ObservableObject {
                 // リベンジ宣言時に全プレイヤーの処理を停止
                 gameViewModel.stopAllPlayerActions()
                 
-                // リベンジ待機を再開（連鎖リベンジ対応）
-                self.startRevengeWaitingPhase()
+                // チャレンジゾーン参加判定を再開（連鎖リベンジ対応）
+                self.startChallengeZoneParticipation()
             }
         }
     }
     
-    /// BOTプレイヤーのリベンジ宣言チェック（リアルタイム）
-    func checkBotRevengeDeclarations() {
-        guard let gameViewModel = gameViewModel else { return }
-        let gameState = createBotGameState()
-        botManager.checkRevengeDeclarations(players: gameViewModel.players, gameState: gameState) { [weak self] declaringBotIds in
-            for botId in declaringBotIds {
-                self?.handleRevengeDeclaration(playerId: botId)
-            }
-        }
-    }
+
     
     // MARK: - Challenge Zone Participation Modal System
     
@@ -565,9 +508,6 @@ class GameRevengeManager: ObservableObject {
         revengeEligiblePlayers.removeAll()
         challengeParticipants.removeAll()
         isChallengeZone = false
-        isRevengeWaiting = false
-        revengeTimer?.invalidate()
-        revengeTimer = nil
     }
     
     /// チャレンジゾーンを終了（終了アナウンス付き）
