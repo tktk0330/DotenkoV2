@@ -296,8 +296,8 @@ private struct HandCardsView: View {
             return true
         }
         
-        // チャレンジゾーン参加者の手札は表面を表示
-        if viewModel.showHandReveal && viewModel.challengeParticipants.contains(player.id) {
+        // チャレンジゾーン中は全プレイヤーの手札を表面表示
+        if viewModel.showHandReveal {
             return true
         }
         
