@@ -225,7 +225,9 @@ class GameScoreCalculationManager: ObservableObject {
         isShotenkoRound: Bool,
         isBurst: Bool,
         shotenkoWinnerId: String?,
-        burstPlayerId: String?
+        burstPlayerId: String?,
+        dotenkoWinnerId: String?, // 通常のどてんこ勝者ID
+        lastCardPlayerId: String? // 場のカードを出したプレイヤーID
     ) {
         // CardModelの新しいメソッドを使用して最終数字を決定
         let bottomCardValue = bottomCard.card.finalScoreNum()
@@ -247,30 +249,53 @@ class GameScoreCalculationManager: ObservableObject {
         print("   最終数字: \(bottomCardValue)")
         print("   ラウンドスコア: \(roundScore)")
         
-        // 勝者・敗者を特定
-        let winner = players.first { $0.rank == 1 }
-        let loser = players.first { $0.rank == players.count }
-        let winnerHand = winner?.hand ?? []
-        
-        // しょてんこ・バーストの場合は該当プレイヤーも渡す
-        var shotenkoPlayer: Player? = nil
-        var burstPlayer: Player? = nil
+        // 勝者・敗者を特定（IDベースで正確に特定、配列対応）
+        var winners: [Player] = []
+        var losers: [Player] = []
         
         if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
-            shotenkoPlayer = players.first { $0.id == shotenkoWinnerId }
-        }
-        
-        if isBurst, let burstPlayerId = burstPlayerId {
-            burstPlayer = players.first { $0.id == burstPlayerId }
+            // しょてんこの場合：勝者1人、敗者は複数人
+            if let winner = players.first(where: { $0.id == shotenkoWinnerId }) {
+                winners = [winner]
+            }
+            losers = players.filter { $0.id != shotenkoWinnerId }
+            print("🎊 しょてんこ勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
+        } else if isBurst, let burstPlayerId = burstPlayerId {
+            // バーストの場合：敗者1人、勝者は複数人
+            winners = players.filter { $0.id != burstPlayerId }
+            if let loser = players.first(where: { $0.id == burstPlayerId }) {
+                losers = [loser]
+            }
+            print("💥 バースト勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
+        } else {
+            // 通常のどてんこの場合：IDベースで特定（rank使用禁止）
+            guard let winnerId = dotenkoWinnerId else {
+                print("⚠️ 通常どてんこの勝者IDが見つかりません")
+                return
+            }
+            
+            if let winner = players.first(where: { $0.id == winnerId }) {
+                winners = [winner]
+            }
+            
+            // 場のカードを出したプレイヤーを敗者とする（正しい実装）
+            guard let loserId = lastCardPlayerId else {
+                print("⚠️ 場のカードを出したプレイヤーIDが見つかりません")
+                return
+            }
+            
+            if let loser = players.first(where: { $0.id == loserId }) {
+                losers = [loser]
+            }
+            print("🎯 通常どてんこ勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
         }
         
         // スコア確定画面データを作成
         let resultData = ScoreResultData(
-            winner: shotenkoPlayer ?? winner,
-            loser: burstPlayer ?? loser,
+            winners: winners,
+            losers: losers,
             deckBottomCard: bottomCard,
             consecutiveCards: consecutiveSpecialCards,
-            winnerHand: winnerHand,
             baseRate: baseRate,
             upRate: currentUpRate,
             finalMultiplier: bottomCardValue,
@@ -282,8 +307,6 @@ class GameScoreCalculationManager: ObservableObject {
         )
         
         print("🎯 GameScoreCalculationManager - スコア確定画面データ設定")
-        print("   データ作成完了: winner=\(resultData.winner?.name ?? "nil"), totalScore=\(resultData.totalScore)")
-        
         // データを設定
         scoreResultData = resultData
         print("   scoreResultData設定完了: \(scoreResultData != nil)")
@@ -309,8 +332,8 @@ class GameScoreCalculationManager: ObservableObject {
         completion()
     }
     
-    /// プレイヤーにスコアを適用
-    func applyScoreToPlayers(players: inout [Player], isShotenkoRound: Bool, isBurst: Bool, shotenkoWinnerId: String?, burstPlayerId: String?) {
+    /// プレイヤーにスコアを適用（IDベース統一）
+    func applyScoreToPlayers(players: inout [Player], isShotenkoRound: Bool, isBurst: Bool, shotenkoWinnerId: String?, burstPlayerId: String?, dotenkoWinnerId: String?, lastCardPlayerId: String?) {
         // しょてんこの場合の特別計算
         if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
             applyShotenkoScore(players: &players, winnerId: shotenkoWinnerId)
@@ -323,21 +346,8 @@ class GameScoreCalculationManager: ObservableObject {
             return
         }
         
-        // 通常のどてんこの場合
-        for index in players.indices {
-            let player = players[index]
-            
-            if player.rank == 1 {
-                // 勝者：スコアを獲得
-                players[index].score += roundScore
-                print("🏆 \(player.name) がスコア獲得: +\(roundScore)")
-            } else if player.rank == players.count {
-                // 敗者：スコアを失う
-                players[index].score -= roundScore
-                print("💀 \(player.name) がスコア失失: -\(roundScore)")
-            }
-            // 中間順位は変動なし
-        }
+        // 通常のどてんこの場合（IDベース統一）
+        applyNormalDotenkoScore(players: &players, winnerId: dotenkoWinnerId, loserId: lastCardPlayerId)
     }
     
     /// しょてんこのスコア計算
@@ -377,6 +387,41 @@ class GameScoreCalculationManager: ObservableObject {
                 players[index].score += roundScore
                 print("🏆 \(players[index].name) がバーストでスコア獲得: +\(roundScore)")
             }
+        }
+    }
+    
+    /// 通常のどてんこのスコア計算（IDベース）
+    private func applyNormalDotenkoScore(players: inout [Player], winnerId: String?, loserId: String?) {
+        guard let winnerId = winnerId else {
+            print("⚠️ 通常どてんこの勝者IDが見つかりません - スコア適用をスキップ")
+            return
+        }
+        
+        guard let loserId = loserId else {
+            print("⚠️ 通常どてんこの敗者IDが見つかりません - スコア適用をスキップ")
+            return
+        }
+        
+        // 勝者にスコアを加算
+        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
+            players[winnerIndex].score += roundScore
+            print("🏆 \(players[winnerIndex].name) がどてんこでスコア獲得: +\(roundScore)")
+        } else {
+            print("⚠️ 勝者プレイヤーが見つかりません: \(winnerId)")
+        }
+        
+        // 敗者からスコアを減算
+        if let loserIndex = players.firstIndex(where: { $0.id == loserId }) {
+            players[loserIndex].score -= roundScore
+            print("💀 \(players[loserIndex].name) がどてんこでスコア失失: -\(roundScore)")
+        } else {
+            print("⚠️ 敗者プレイヤーが見つかりません: \(loserId)")
+        }
+        
+        // その他のプレイヤーは変動なし
+        let otherPlayers = players.filter { $0.id != winnerId && $0.id != loserId }
+        for player in otherPlayers {
+            print("➖ \(player.name) はスコア変動なし")
         }
     }
     

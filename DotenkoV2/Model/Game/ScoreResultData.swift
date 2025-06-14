@@ -3,11 +3,10 @@ import Foundation
 // MARK: - Score Result Data
 /// スコア確定画面表示用のデータ構造
 struct ScoreResultData {
-    let winner: Player?
-    let loser: Player?
+    let winners: [Player] // 勝者配列（しょてんこ: 1人、バースト: 複数人、通常: 1人）
+    let losers: [Player] // 敗者配列（しょてんこ: 複数人、バースト: 1人、通常: 1人）
     let deckBottomCard: Card?
     let consecutiveCards: [Card] // 連続特殊カードのリスト
-    let winnerHand: [Card]
     let baseRate: Int
     let upRate: Int
     let finalMultiplier: Int
@@ -20,11 +19,10 @@ struct ScoreResultData {
     let burstPlayerId: String?
     
     init(
-        winner: Player?,
-        loser: Player?,
+        winners: [Player] = [],
+        losers: [Player] = [],
         deckBottomCard: Card?,
         consecutiveCards: [Card] = [],
-        winnerHand: [Card] = [],
         baseRate: Int,
         upRate: Int,
         finalMultiplier: Int,
@@ -34,11 +32,10 @@ struct ScoreResultData {
         shotenkoWinnerId: String? = nil,
         burstPlayerId: String? = nil
     ) {
-        self.winner = winner
-        self.loser = loser
+        self.winners = winners
+        self.losers = losers
         self.deckBottomCard = deckBottomCard
         self.consecutiveCards = consecutiveCards
-        self.winnerHand = winnerHand
         self.baseRate = baseRate
         self.upRate = upRate
         self.finalMultiplier = finalMultiplier

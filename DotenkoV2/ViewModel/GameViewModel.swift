@@ -1425,7 +1425,7 @@ class GameViewModel: ObservableObject {
         // 勝敗設定（しょてんこ・バーストの場合は既に設定済み、通常のどてんこの場合は設定）
         if !isShotenkoRound && !isBurst {
             // 通常のどてんこの場合の勝敗設定
-            setDotenkoVictoryRanks()
+            recordDotenkoWinnerAndLoser()
         }
         
         print("🎮 ゲーム終了 - どてんこ勝利確定")
@@ -1434,32 +1434,22 @@ class GameViewModel: ObservableObject {
         startScoreCalculation()
     }
     
-    /// 通常のどてんこ勝敗設定
-    private func setDotenkoVictoryRanks() {
+    /// 通常のどてんこ勝者・敗者を記録（IDベースのみ）
+    private func recordDotenkoWinnerAndLoser() {
         guard let winnerId = revengeManager.dotenkoWinnerId else { return }
         
-        // 勝者の設定
-        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
-            players[winnerIndex].rank = 1
-            print("🏆 どてんこ勝者: \(players[winnerIndex].name)")
+        print("🏆 通常どてんこ勝者設定: \(players.first(where: { $0.id == winnerId })?.name ?? "不明")")
+        
+        // 場のカードを出したプレイヤーを敗者とする（正しい実装）
+        guard let loserId = lastCardPlayerId else {
+            print("⚠️ 場のカードを出したプレイヤーIDが見つかりません")
+            return
         }
         
-        // 場のカードを出したプレイヤーを敗者に設定
-        // 現在のターンプレイヤーが場のカードを出したプレイヤーと仮定
-        if let currentTurnPlayer = getCurrentTurnPlayer(),
-           currentTurnPlayer.id != winnerId {
-            if let loserIndex = players.firstIndex(where: { $0.id == currentTurnPlayer.id }) {
-                players[loserIndex].rank = players.count // 最下位
-                print("💀 敗者（場のカードを出した人）: \(players[loserIndex].name)")
-            }
-        }
+        print("💀 通常どてんこ敗者設定: \(players.first(where: { $0.id == loserId })?.name ?? "不明")（場のカードを出した人）")
         
-        // その他のプレイヤーは中間順位
-        for index in players.indices {
-            if players[index].rank == 0 { // まだ順位が決まっていないプレイヤー
-                players[index].rank = 2
-            }
-        }
+        // 注意：rankは順位専用のため、勝敗判定では使用しない
+        // 実際の勝敗判定は全てIDベースで行う
     }
     
     /// リベンジボタンを表示すべきかチェック
@@ -1547,17 +1537,12 @@ class GameViewModel: ObservableObject {
         isShotenkoRound = true
         shotenkoWinnerId = playerId
         players[playerIndex].dtnk = true
-        players[playerIndex].rank = 1 // 勝者
-        
-        // その他全員を敗者に設定
-        for index in players.indices {
-            if players[index].id != playerId {
-                players[index].rank = players.count // 最下位
-            }
-        }
         
         print("🏆 しょてんこ勝者: \(players[playerIndex].name)")
         print("💀 しょてんこ敗者: その他全員")
+        
+        // 注意：rankは順位専用のため、勝敗判定では使用しない
+        // 実際の勝敗判定は全てIDベースで行う
         
         // しょてんこ宣言時に即座に全プレイヤーの処理を停止
         stopAllPlayerActions()
@@ -1582,29 +1567,20 @@ class GameViewModel: ObservableObject {
         // バースト状態を設定
         isBurst = true
         burstPlayerId = playerId
-        players[playerIndex].rank = players.count // 敗者（最下位）
-        
-        // その他全員を勝者に設定
-        for index in players.indices {
-            if players[index].id != playerId {
-                players[index].rank = 1 // 勝者
-            }
-                }
         
         print("💀 バースト敗者: \(players[playerIndex].name)")
         print("🏆 バースト勝者: その他全員")
         
-        // バースト発生アナウンス
-        announcementEffectManager.showAnnouncementMessage(
-            title: "バースト発生！",
-            subtitle: "\(players[playerIndex].name) の敗北"
-        ) {
-            // バーストの場合はチャレンジゾーンをスキップして直接スコア確定
-            self.gamePhase = .finished
-            print("🎮 ラウンド終了 - バーストによる勝敗確定（チャレンジゾーンスキップ）")
-            
-            // スコア計算を開始（正しい流れでスコア確定画面を表示）
-            self.startScoreCalculation()
+        // 注意：rankは順位専用のため、勝敗判定では使用しない
+        // 実際の勝敗判定は全てIDベースで行う
+        
+        // バーストアニメーションを表示
+        let playerName = players[playerIndex].name
+        announcementEffectManager.showDeclarationAnimation(type: .dotenko, playerName: playerName) {
+            // アニメーション完了後に直接スコア確定に進む（チャレンジゾーンスキップ）
+            DispatchQueue.main.async {
+                self.finalizeDotenko()
+            }
         }
     }
     
@@ -1699,7 +1675,9 @@ class GameViewModel: ObservableObject {
             isShotenkoRound: isShotenkoRound,
             isBurst: isBurst,
             shotenkoWinnerId: shotenkoWinnerId,
-            burstPlayerId: burstPlayerId
+            burstPlayerId: burstPlayerId,
+            dotenkoWinnerId: revengeManager.dotenkoWinnerId, // 通常のどてんこ勝者ID
+            lastCardPlayerId: lastCardPlayerId // 場のカードを出したプレイヤーID
         )
         
         print("💰 スコア計算完了 - 自動遷移開始")
@@ -1753,32 +1731,43 @@ class GameViewModel: ObservableObject {
     
     /// プレイヤーにスコアを適用
     private func applyScoreToPlayers() {
-        // しょてんこの場合の特別計算
+        // しょてんこの場合の特別計算（IDベース）
         if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
             applyShotenkoScore(winnerId: shotenkoWinnerId)
             return
         }
         
-        // バーストの場合の特別計算
+        // バーストの場合の特別計算（IDベース）
         if isBurst, let burstPlayerId = burstPlayerId {
             applyBurstScore(burstPlayerId: burstPlayerId)
             return
         }
         
-        // 通常のどてんこの場合
+        // 通常のどてんこの場合（IDベースのみ）
+        guard let winnerId = revengeManager.dotenkoWinnerId else {
+            print("⚠️ 通常どてんこの勝者IDが見つかりません")
+            return
+        }
+        
+        // 場のカードを出したプレイヤーを敗者とする（正しい実装）
+        guard let loserId = lastCardPlayerId else {
+            print("⚠️ 場のカードを出したプレイヤーIDが見つかりません")
+            return
+        }
+        
         for index in players.indices {
             let player = players[index]
             
-            if player.rank == 1 {
+            if player.id == winnerId {
                 // 勝者：スコアを獲得
                 players[index].score += roundScore
                 print("🏆 \(player.name) がスコア獲得: +\(roundScore)")
-            } else if player.rank == players.count {
-                // 敗者：スコアを失う
+            } else if player.id == loserId {
+                // 敗者（場のカードを出した人）：スコアを失う
                 players[index].score -= roundScore
                 print("💀 \(player.name) がスコア失失: -\(roundScore)")
             }
-            // 中間順位は変動なし
+            // その他のプレイヤーは変動なし
         }
     }
     
