@@ -1425,7 +1425,7 @@ class GameViewModel: ObservableObject {
         // 勝敗設定（しょてんこ・バーストの場合は既に設定済み、通常のどてんこの場合は設定）
         if !isShotenkoRound && !isBurst {
             // 通常のどてんこの場合の勝敗設定
-            setDotenkoVictoryRanks()
+            recordDotenkoWinnerAndLoser()
         }
         
         print("🎮 ゲーム終了 - どてんこ勝利確定")
@@ -1434,8 +1434,8 @@ class GameViewModel: ObservableObject {
         startScoreCalculation()
     }
     
-    /// 通常のどてんこ勝敗設定（IDベースのみ）
-    private func setDotenkoVictoryRanks() {
+    /// 通常のどてんこ勝者・敗者を記録（IDベースのみ）
+    private func recordDotenkoWinnerAndLoser() {
         guard let winnerId = revengeManager.dotenkoWinnerId else { return }
         
         print("🏆 通常どてんこ勝者設定: \(players.first(where: { $0.id == winnerId })?.name ?? "不明")")

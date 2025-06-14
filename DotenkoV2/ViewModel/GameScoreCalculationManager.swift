@@ -332,8 +332,8 @@ class GameScoreCalculationManager: ObservableObject {
         completion()
     }
     
-    /// プレイヤーにスコアを適用
-    func applyScoreToPlayers(players: inout [Player], isShotenkoRound: Bool, isBurst: Bool, shotenkoWinnerId: String?, burstPlayerId: String?) {
+    /// プレイヤーにスコアを適用（IDベース統一）
+    func applyScoreToPlayers(players: inout [Player], isShotenkoRound: Bool, isBurst: Bool, shotenkoWinnerId: String?, burstPlayerId: String?, dotenkoWinnerId: String?, lastCardPlayerId: String?) {
         // しょてんこの場合の特別計算
         if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
             applyShotenkoScore(players: &players, winnerId: shotenkoWinnerId)
@@ -346,21 +346,8 @@ class GameScoreCalculationManager: ObservableObject {
             return
         }
         
-        // 通常のどてんこの場合
-        for index in players.indices {
-            let player = players[index]
-            
-            if player.rank == 1 {
-                // 勝者：スコアを獲得
-                players[index].score += roundScore
-                print("🏆 \(player.name) がスコア獲得: +\(roundScore)")
-            } else if player.rank == players.count {
-                // 敗者：スコアを失う
-                players[index].score -= roundScore
-                print("💀 \(player.name) がスコア失失: -\(roundScore)")
-            }
-            // 中間順位は変動なし
-        }
+        // 通常のどてんこの場合（IDベース統一）
+        applyNormalDotenkoScore(players: &players, winnerId: dotenkoWinnerId, loserId: lastCardPlayerId)
     }
     
     /// しょてんこのスコア計算
@@ -400,6 +387,41 @@ class GameScoreCalculationManager: ObservableObject {
                 players[index].score += roundScore
                 print("🏆 \(players[index].name) がバーストでスコア獲得: +\(roundScore)")
             }
+        }
+    }
+    
+    /// 通常のどてんこのスコア計算（IDベース）
+    private func applyNormalDotenkoScore(players: inout [Player], winnerId: String?, loserId: String?) {
+        guard let winnerId = winnerId else {
+            print("⚠️ 通常どてんこの勝者IDが見つかりません - スコア適用をスキップ")
+            return
+        }
+        
+        guard let loserId = loserId else {
+            print("⚠️ 通常どてんこの敗者IDが見つかりません - スコア適用をスキップ")
+            return
+        }
+        
+        // 勝者にスコアを加算
+        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
+            players[winnerIndex].score += roundScore
+            print("🏆 \(players[winnerIndex].name) がどてんこでスコア獲得: +\(roundScore)")
+        } else {
+            print("⚠️ 勝者プレイヤーが見つかりません: \(winnerId)")
+        }
+        
+        // 敗者からスコアを減算
+        if let loserIndex = players.firstIndex(where: { $0.id == loserId }) {
+            players[loserIndex].score -= roundScore
+            print("💀 \(players[loserIndex].name) がどてんこでスコア失失: -\(roundScore)")
+        } else {
+            print("⚠️ 敗者プレイヤーが見つかりません: \(loserId)")
+        }
+        
+        // その他のプレイヤーは変動なし
+        let otherPlayers = players.filter { $0.id != winnerId && $0.id != loserId }
+        for player in otherPlayers {
+            print("➖ \(player.name) はスコア変動なし")
         }
     }
     
