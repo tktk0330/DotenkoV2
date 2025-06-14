@@ -72,8 +72,8 @@ class ScoreResultViewModel: ObservableObject {
     @Published var isReversed: Bool = false
     @Published var showReversalAnimation: Bool = false
     @Published var reversalAnimationPhase: Int = 0
-    @Published var currentWinner: Player?
-    @Published var currentLoser: Player?
+    @Published var currentWinner: Player? // UI表示用（代表勝者）
+    @Published var currentLoser: Player? // UI表示用（代表敗者）
     
     // MARK: - Private Properties
     private var currentRevealIndex: Int = 0
@@ -81,9 +81,9 @@ class ScoreResultViewModel: ObservableObject {
     private var needsAdditionalCard: Bool = false
     private var additionalCards: [Card] = []
     
-    // 入力データ
-    private let winner: Player?
-    private let loser: Player?
+    // 入力データ（配列対応）
+    private let winners: [Player] // 勝者配列
+    private let losers: [Player] // 敗者配列
     private let deckBottomCard: Card?
     private let consecutiveCards: [Card]
     private let baseRate: Int
@@ -106,12 +106,12 @@ class ScoreResultViewModel: ObservableObject {
     }
     
     // MARK: - Initialization
-    init(winner: Player?, loser: Player?, deckBottomCard: Card?, consecutiveCards: [Card], 
+    init(winners: [Player] = [], losers: [Player] = [], deckBottomCard: Card?, consecutiveCards: [Card], 
          baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int,
          isShotenkoRound: Bool = false, isBurstRound: Bool = false,
          shotenkoWinnerId: String? = nil, burstPlayerId: String? = nil) {
-        self.winner = winner
-        self.loser = loser
+        self.winners = winners
+        self.losers = losers
         self.deckBottomCard = deckBottomCard
         self.consecutiveCards = consecutiveCards
         self.baseRate = baseRate
@@ -139,30 +139,25 @@ class ScoreResultViewModel: ObservableObject {
     private func setupPlayerStates() {
         // バーストの場合：バーストしたプレイヤーをLoserとして表示
         if isBurstRound, let burstPlayerId = burstPlayerId {
-            // バーストしたプレイヤーを見つけてLoserに設定
-            if let burstPlayer = [winner, loser].compactMap({ $0 }).first(where: { $0.id == burstPlayerId }) {
-                currentWinner = nil
-                currentLoser = burstPlayer
-            } else {
-                currentWinner = winner
-                currentLoser = loser
-            }
+            // バーストしたプレイヤーを敗者として設定
+            currentLoser = losers.first { $0.id == burstPlayerId }
+            // 勝者は複数いるので代表として最初の人を表示
+            currentWinner = winners.first
+            print("💥 バースト表示設定: 敗者=\(currentLoser?.name ?? "nil"), 勝者代表=\(currentWinner?.name ?? "nil")")
         }
         // しょてんこの場合：しょてんこしたプレイヤーをWinnerとして表示
         else if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
-            // しょてんこしたプレイヤーを見つけてWinnerに設定
-            if let shotenkoPlayer = [winner, loser].compactMap({ $0 }).first(where: { $0.id == shotenkoWinnerId }) {
-                currentWinner = shotenkoPlayer
-                currentLoser = nil
-            } else {
-                currentWinner = winner
-                currentLoser = loser
-            }
+            // しょてんこしたプレイヤーを勝者として設定
+            currentWinner = winners.first { $0.id == shotenkoWinnerId }
+            // 敗者は複数いるので代表として最初の人を表示
+            currentLoser = losers.first
+            print("🎊 しょてんこ表示設定: 勝者=\(currentWinner?.name ?? "nil"), 敗者代表=\(currentLoser?.name ?? "nil")")
         }
         // 通常のどてんこの場合
         else {
-            currentWinner = winner
-            currentLoser = loser
+            currentWinner = winners.first
+            currentLoser = losers.first
+            print("🎯 通常どてんこ表示設定: 勝者=\(currentWinner?.name ?? "nil"), 敗者=\(currentLoser?.name ?? "nil")")
         }
         
         currentUpRate = upRate

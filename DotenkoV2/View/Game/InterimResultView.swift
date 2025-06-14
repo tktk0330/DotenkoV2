@@ -117,12 +117,22 @@ struct InterimResultView: View {
             }
         }
         
-        // 通常のどてんこの場合
-        if player.rank == 1 {
-            return roundScore
-        } else if player.rank == viewModel.players.count {
-            return -roundScore
+        // 通常のどてんこの場合（IDベースのみ）
+        if let winnerId = viewModel.revengeManager.dotenkoWinnerId {
+            if player.id == winnerId {
+                // 勝者：スコアを獲得
+                return roundScore
+            } else if let lastCardPlayerId = viewModel.lastCardPlayerId,
+                      player.id == lastCardPlayerId {
+                // 敗者（場のカードを出した人）：スコアを失う
+                return -roundScore
+            } else {
+                // その他のプレイヤー：変動なし
+                return 0
+            }
         } else {
+            // 勝者IDが不明な場合はスコア変動なし
+            print("⚠️ 通常どてんこの勝者IDが不明のため、スコア変動なし")
             return 0
         }
     }

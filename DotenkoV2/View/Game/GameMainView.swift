@@ -84,11 +84,10 @@ struct GameMainView: View {
             // スコア確定画面
             if viewModel.showScoreResult, let scoreData = viewModel.scoreResultData {
                 ScoreResultView(
-                    winner: scoreData.winner,
-                    loser: scoreData.loser,
+                    winners: scoreData.winners,
+                    losers: scoreData.losers,
                     deckBottomCard: scoreData.deckBottomCard,
                     consecutiveCards: scoreData.consecutiveCards,
-                    winnerHand: scoreData.winnerHand,
                     baseRate: scoreData.baseRate,
                     upRate: scoreData.upRate,
                     finalMultiplier: scoreData.finalMultiplier,
@@ -97,7 +96,9 @@ struct GameMainView: View {
                     isBurstRound: scoreData.isBurstRound,
                     shotenkoWinnerId: scoreData.shotenkoWinnerId,
                     burstPlayerId: scoreData.burstPlayerId,
-                    onOKAction: viewModel.onScoreResultOK
+                    onOKAction: {
+                        viewModel.onScoreResultOK()
+                    }
                 )
             }
             

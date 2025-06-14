@@ -23,11 +23,10 @@ struct ScoreResultView: View {
     }
     
     // MARK: - Input Properties
-    let winner: Player?
-    let loser: Player?
+    let winners: [Player] // 勝者配列
+    let losers: [Player] // 敗者配列
     let deckBottomCard: Card?
     let consecutiveCards: [Card]
-    let winnerHand: [Card]
     let baseRate: Int
     let upRate: Int
     let finalMultiplier: Int
@@ -42,16 +41,16 @@ struct ScoreResultView: View {
     @StateObject private var viewModel: ScoreResultViewModel
     
     // MARK: - Initialization
-    init(winner: Player?, loser: Player?, deckBottomCard: Card?, consecutiveCards: [Card], 
-         winnerHand: [Card], baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int,
+    init(winners: [Player] = [], losers: [Player] = [], deckBottomCard: Card?, consecutiveCards: [Card], 
+         baseRate: Int, upRate: Int, finalMultiplier: Int, totalScore: Int,
          isShotenkoRound: Bool = false, isBurstRound: Bool = false,
          shotenkoWinnerId: String? = nil, burstPlayerId: String? = nil,
          onOKAction: @escaping () -> Void) {
-        self.winner = winner
-        self.loser = loser
+        
+        self.winners = winners
+        self.losers = losers
         self.deckBottomCard = deckBottomCard
         self.consecutiveCards = consecutiveCards
-        self.winnerHand = winnerHand
         self.baseRate = baseRate
         self.upRate = upRate
         self.finalMultiplier = finalMultiplier
@@ -63,8 +62,8 @@ struct ScoreResultView: View {
         self.onOKAction = onOKAction
         
         self._viewModel = StateObject(wrappedValue: ScoreResultViewModel(
-            winner: winner,
-            loser: loser,
+            winners: winners,
+            losers: losers,
             deckBottomCard: deckBottomCard,
             consecutiveCards: consecutiveCards,
             baseRate: baseRate,
