@@ -484,20 +484,41 @@ struct GameAnnouncementView: View {
             // 絶対位置指定でレイアウトに影響しないオーバーレイ
             GeometryReader { geometry in
                 VStack(spacing: 16) {
-                    // メインタイトル
+                    // メインタイトル（カジノ風強化）
                     Text(title)
-                        .font(.system(size: 36, weight: .black))
-                        .foregroundColor(Appearance.Color.commonWhite)
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(Appearance.Color.casinoGoldGlow),
+                                    Color.yellow,
+                                    Color(Appearance.Color.casinoGoldGlow),
+                                    Color.orange
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .tracking(4.0)
-                        .shadow(color: Appearance.Color.commonBlack, radius: 3, x: 0, y: 2)
                         .scaleEffect(glowAnimation ? 1.08 : 1.0)
                     
-                    // サブタイトル
+                    // サブタイトル（カジノ風強化）
                     if !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Appearance.Color.commonWhite.opacity(0.95))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.white,
+                                        Color(Appearance.Color.playerGold).opacity(0.9),
+                                        Color.white
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .tracking(1.5)
+                            .shadow(color: Color(Appearance.Color.playerGold).opacity(0.5), radius: 4, x: 0, y: 0)
                             .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
                     }
                 }
@@ -505,8 +526,6 @@ struct GameAnnouncementView: View {
                 .padding(.vertical, 40)
                 .background(luxuryAnnouncementBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 25))
-                .overlay(luxuryAnnouncementBorder)
-
                 .shadow(color: Appearance.Color.commonBlack.opacity(0.6), radius: 8, x: 0, y: 4)
                 .scaleEffect(animationPhase == .staying ? (glowAnimation ? 1.02 : 1.0) : 1.0)
                 .position(
@@ -624,25 +643,6 @@ struct GameAnnouncementView: View {
                 )
             )
     }
-    
-
-    
-    @ViewBuilder
-    private var luxuryAnnouncementBorder: some View {
-        // キリッとしたシンプルなボーダー
-        RoundedRectangle(cornerRadius: 25)
-            .stroke(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Appearance.Color.playerGold,
-                        Appearance.Color.playerGold.opacity(0.8)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: 3
-            )
-    }
 }
 
 // MARK: - Diamond Shape
@@ -665,6 +665,47 @@ struct Diamond: Shape {
 }
 
 // MARK: - SwiftUI Previews
+
+/// GameAnnouncementViewのプレビュー
+struct GameAnnouncementView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // ラウンドスタート
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                GameAnnouncementView(
+                    title: "Round 11 Start",
+                    subtitle: "",
+                    isVisible: true
+                )
+            }
+            .previewDisplayName("ラウンドスタート")
+            
+            // サブタイトル付き
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                GameAnnouncementView(
+                    title: "Challenge Zone",
+                    subtitle: "3人が参加",
+                    isVisible: true
+                )
+            }
+            .previewDisplayName("サブタイトル付き")
+            
+            // 長いテキスト
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                GameAnnouncementView(
+                    title: "Final Round",
+                    subtitle: "勝負の時間です！",
+                    isVisible: true
+                )
+            }
+            .previewDisplayName("長いテキスト")
+        }
+    }
+}
+
 /// DOTENKOボタンのプレビュー（パチンコ風赤ボタンデザイン）
 struct DotenkoDeclarationButton_Previews: PreviewProvider {
     static var previews: some View {

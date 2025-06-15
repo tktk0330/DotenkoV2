@@ -21,7 +21,7 @@ struct MatchingView: View {
                 HStack {
                     Button(action: { allViewNavigator.pop() }) {
                         Image(systemName: Appearance.Icon.chevronLeft)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 36, weight: .bold))
                             .foregroundColor(Appearance.Color.commonWhite)
                     }
                     
@@ -29,7 +29,7 @@ struct MatchingView: View {
                     
                     // 参加人数表示
                     Text("\(viewModel.players.count)/\(maxPlayers)が参加中")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 24, weight: .medium))
                         .foregroundColor(Appearance.Color.commonWhite)
                 }
                 .padding(.horizontal, 20)
