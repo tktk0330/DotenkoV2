@@ -1893,7 +1893,7 @@ class GameViewModel: ObservableObject {
             players[index].hand.removeAll()
             players[index].selectedCards.removeAll()
             players[index].dtnk = false
-            players[index].rank = 0
+            // rank は前回の結果を保持（updatePlayerRanksByScore()で更新される）
         }
         
         // カード状態をリセット
