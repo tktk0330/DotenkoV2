@@ -1313,39 +1313,6 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    /// どてんこ勝利処理
-    private func handleDotenkoVictory(winnerId: String) {
-        // 勝者の設定
-        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
-            players[winnerIndex].rank = 1
-            print("🏆 どてんこ勝者: \(players[winnerIndex].name)")
-        }
-        
-        // 場のカードを出したプレイヤーを敗者に設定
-        // 現在のターンプレイヤーが場のカードを出したプレイヤーと仮定
-        if let currentTurnPlayer = getCurrentTurnPlayer(),
-           currentTurnPlayer.id != winnerId {
-            if let loserIndex = players.firstIndex(where: { $0.id == currentTurnPlayer.id }) {
-                players[loserIndex].rank = players.count // 最下位
-                print("💀 敗者（場のカードを出した人）: \(players[loserIndex].name)")
-            }
-        }
-        
-        // その他のプレイヤーは中間順位
-        for index in players.indices {
-            if players[index].rank == 0 { // まだ順位が決まっていないプレイヤー
-                players[index].rank = 2
-            }
-        }
-        
-        // ゲーム終了処理
-        gamePhase = .finished
-        print("🎮 ラウンド終了 - どてんこによる勝敗確定")
-        
-        // スコア計算を開始
-        startScoreCalculation()
-    }
-    
     /// 現在のプレイヤーがどてんこ宣言できるかチェック
     func canCurrentPlayerDeclareDotenko() -> Bool {
         guard let currentPlayer = getCurrentPlayer() else { return false }
