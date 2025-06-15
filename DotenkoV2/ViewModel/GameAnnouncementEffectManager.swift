@@ -21,13 +21,22 @@ class GameAnnouncementEffectManager: ObservableObject {
     @Published var dotenkoAnimationSubtitle: String = ""
     @Published var dotenkoAnimationColorType: DotenkoAnimationType = .dotenko
     
-    // レートアップエフェクトシステム
+    // レートアップエフェクトシステム（連続表示対応）
     @Published var showRateUpEffect: Bool = false
     @Published var rateUpMultiplier: Int = 1
+    @Published var rateUpEffectId: UUID = UUID() // 連続アニメーション識別用
     
     // MARK: - Private Properties
     private var rateUpEffectTimer: Timer?
     private var animationCompletionExecuted: Bool = false // アニメーション完了コールバックの重複実行防止
+    private var rateUpEffectQueue: [RateUpEffectRequest] = [] // 連続エフェクト管理用キュー
+    private var isProcessingRateUpEffect: Bool = false // エフェクト処理中フラグ
+    
+    // MARK: - Rate Up Effect Request Model
+    private struct RateUpEffectRequest {
+        let multiplier: Int
+        let id: UUID = UUID()
+    }
     
     // MARK: - Lifecycle
     deinit {
@@ -86,38 +95,85 @@ class GameAnnouncementEffectManager: ObservableObject {
         return isAnnouncementBlocking
     }
     
-    // MARK: - Rate Up Effect System
+    // MARK: - Rate Up Effect System（連続表示対応版）
     
-    /// レートアップエフェクトを表示
+    /// レートアップエフェクトを表示（連続表示対応）
     /// - Parameter multiplier: 現在の倍率
     func showRateUpEffect(multiplier: Int) {
-        // 既存のタイマーをキャンセル
-        rateUpEffectTimer?.invalidate()
+        let request = RateUpEffectRequest(multiplier: multiplier)
+        rateUpEffectQueue.append(request)
         
-        rateUpMultiplier = multiplier
-        showRateUpEffect = true
+        print("📈 レートアップエフェクト要求追加: ×\(multiplier) (キュー数: \(rateUpEffectQueue.count))")
         
-        print("📈 レートアップエフェクト表示: ×\(multiplier)")
-        
-        // 5.0秒後にエフェクトを非表示（5回発射 + スローアニメーション完了時間に合わせて調整）
-        rateUpEffectTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            self.hideRateUpEffect()
+        // 現在処理中でなければ即座に処理開始
+        if !isProcessingRateUpEffect {
+            processNextRateUpEffect()
         }
     }
     
-    /// レートアップエフェクトを非表示
+    /// 次のレートアップエフェクトを処理
+    private func processNextRateUpEffect() {
+        guard !rateUpEffectQueue.isEmpty else {
+            isProcessingRateUpEffect = false
+            print("📈 レートアップエフェクトキュー処理完了")
+            return
+        }
+        
+        isProcessingRateUpEffect = true
+        let request = rateUpEffectQueue.removeFirst()
+        
+        print("📈 レートアップエフェクト処理開始: ×\(request.multiplier)")
+        
+        // 新しいエフェクトIDを生成してアニメーションを強制更新
+        rateUpEffectId = UUID()
+        rateUpMultiplier = request.multiplier
+        showRateUpEffect = true
+        
+        // 既存のタイマーをキャンセル（新しいエフェクト用）
+        rateUpEffectTimer?.invalidate()
+        
+        // エフェクト表示時間（3.0秒に短縮してパフォーマンス向上）
+        let effectDuration: Double = 3.0
+        
+        // エフェクト終了タイマーを設定
+        rateUpEffectTimer = Timer.scheduledTimer(withTimeInterval: effectDuration, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            self.completeCurrentRateUpEffect()
+        }
+    }
+    
+    /// 現在のレートアップエフェクトを完了し、次のエフェクトを処理
+    private func completeCurrentRateUpEffect() {
+        print("📈 レートアップエフェクト完了: ×\(rateUpMultiplier)")
+        
+        // エフェクトを非表示
+        showRateUpEffect = false
+        rateUpMultiplier = 1
+        
+        // タイマーをクリーンアップ
+        rateUpEffectTimer?.invalidate()
+        rateUpEffectTimer = nil
+        
+        // 短い間隔を置いて次のエフェクトを処理（連続表示の視認性向上）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.processNextRateUpEffect()
+        }
+    }
+    
+    /// レートアップエフェクトを非表示（外部からの強制終了用）
     func hideRateUpEffect() {
         rateUpEffectTimer?.invalidate()
         rateUpEffectTimer = nil
         showRateUpEffect = false
         rateUpMultiplier = 1
-        print("📈 レートアップエフェクト終了")
+        rateUpEffectQueue.removeAll() // キューもクリア
+        isProcessingRateUpEffect = false
+        print("📈 レートアップエフェクト強制終了")
     }
     
     /// レートアップエフェクトが表示中かチェック
     func isRateUpEffectActive() -> Bool {
-        return showRateUpEffect
+        return showRateUpEffect || !rateUpEffectQueue.isEmpty
     }
     
     // MARK: - Declaration Animation System

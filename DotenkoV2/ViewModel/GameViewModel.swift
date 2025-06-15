@@ -92,6 +92,7 @@ class GameViewModel: ObservableObject {
     var dotenkoAnimationColorType: DotenkoAnimationType { announcementEffectManager.dotenkoAnimationColorType }
     var showRateUpEffect: Bool { announcementEffectManager.showRateUpEffect }
     var rateUpMultiplier: Int { announcementEffectManager.rateUpMultiplier }
+    var rateUpEffectId: UUID { announcementEffectManager.rateUpEffectId } // 連続アニメーション識別用
     
     // 中間結果画面システム
     @Published var showInterimResult: Bool = false

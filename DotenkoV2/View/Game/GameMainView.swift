@@ -72,12 +72,13 @@ struct GameMainView: View {
                 .allowsHitTesting(false)
             }
             
-            // レートアップエフェクト表示
+            // レートアップエフェクト表示（連続表示対応）
             if viewModel.showRateUpEffect {
                 RateUpEffectView(
                     isVisible: viewModel.showRateUpEffect,
                     multiplier: viewModel.rateUpMultiplier
                 )
+                .id(viewModel.rateUpEffectId) // エフェクトIDでアニメーション強制更新
                 .allowsHitTesting(false)
             }
             
