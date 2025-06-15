@@ -262,8 +262,7 @@ struct ScoreResultView: View {
             // めくられたカード表示エリア
             revealedCardsArea
         }
-        .animation(.easeInOut(duration: 0.5), value: viewModel.showDeck)
-        .animation(.easeInOut(duration: 0.5), value: viewModel.showFloatingCard)
+        .animation(.easeInOut(duration: 0.5), value: [viewModel.showDeck, viewModel.showFloatingCard])
     }
     
     // MARK: - Deck Display Area
@@ -314,8 +313,7 @@ struct ScoreResultView: View {
             }
         }
         .frame(height: viewModel.showDeck || viewModel.showFloatingCard ? ViewConstants.deckHeight : 0)
-        .animation(.easeInOut(duration: 0.5), value: viewModel.showDeck)
-        .animation(.easeInOut(duration: 0.5), value: viewModel.showFloatingCard)
+        .animation(.easeInOut(duration: 0.5), value: [viewModel.showDeck, viewModel.showFloatingCard])
     }
     
     // MARK: - Revealed Cards Area

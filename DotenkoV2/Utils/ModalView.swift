@@ -11,13 +11,10 @@ struct ModalView<Content: View>: View {
         GeometryReader { geometry in
             ZStack {
                 // 背景のオーバーレイ（広告エリアを除く）
-                VStack(spacing: 0) {
-                    // メインコンテンツエリアのオーバーレイ
-                    Color.black
-                        .opacity(0.4)
-                        .ignoresSafeArea(.all, edges: [.top, .horizontal])
-                }
-                .allowsHitTesting(false) // 背景タップを無効化
+                Color.black
+                    .opacity(0.4)
+                    .ignoresSafeArea(.all, edges: [.top, .horizontal])
+                    .allowsHitTesting(false) // 背景タップを無効化
                 
                 // モーダルコンテンツ
                 VStack {
@@ -31,7 +28,6 @@ struct ModalView<Content: View>: View {
                 .transition(.opacity.combined(with: .scale))
             }
         }
-        .ignoresSafeArea()
     }
 }
 

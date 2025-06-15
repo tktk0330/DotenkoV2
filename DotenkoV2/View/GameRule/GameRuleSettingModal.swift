@@ -19,8 +19,8 @@ struct GameRuleSettingModal: View {
     
     var body: some View {
         ZStack {
-            // 背景
-            Color.black.opacity(0.9)
+            // 暗い背景
+            Color.black.opacity(0.85)
                 .ignoresSafeArea()
             
             // メインコンテンツ
@@ -29,8 +29,18 @@ struct GameRuleSettingModal: View {
                 
                 // タイトル
                 Text(title)
-                    .font(.system(size: 48, weight: .heavy))
-                    .foregroundColor(.white)
+                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.yellow,
+                                Color.orange
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .shadow(color: Color.black.opacity(0.5), radius: 2, x: 0, y: 2)
                 
                 // 値の選択
                 ScrollViewReader { proxy in
@@ -39,20 +49,15 @@ struct GameRuleSettingModal: View {
                             ForEach(setting.values, id: \.self) { value in
                                 Button(action: {
                                     selectedValue = value
-                                    withAnimation {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
                                         proxy.scrollTo(value, anchor: .center)
                                     }
                                 }) {
                                     Text(value)
-                                        .font(.system(size: 24, weight: .bold))
+                                        .font(.system(size: 20, weight: .bold, design: .rounded))
                                         .foregroundColor(.white)
                                         .frame(width: 80, height: 60)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(selectedValue == value ? 
-                                                    Color(uiColor: Appearance.Color.mossGreen) : 
-                                                    Color.gray.opacity(0.3))
-                                        )
+                                        .background(casinoValueBackground(isSelected: selectedValue == value))
                                 }
                                 .id(value)
                             }
@@ -60,7 +65,7 @@ struct GameRuleSettingModal: View {
                         .padding(.horizontal, UIScreen.main.bounds.width / 2 - 30)
                     }
                     .onAppear {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.5)) {
                             proxy.scrollTo(selectedValue, anchor: .center)
                         }
                     }
@@ -68,8 +73,10 @@ struct GameRuleSettingModal: View {
                 
                 // 説明テキスト
                 Text(getDescription(for: setting))
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
                 
                 // 決定ボタン
                 CasinoUnifiedButton.confirm {
@@ -83,6 +90,16 @@ struct GameRuleSettingModal: View {
             .padding(.vertical, 32)
         }
         .presentationBackground(.clear)
+    }
+    
+    /// シンプルな値選択背景
+    private func casinoValueBackground(isSelected: Bool) -> some View {
+        return RoundedRectangle(cornerRadius: 12)
+            .fill(isSelected ? Color.blue : Color.gray.opacity(0.3))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.blue.opacity(0.8) : Color.gray.opacity(0.5), lineWidth: 1)
+            )
     }
     
     private func getDescription(for setting: GameSetting) -> String {

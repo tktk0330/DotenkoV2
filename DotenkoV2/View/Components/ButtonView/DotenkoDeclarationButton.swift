@@ -289,8 +289,12 @@ struct BaseDeclarationButton: View {
             .scaleEffect(animationManager.isPressed && isEnabled ? DeclarationButtonConfig.pressedScale : 1.0)
             .scaleEffect(animationManager.isBlinking ? DeclarationButtonConfig.blinkingScale : 1.0)
             .scaleEffect(animationManager.heartbeatAnimation ? DeclarationButtonConfig.heartbeatScale : 1.0)
-            .animation(.easeInOut(duration: DeclarationButtonConfig.pressAnimationDuration), value: animationManager.isPressed)
-            .animation(.easeInOut(duration: DeclarationButtonConfig.blinkAnimationDuration).repeatForever(autoreverses: true), value: animationManager.isBlinking)
+            .animation(
+                animationManager.isPressed ? 
+                    .easeInOut(duration: DeclarationButtonConfig.pressAnimationDuration) : 
+                    .easeInOut(duration: DeclarationButtonConfig.blinkAnimationDuration).repeatForever(autoreverses: true), 
+                value: animationManager.isPressed ? animationManager.isPressed : animationManager.isBlinking
+            )
             .opacity(isEnabled ? 1.0 : 0.0)
         }
         .buttonStyle(PlainButtonStyle())

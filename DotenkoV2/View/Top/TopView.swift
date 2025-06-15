@@ -48,9 +48,7 @@ struct CardAnimationLayer: View {
                 .position(cardAnim.position)
                 .rotationEffect(.degrees(cardAnim.rotation))
                 .opacity(cardAnim.opacity)
-                .animation(.linear(duration: cardAnim.duration), value: cardAnim.position)
-                .animation(.linear(duration: cardAnim.duration), value: cardAnim.rotation)
-                .animation(.linear(duration: cardAnim.duration), value: cardAnim.opacity)
+                .animation(.linear(duration: cardAnim.duration), value: [cardAnim.position.x, cardAnim.position.y, cardAnim.rotation, cardAnim.opacity])
         }
     }
 }
@@ -104,14 +102,10 @@ struct LogoView: View {
             .offset(animationState.offset)
             .opacity(animationState.opacity)
             .animation(
-                .easeInOut(duration: TopViewConfig.Logo.glowDuration)
-                .repeatForever(autoreverses: true),
-                value: animationState.isGlowing
-            )
-            .animation(
-                .easeInOut(duration: TopViewConfig.Logo.colorShiftDuration)
-                .repeatForever(autoreverses: true),
-                value: animationState.colorShift
+                animationState.isGlowing ? 
+                    .easeInOut(duration: TopViewConfig.Logo.glowDuration).repeatForever(autoreverses: true) :
+                    .easeInOut(duration: TopViewConfig.Logo.colorShiftDuration).repeatForever(autoreverses: true),
+                value: [animationState.isGlowing, animationState.colorShift]
             )
     }
     
@@ -153,14 +147,10 @@ struct StartButtonView: View {
                 )
                 .scaleEffect(animationState.isGlowing ? TopViewConfig.Button.glowScale : 1.0)
                 .animation(
-                    .easeInOut(duration: TopViewConfig.Button.glowDuration)
-                    .repeatForever(autoreverses: true),
-                    value: animationState.isGlowing
-                )
-                .animation(
-                    .easeInOut(duration: TopViewConfig.Button.colorShiftDuration)
-                    .repeatForever(autoreverses: true),
-                    value: animationState.colorShift
+                    animationState.isGlowing ? 
+                        .easeInOut(duration: TopViewConfig.Button.glowDuration).repeatForever(autoreverses: true) :
+                        .easeInOut(duration: TopViewConfig.Button.colorShiftDuration).repeatForever(autoreverses: true),
+                    value: [animationState.isGlowing, animationState.colorShift]
                 )
                 .padding(.horizontal, TopViewConfig.Button.horizontalPadding)
                 .padding(.vertical, TopViewConfig.Button.verticalPadding)

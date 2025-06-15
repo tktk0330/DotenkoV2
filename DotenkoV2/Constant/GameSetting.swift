@@ -140,8 +140,8 @@ enum GameSetting: String, Identifiable {
         case .roundCount: return "chart.bar.fill"       // グラフアイコン
         case .jokerCount: return "crown.fill"           // 王冠アイコン
         case .gameRate: return "dollarsign.circle.fill" // ドル記号アイコン
-        case .upRate: return "hand.raised.fill"         // 手のアイコン
-        case .maxScore: return "arrow.up.forward"       // 上向き矢印アイコン
+        case .upRate: return "arrow.up.forward"         // 上向き矢印アイコン
+        case .maxScore: return "hand.raised.fill"       // 手のアイコン
         case .deckCycle: return "rectangle.stack.fill"  // カードスタックアイコン
         }
     }

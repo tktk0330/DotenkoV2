@@ -41,13 +41,13 @@ struct GlobalNavigationView: View {
     @ViewBuilder
     private func navigationButtonBackground(isSelected: Bool) -> some View {
         if isSelected {
-            // 選択時のカジノ風背景
+            // 選択時のカジノ風背景（プレイヤー数選択と同じ色）
             RoundedRectangle(cornerRadius: 12)
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(uiColor: Appearance.Color.goldenYellow),
-                            Color(uiColor: Appearance.Color.goldenYellow).opacity(0.8)
+                            Color.yellow.opacity(0.9),
+                            Color.orange.opacity(0.8)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -68,7 +68,7 @@ struct GlobalNavigationView: View {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: Color(uiColor: Appearance.Color.goldenYellow).opacity(0.4), radius: 8, x: 0, y: 2)
+                .shadow(color: Color.yellow.opacity(0.4), radius: 8, x: 0, y: 2)
                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
         } else {
             // 非選択時の透明背景
