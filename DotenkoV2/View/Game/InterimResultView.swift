@@ -305,32 +305,8 @@ private struct InterimResultActionButtonView: View {
     }
     
     private var okButton: some View {
-        Button(action: onOKTapped) {
-            HStack(spacing: InterimResultConstants.Spacing.buttonSpacing) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: InterimResultConstants.Typography.buttonFontSize, weight: .bold))
-                Text("OK")
-                    .font(.system(size: InterimResultConstants.Typography.buttonFontSize, weight: .bold))
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: InterimResultConstants.Dimensions.buttonHeight)
-            .background(buttonBackground)
-        }
+        CasinoUnifiedButton.ok(action: onOKTapped)
     }
     
-    private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: InterimResultConstants.Dimensions.buttonCornerRadius)
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.green.opacity(InterimResultConstants.Colors.greenButtonTopOpacity),
-                        Color.green.opacity(InterimResultConstants.Colors.greenButtonBottomOpacity)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .shadow(color: .black.opacity(InterimResultConstants.Colors.shadowOpacity), radius: 4, x: 0, y: 2)
-    }
+
 }

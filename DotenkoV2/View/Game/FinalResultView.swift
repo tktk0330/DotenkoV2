@@ -129,40 +129,15 @@ private struct FinalResultHomeButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: FinalResultConstants.Dimensions.homeButtonSpacing) {
-                Image(systemName: "house.fill")
-                    .font(.system(size: FinalResultConstants.Typography.homeButtonSize, weight: .bold))
-                Text("HOME")
-                    .font(.system(size: FinalResultConstants.Typography.homeButtonSize, weight: .bold))
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: FinalResultConstants.Dimensions.homeButtonHeight)
-            .background(homeButtonBackground)
-        }
+        CasinoUnifiedButton(
+            title: "HOME",
+            style: .primary,
+            size: .large,
+            icon: "house.fill",
+            action: action
+        )
         .padding(.horizontal, FinalResultConstants.Dimensions.homeButtonHorizontalPadding)
         .padding(.top, FinalResultConstants.Dimensions.homeButtonTopPadding)
-    }
-    
-    private var homeButtonBackground: some View {
-        RoundedRectangle(cornerRadius: FinalResultConstants.Dimensions.homeButtonCornerRadius)
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Appearance.Color.homeButtonGold.opacity(FinalResultConstants.Colors.goldOpacity),
-                        Appearance.Color.homeButtonDarkGold.opacity(FinalResultConstants.Colors.goldSecondaryOpacity)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .shadow(
-                color: Appearance.Color.finalResultShadow.opacity(FinalResultConstants.Colors.shadowOpacity),
-                radius: FinalResultConstants.Dimensions.shadowRadius,
-                x: 0,
-                y: FinalResultConstants.Dimensions.shadowOffset
-            )
     }
 }
 
