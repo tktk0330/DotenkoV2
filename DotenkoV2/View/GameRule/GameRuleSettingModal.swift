@@ -72,19 +72,9 @@ struct GameRuleSettingModal: View {
                     .foregroundColor(.gray)
                 
                 // 決定ボタン
-                Button(action: {
+                CasinoUnifiedButton.confirm {
                     onSave(selectedValue)
                     dismiss()
-                }) {
-                    Text("決定")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(
-                            RoundedRectangle(cornerRadius: 25)
-                                .fill(Color(uiColor: Appearance.Color.mossGreen))
-                        )
                 }
                 .padding(.horizontal, 40)
                 

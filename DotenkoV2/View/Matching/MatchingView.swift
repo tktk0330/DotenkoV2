@@ -49,17 +49,9 @@ struct MatchingView: View {
                 
                 // スタートボタン（全員揃った場合のみ表示）
                 if viewModel.players.count == maxPlayers {
-                    Button(action: startGame) {
-                        Text("ゲームを開始")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Appearance.Color.commonWhite)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Appearance.Color.commonGreen)
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
+                    CasinoUnifiedButton.start(action: startGame)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
                 }
             }
         }

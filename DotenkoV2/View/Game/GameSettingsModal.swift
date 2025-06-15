@@ -89,73 +89,16 @@ struct GameSettingsModal: View {
     private var buttonAreaView: some View {
         VStack(spacing: 12) {
             // ゲームを抜けるボタン
-            Button(action: {
+            CasinoUnifiedButton.danger(title: "ゲームを抜ける") {
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     onExitGame()
                 }
-            }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "door.left.hand.open")
-                        .font(.system(size: 18, weight: .bold))
-                    
-                    Text("ゲームを抜ける")
-                        .font(.system(size: 16, weight: .bold))
-                }
-                .foregroundColor(Appearance.Color.commonWhite)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.red.opacity(0.8),
-                                    Color.red.opacity(0.6)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 25)
-                        .stroke(Color.red.opacity(0.8), lineWidth: 2)
-                )
-                .shadow(color: Color.red.opacity(0.3), radius: 6, x: 0, y: 3)
             }
             
             // 閉じるボタン
-            Button(action: {
+            CasinoUnifiedButton.close {
                 dismiss()
-            }) {
-                HStack(spacing: 10) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .bold))
-                    
-                    Text("閉じる")
-                        .font(.system(size: 16, weight: .bold))
-                }
-                .foregroundColor(Appearance.Color.commonWhite)
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Appearance.Color.commonGray.opacity(0.8),
-                                    Appearance.Color.commonGray.opacity(0.6)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 25)
-                        .stroke(Appearance.Color.commonGray.opacity(0.6), lineWidth: 1)
-                )
             }
         }
     }

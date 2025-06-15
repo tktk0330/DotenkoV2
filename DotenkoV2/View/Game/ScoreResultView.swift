@@ -483,24 +483,14 @@ struct ScoreResultView: View {
     @ViewBuilder
     private var okButton: some View {
         if viewModel.showOKButton {
-            Button(action: onOKAction) {
-                Text("OK")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.black)
-                    .frame(width: 200, height: 60)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                    )
-            }
-            .padding(.bottom, 20)
-            .scaleEffect(viewModel.showOKButton ? 1.0 : 0.8)
-            .opacity(viewModel.showOKButton ? 1.0 : 0.0)
-            .transition(.asymmetric(
-                insertion: .scale.combined(with: .opacity),
-                removal: .opacity
-            ))
+            CasinoUnifiedButton.ok(action: onOKAction)
+                .padding(.bottom, 20)
+                .scaleEffect(viewModel.showOKButton ? 1.0 : 0.8)
+                .opacity(viewModel.showOKButton ? 1.0 : 0.0)
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .opacity
+                ))
         }
     }
 }
