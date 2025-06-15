@@ -187,6 +187,7 @@ class GameViewModel: ObservableObject {
         revengeManager.setGameViewModel(self)
         gameBotManager.setGameViewModel(self)
         scoreCalculationManager.setAnnouncementEffectManager(announcementEffectManager)
+        scoreCalculationManager.gameViewModel = self
         
         // スコア計算マネージャーの状態変更を監視
         setupScoreCalculationBinding()
@@ -1313,39 +1314,6 @@ class GameViewModel: ObservableObject {
         }
     }
     
-    /// どてんこ勝利処理
-    private func handleDotenkoVictory(winnerId: String) {
-        // 勝者の設定
-        if let winnerIndex = players.firstIndex(where: { $0.id == winnerId }) {
-            players[winnerIndex].rank = 1
-            print("🏆 どてんこ勝者: \(players[winnerIndex].name)")
-        }
-        
-        // 場のカードを出したプレイヤーを敗者に設定
-        // 現在のターンプレイヤーが場のカードを出したプレイヤーと仮定
-        if let currentTurnPlayer = getCurrentTurnPlayer(),
-           currentTurnPlayer.id != winnerId {
-            if let loserIndex = players.firstIndex(where: { $0.id == currentTurnPlayer.id }) {
-                players[loserIndex].rank = players.count // 最下位
-                print("💀 敗者（場のカードを出した人）: \(players[loserIndex].name)")
-            }
-        }
-        
-        // その他のプレイヤーは中間順位
-        for index in players.indices {
-            if players[index].rank == 0 { // まだ順位が決まっていないプレイヤー
-                players[index].rank = 2
-            }
-        }
-        
-        // ゲーム終了処理
-        gamePhase = .finished
-        print("🎮 ラウンド終了 - どてんこによる勝敗確定")
-        
-        // スコア計算を開始
-        startScoreCalculation()
-    }
-    
     /// 現在のプレイヤーがどてんこ宣言できるかチェック
     func canCurrentPlayerDeclareDotenko() -> Bool {
         guard let currentPlayer = getCurrentPlayer() else { return false }
@@ -1650,38 +1618,15 @@ class GameViewModel: ObservableObject {
     var scoreResultData: ScoreResultData? { scoreCalculationManager.scoreResultData }
     var consecutiveSpecialCards: [Card] { scoreCalculationManager.consecutiveSpecialCards }
     
-    /// ラウンド終了時のスコア計算を開始
+    /// ラウンド終了時のスコア計算を開始（統合版使用）
     func startScoreCalculation() {
-        print("💰 スコア計算開始 - 演出付きスコア計算システムを使用")
+        print("💰 GameViewModel - 統合スコア計算開始")
         
-        // GameScoreCalculationManagerの演出付きメソッドを使用
-        scoreCalculationManager.startScoreCalculation(
+        // ScoreCalculationContext構造体を使用してメソッド呼び出しを簡潔化
+        let context = GameScoreCalculationManager.ScoreCalculationContext(
             gamePhase: gamePhase,
             deckCards: deckCards,
-            fieldCards: fieldCards
-        ) { [weak self] in
-            // 演出完了後にスコア確定画面データを作成
-            self?.finalizeScoreCalculationWithData()
-        }
-    }
-    
-    /// スコア計算演出完了後の最終処理
-    private func finalizeScoreCalculationWithData() {
-        // デッキの裏カードを取得
-        let bottomCard: Card
-        if !deckCards.isEmpty {
-            bottomCard = deckCards.last!
-        } else if !fieldCards.isEmpty {
-            bottomCard = fieldCards.first!
-        } else {
-            print("⚠️ デッキも場も空のため、スコア計算をスキップします")
-            finishScoreCalculation()
-            return
-        }
-        
-        // スコア確定画面データを作成して自動遷移
-        scoreCalculationManager.calculateFinalScoreWithData(
-            bottomCard: bottomCard,
+            fieldCards: fieldCards,
             baseRate: Int(gameRuleInfo.gameRate) ?? 1,
             maxScore: gameRuleInfo.maxScore,
             players: players,
@@ -1689,11 +1634,25 @@ class GameViewModel: ObservableObject {
             isBurst: isBurst,
             shotenkoWinnerId: shotenkoWinnerId,
             burstPlayerId: burstPlayerId,
-            dotenkoWinnerId: revengeManager.dotenkoWinnerId, // 通常のどてんこ勝者ID
-            lastCardPlayerId: lastCardPlayerId // 場のカードを出したプレイヤーID
+            dotenkoWinnerId: revengeManager.dotenkoWinnerId,
+            lastCardPlayerId: lastCardPlayerId
         )
         
-        print("💰 スコア計算完了 - 自動遷移開始")
+        // 統合版のスコア計算を使用（演出→特殊カード処理→スコア計算→画面表示）
+        scoreCalculationManager.startScoreCalculationWithAutoDisplay(context)
+    }
+    
+    /// スコア計算演出完了後の最終処理（統合版から呼び出し用）
+    func finalizeScoreCalculationWithData(_ scoreData: ScoreResultData) {
+        print("💰 GameViewModel - スコア確定画面データ受信")
+        print("   勝者数: \(scoreData.winners.count)")
+        print("   敗者数: \(scoreData.losers.count)")
+        print("   最終スコア: \(scoreData.totalScore)")
+        
+        // スコア確定画面の表示をManagerに委譲（責務明確化）
+        // ViewModelから直接showScoreResultフラグを操作せず、Manager側で制御
+        // これにより、将来のManager側フロー変更時の整合性を保つ
+        scoreCalculationManager.displayScoreResult()
     }
     
 
@@ -1935,7 +1894,7 @@ class GameViewModel: ObservableObject {
             players[index].hand.removeAll()
             players[index].selectedCards.removeAll()
             players[index].dtnk = false
-            players[index].rank = 0
+            // rank は前回の結果を保持（updatePlayerRanksByScore()で更新される）
         }
         
         // カード状態をリセット
