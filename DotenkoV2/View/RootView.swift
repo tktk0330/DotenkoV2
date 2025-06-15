@@ -114,15 +114,6 @@ struct CasinoBackground: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .overlay(
-                // 上部からの白いオーバーレイ効果
-                RadialGradient(
-                    gradient: Gradient(colors: Appearance.Color.overlayWhiteGradient),
-                    center: .topLeading,
-                    startRadius: 0,
-                    endRadius: geometry.size.width
-                )
-            )
             .ignoresSafeArea()
         }
     }

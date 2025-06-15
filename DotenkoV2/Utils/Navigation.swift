@@ -134,8 +134,12 @@ class NavigationAllViewStateManager: ObservableObject {
             currentView = AnyView(
                 ZStack {
                     // カジノ風背景
-                    Color(uiColor: Appearance.Color.mossGreen)
-                        .ignoresSafeArea()
+                    LinearGradient(
+                        gradient: Gradient(colors: Appearance.Color.mainBackgroundGradient),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
                     view
                 }
             )
