@@ -1622,8 +1622,8 @@ class GameViewModel: ObservableObject {
     func startScoreCalculation() {
         print("💰 GameViewModel - 統合スコア計算開始")
         
-        // 統合版のスコア計算を使用（演出→特殊カード処理→スコア計算→画面表示）
-        scoreCalculationManager.startScoreCalculationWithAutoDisplay(
+        // ScoreCalcInput構造体を使用してメソッド呼び出しを簡潔化
+        let input = GameScoreCalculationManager.ScoreCalcInput(
             gamePhase: gamePhase,
             deckCards: deckCards,
             fieldCards: fieldCards,
@@ -1637,6 +1637,9 @@ class GameViewModel: ObservableObject {
             dotenkoWinnerId: revengeManager.dotenkoWinnerId,
             lastCardPlayerId: lastCardPlayerId
         )
+        
+        // 統合版のスコア計算を使用（演出→特殊カード処理→スコア計算→画面表示）
+        scoreCalculationManager.startScoreCalculationWithAutoDisplay(input)
     }
     
     /// スコア計算演出完了後の最終処理（統合版から呼び出し用）

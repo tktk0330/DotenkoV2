@@ -57,22 +57,26 @@ class GameScoreCalculationManager: ObservableObject {
         print("💰 スコア計算システム初期化完了")
     }
     
+    /// スコア計算入力データ構造体
+    /// 15個の引数を1つの構造体にまとめて可読性と保守性を向上
+    struct ScoreCalcInput {
+        let gamePhase: GamePhase
+        let deckCards: [Card]
+        let fieldCards: [Card]
+        let baseRate: Int
+        let maxScore: String?
+        let players: [Player]
+        let isShotenkoRound: Bool
+        let isBurst: Bool
+        let shotenkoWinnerId: String?
+        let burstPlayerId: String?
+        let dotenkoWinnerId: String?
+        let lastCardPlayerId: String?
+    }
+    
     /// ラウンド終了時のスコア計算を開始（統合版：演出→特殊カード処理→スコア計算→画面表示）
-    func startScoreCalculationWithAutoDisplay(
-        gamePhase: GamePhase,
-        deckCards: [Card],
-        fieldCards: [Card],
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?,
-        lastCardPlayerId: String?
-    ) {
-        guard gamePhase == .finished else { return }
+    func startScoreCalculationWithAutoDisplay(_ input: ScoreCalcInput) {
+        guard input.gamePhase == .finished else { return }
         
         print("💰 統合スコア計算開始")
         
@@ -81,43 +85,19 @@ class GameScoreCalculationManager: ObservableObject {
             title: "スコア計算",
             subtitle: "デッキの裏を確認します"
         ) {
-            self.revealDeckBottomWithAutoDisplay(
-                deckCards: deckCards,
-                fieldCards: fieldCards,
-                baseRate: baseRate,
-                maxScore: maxScore,
-                players: players,
-                isShotenkoRound: isShotenkoRound,
-                isBurst: isBurst,
-                shotenkoWinnerId: shotenkoWinnerId,
-                burstPlayerId: burstPlayerId,
-                dotenkoWinnerId: dotenkoWinnerId,
-                lastCardPlayerId: lastCardPlayerId
-            )
+            self.revealDeckBottomWithAutoDisplay(input)
         }
     }
     
     /// デッキの裏（山札の一番下）を確認（統合版）
-    private func revealDeckBottomWithAutoDisplay(
-        deckCards: [Card],
-        fieldCards: [Card],
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?,
-        lastCardPlayerId: String?
-    ) {
+    private func revealDeckBottomWithAutoDisplay(_ input: ScoreCalcInput) {
         // デッキの裏カードを取得
         let bottomCard: Card
-        if !deckCards.isEmpty {
-            bottomCard = deckCards.last!
+        if !input.deckCards.isEmpty {
+            bottomCard = input.deckCards.last!
             print("🔍 デッキの裏確認: \(bottomCard.card.rawValue)")
-        } else if !fieldCards.isEmpty {
-            bottomCard = fieldCards.first!
+        } else if !input.fieldCards.isEmpty {
+            bottomCard = input.fieldCards.first!
             print("🔍 場のカードから裏確認: \(bottomCard.card.rawValue)")
         } else {
             print("⚠️ デッキも場も空のため、スコア計算をスキップします")
@@ -125,37 +105,11 @@ class GameScoreCalculationManager: ObservableObject {
         }
         
         // 特殊カード判定と演出→スコア計算→画面表示
-        processSpecialCardEffectWithAutoDisplay(
-            card: bottomCard,
-            deckCards: deckCards,
-            baseRate: baseRate,
-            maxScore: maxScore,
-            players: players,
-            isShotenkoRound: isShotenkoRound,
-            isBurst: isBurst,
-            shotenkoWinnerId: shotenkoWinnerId,
-            burstPlayerId: burstPlayerId,
-            dotenkoWinnerId: dotenkoWinnerId,
-            lastCardPlayerId: lastCardPlayerId
-        )
+        processSpecialCardEffectWithAutoDisplay(card: bottomCard, input: input)
     }
     
-
-    
     /// 特殊カード効果の処理と演出（統合版：演出→スコア計算→画面表示）
-    private func processSpecialCardEffectWithAutoDisplay(
-        card: Card,
-        deckCards: [Card],
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?,
-        lastCardPlayerId: String?
-    ) {
+    private func processSpecialCardEffectWithAutoDisplay(card: Card, input: ScoreCalcInput) {
         print("🎴 統合特殊カード効果処理開始")
         print("   カード: \(card.card.rawValue)")
         print("   処理前UpRate: ×\(currentUpRate)")
@@ -175,17 +129,8 @@ class GameScoreCalculationManager: ObservableObject {
                 // 連続特殊カード確認→スコア計算→画面表示
                 self.checkConsecutiveSpecialCardsWithAutoDisplay(
                     from: card,
-                    deckCards: deckCards,
                     bottomCard: card,
-                    baseRate: baseRate,
-                    maxScore: maxScore,
-                    players: players,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurst: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId,
-                    dotenkoWinnerId: dotenkoWinnerId,
-                    lastCardPlayerId: lastCardPlayerId
+                    input: input
                 )
             }
         } else if card.card == .diamond3 {
@@ -197,18 +142,7 @@ class GameScoreCalculationManager: ObservableObject {
                 effectType: .diamond3
             ) {
                 // ダイヤ3は上昇レートを変更せず、直接スコア計算→画面表示
-                self.calculateFinalScoreWithAutoDisplay(
-                    bottomCard: card,
-                    baseRate: baseRate,
-                    maxScore: maxScore,
-                    players: players,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurst: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId,
-                    dotenkoWinnerId: dotenkoWinnerId,
-                    lastCardPlayerId: lastCardPlayerId
-                )
+                self.calculateFinalScoreWithAutoDisplay(bottomCard: card, input: input)
             }
         } else if card.card.finalReverce() {
             // 黒3：勝敗逆転演出
@@ -219,54 +153,23 @@ class GameScoreCalculationManager: ObservableObject {
                 effectType: .black3Reverse
             ) {
                 // 黒3は勝敗逆転処理後にスコア計算→画面表示
-                self.calculateFinalScoreWithAutoDisplay(
-                    bottomCard: card,
-                    baseRate: baseRate,
-                    maxScore: maxScore,
-                    players: players,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurst: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId,
-                    dotenkoWinnerId: dotenkoWinnerId,
-                    lastCardPlayerId: lastCardPlayerId
-                )
+                self.calculateFinalScoreWithAutoDisplay(bottomCard: card, input: input)
             }
         } else {
             // 通常カード（ハート3も含む）
             print("🔢 通常カード判定: 特殊効果なし")
-            calculateFinalScoreWithAutoDisplay(
-                bottomCard: card,
-                baseRate: baseRate,
-                maxScore: maxScore,
-                players: players,
-                isShotenkoRound: isShotenkoRound,
-                isBurst: isBurst,
-                shotenkoWinnerId: shotenkoWinnerId,
-                burstPlayerId: burstPlayerId,
-                dotenkoWinnerId: dotenkoWinnerId,
-                lastCardPlayerId: lastCardPlayerId
-            )
+            calculateFinalScoreWithAutoDisplay(bottomCard: card, input: input)
         }
     }
     
     /// 連続特殊カード確認（統合版：連続確認→スコア計算→画面表示）
     private func checkConsecutiveSpecialCardsWithAutoDisplay(
         from currentCard: Card,
-        deckCards: [Card],
         bottomCard: Card,
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?,
-        lastCardPlayerId: String?
+        input: ScoreCalcInput
     ) {
         // デッキから次のカードを確認
-        var cardsToCheck = deckCards
+        var cardsToCheck = input.deckCards
         
         // 処理済みカードをデッキから削除
         if let currentIndex = cardsToCheck.firstIndex(where: { $0.id == currentCard.id }) {
@@ -276,18 +179,7 @@ class GameScoreCalculationManager: ObservableObject {
         
         guard !cardsToCheck.isEmpty else {
             print("🔄 確認用デッキが空のため連続確認を終了→スコア計算開始")
-            calculateFinalScoreWithAutoDisplay(
-                bottomCard: bottomCard,
-                baseRate: baseRate,
-                maxScore: maxScore,
-                players: players,
-                isShotenkoRound: isShotenkoRound,
-                isBurst: isBurst,
-                shotenkoWinnerId: shotenkoWinnerId,
-                burstPlayerId: burstPlayerId,
-                dotenkoWinnerId: dotenkoWinnerId,
-                lastCardPlayerId: lastCardPlayerId
-            )
+            calculateFinalScoreWithAutoDisplay(bottomCard: bottomCard, input: input)
             return
         }
         
@@ -308,51 +200,34 @@ class GameScoreCalculationManager: ObservableObject {
                 print("🎯 連続特殊カード処理完了! 新倍率: ×\(self.currentUpRate)")
                 
                 // 再帰的に次のカードもチェック
+                let updatedInput = ScoreCalcInput(
+                    gamePhase: input.gamePhase,
+                    deckCards: cardsToCheck,
+                    fieldCards: input.fieldCards,
+                    baseRate: input.baseRate,
+                    maxScore: input.maxScore,
+                    players: input.players,
+                    isShotenkoRound: input.isShotenkoRound,
+                    isBurst: input.isBurst,
+                    shotenkoWinnerId: input.shotenkoWinnerId,
+                    burstPlayerId: input.burstPlayerId,
+                    dotenkoWinnerId: input.dotenkoWinnerId,
+                    lastCardPlayerId: input.lastCardPlayerId
+                )
                 self.checkConsecutiveSpecialCardsWithAutoDisplay(
                     from: nextCard,
-                    deckCards: cardsToCheck,
                     bottomCard: bottomCard,
-                    baseRate: baseRate,
-                    maxScore: maxScore,
-                    players: players,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurst: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId,
-                    dotenkoWinnerId: dotenkoWinnerId,
-                    lastCardPlayerId: lastCardPlayerId
+                    input: updatedInput
                 )
             }
         } else {
             print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)→スコア計算開始")
-            calculateFinalScoreWithAutoDisplay(
-                bottomCard: bottomCard,
-                baseRate: baseRate,
-                maxScore: maxScore,
-                players: players,
-                isShotenkoRound: isShotenkoRound,
-                isBurst: isBurst,
-                shotenkoWinnerId: shotenkoWinnerId,
-                burstPlayerId: burstPlayerId,
-                dotenkoWinnerId: dotenkoWinnerId,
-                lastCardPlayerId: lastCardPlayerId
-            )
+            calculateFinalScoreWithAutoDisplay(bottomCard: bottomCard, input: input)
         }
     }
     
     /// 最終スコア計算（統合版：スコア計算→画面表示）
-    private func calculateFinalScoreWithAutoDisplay(
-        bottomCard: Card,
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?,
-        lastCardPlayerId: String?
-    ) {
+    private func calculateFinalScoreWithAutoDisplay(bottomCard: Card, input: ScoreCalcInput) {
         print("💰 統合最終スコア計算開始")
         print("   デッキの裏: \(bottomCard.card.rawValue)")
         print("   現在の上昇レート: ×\(currentUpRate)")
@@ -369,16 +244,16 @@ class GameScoreCalculationManager: ObservableObject {
         ) {
             // スコア計算実行
             let scoreData = self.calculateFinalScoreWithData(
-                baseRate: baseRate,
-                maxScore: maxScore,
-                players: players,
+                baseRate: input.baseRate,
+                maxScore: input.maxScore,
+                players: input.players,
                 bottomCard: bottomCard,
-                isShotenkoRound: isShotenkoRound,
-                isBurst: isBurst,
-                shotenkoWinnerId: shotenkoWinnerId,
-                burstPlayerId: burstPlayerId,
-                dotenkoWinnerId: dotenkoWinnerId,
-                lastCardPlayerId: lastCardPlayerId
+                isShotenkoRound: input.isShotenkoRound,
+                isBurst: input.isBurst,
+                shotenkoWinnerId: input.shotenkoWinnerId,
+                burstPlayerId: input.burstPlayerId,
+                dotenkoWinnerId: input.dotenkoWinnerId,
+                lastCardPlayerId: input.lastCardPlayerId
             )
             
             print("💰 統合スコア計算完了→画面表示")
@@ -387,8 +262,6 @@ class GameScoreCalculationManager: ObservableObject {
             self.gameViewModel?.finalizeScoreCalculationWithData(scoreData)
         }
     }
-    
-
     
     /// 最終スコア計算（外部から呼び出し用）
     func calculateFinalScoreWithData(
