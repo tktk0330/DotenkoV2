@@ -448,7 +448,8 @@ class ScoreResultViewModel: ObservableObject {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 self.showUpRate = true
             }
-            self.animateValue(from: 0, to: self.currentUpRate, duration: ScoreAnimationTiming.countUpDuration) { value in
+            // 独自計算ではなく、GameScoreCalculationManagerから渡されたupRateを使用
+            self.animateValue(from: 0, to: self.upRate, duration: ScoreAnimationTiming.countUpDuration) { value in
                 self.animatedUpRate = value
             }
         }
@@ -460,8 +461,8 @@ class ScoreResultViewModel: ObservableObject {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 self.showFinalMultiplier = true
             }
-            let calculatedFinalMultiplier = self.calculateFinalMultiplierFromRevealedCards()
-            self.animateValue(from: 0, to: calculatedFinalMultiplier, duration: ScoreAnimationTiming.countUpDuration) { value in
+            // 独自計算ではなく、GameScoreCalculationManagerから渡されたfinalMultiplierを使用
+            self.animateValue(from: 0, to: self.finalMultiplier, duration: ScoreAnimationTiming.countUpDuration) { value in
                 self.animatedFinalMultiplier = value
             }
         }
@@ -473,8 +474,8 @@ class ScoreResultViewModel: ObservableObject {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
                 self.showTotalScore = true
             }
-            let calculatedScore = self.calculateFinalScore()
-            self.animateValue(from: 0, to: calculatedScore, duration: ScoreAnimationTiming.totalScoreCountDuration) { value in
+            // 独自計算ではなく、GameScoreCalculationManagerから渡されたtotalScoreを使用
+            self.animateValue(from: 0, to: self.totalScore, duration: ScoreAnimationTiming.totalScoreCountDuration) { value in
                 self.animatedTotalScore = value
             }
         }
@@ -489,31 +490,12 @@ class ScoreResultViewModel: ObservableObject {
         }
     }
     
-    /// 最終スコアを計算（revealedCardsの最後のカードのfinalScoreNum()を使用）
-    private func calculateFinalScore() -> Int {
-        // 最後にめくったカードの最終数字を取得
-        let calculatedFinalMultiplier = calculateFinalMultiplierFromRevealedCards()
-        
-        print("💰 revealedCardsを利用したスコア計算")
-        print("   基本レート: \(baseRate)")
-        print("   上昇レート: \(currentUpRate)")
-        print("   計算された最終倍率: \(calculatedFinalMultiplier)")
-        
-        return baseRate * currentUpRate * calculatedFinalMultiplier
-    }
-    
-    /// revealedCardsから最終倍率を計算（最後のカードのfinalScoreNum()を使用）
-    private func calculateFinalMultiplierFromRevealedCards() -> Int {
-        // 最後にめくられたカード（デッキの裏）の最終数字を使用
-        guard let lastCard = revealedCards.last else {
-            print("⚠️ revealedCardsが空のため、デフォルト値1を使用")
-            return 1
-        }
-        
-        let finalNum = lastCard.card.finalScoreNum()
-        print("🔢 最終倍率カード: \(lastCard.card.rawValue) - 最終数字: \(finalNum)")
-        
-        return finalNum
+    /// 最終スコアを取得（GameScoreCalculationManagerから渡された値を使用）
+    /// 独自計算は廃止し、正確な値を保証
+    private func getFinalScore() -> Int {
+        print("💰 GameScoreCalculationManagerから渡されたスコアを使用")
+        print("   最終スコア: \(totalScore)")
+        return totalScore
     }
     
     /// revealedCardsから逆転効果があるかチェック

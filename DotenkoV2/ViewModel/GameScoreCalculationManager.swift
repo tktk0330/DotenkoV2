@@ -193,7 +193,9 @@ class GameScoreCalculationManager: ObservableObject {
         }
         
         guard !cardsToCheck.isEmpty else {
-            print("🔄 確認用デッキが空のため連続確認を終了→スコア計算開始")
+            print("🔄 連続確認終了→スコア計算開始")
+            print("🎯 最終的なbottomCard: \(bottomCard.card.rawValue)")
+            print("🎯 bottomCardの最終数字: \(bottomCard.card.finalScoreNum())")
             calculateFinalScoreWithAutoDisplay(bottomCard: bottomCard, context: context)
             return
         }
@@ -222,14 +224,17 @@ class GameScoreCalculationManager: ObservableObject {
                     let updatedContext = context.replacing(deckCards: cardsToCheck)
                     self.checkConsecutiveSpecialCardsWithAutoDisplay(
                         from: nextCard,
-                        bottomCard: bottomCard,
+                        bottomCard: bottomCard,  // bottomCardは変更せず維持
                         context: updatedContext
                     )
                 }
             }
         } else {
-            print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)→スコア計算開始")
-            calculateFinalScoreWithAutoDisplay(bottomCard: bottomCard, context: context)
+            print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)")
+            print("🎯 最終数字として使用するカード: \(nextCard.card.rawValue)")
+            print("🎯 最終数字: \(nextCard.card.finalScoreNum())")
+            // 最後の非特殊カードを最終数字として使用
+            calculateFinalScoreWithAutoDisplay(bottomCard: nextCard, context: context)
         }
     }
     
@@ -269,8 +274,12 @@ class GameScoreCalculationManager: ObservableObject {
         context: ScoreCalculationContext,
         bottomCard: Card
     ) -> ScoreResultData {
+        print("💰 最終スコア計算開始 - 詳細ログ")
+        print("   bottomCard: \(bottomCard.card.rawValue)")
+        
         // CardModelの新しいメソッドを使用して最終数字を決定
         let bottomCardValue = bottomCard.card.finalScoreNum()
+        print("   bottomCardValue（最終数字）: \(bottomCardValue)")
         
         // 基本計算式：初期レート × 上昇レート × デッキの裏の数字
         roundScore = context.baseRate * currentUpRate * bottomCardValue
@@ -279,7 +288,11 @@ class GameScoreCalculationManager: ObservableObject {
         if let maxScoreString = context.maxScore,
            maxScoreString != "♾️",
            let maxScore = Int(maxScoreString) {
+            let originalScore = roundScore
             roundScore = min(roundScore, maxScore)
+            if originalScore != roundScore {
+                print("   スコア上限適用: \(originalScore) → \(roundScore)")
+            }
         }
         
         print("💰 最終スコア計算完了")
@@ -287,6 +300,7 @@ class GameScoreCalculationManager: ObservableObject {
         print("   上昇レート: \(currentUpRate)")
         print("   デッキの裏: \(bottomCard.card.rawValue)")
         print("   最終数字: \(bottomCardValue)")
+        print("   計算式: \(context.baseRate) × \(currentUpRate) × \(bottomCardValue) = \(roundScore)")
         print("   ラウンドスコア: \(roundScore)")
         
         // 勝者・敗者を特定（IDベースで正確に特定、配列対応）
