@@ -1649,12 +1649,10 @@ class GameViewModel: ObservableObject {
         print("   敗者数: \(scoreData.losers.count)")
         print("   最終スコア: \(scoreData.totalScore)")
         
-        // 少し遅延してからスコア確定画面を自動表示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            print("🎯 GameViewModel - 自動遷移開始")
-            self.scoreCalculationManager.showScoreResult = true
-            print("   showScoreResult設定完了: \(self.scoreCalculationManager.showScoreResult)")
-        }
+        // スコア確定画面の表示をManagerに委譲（責務明確化）
+        // ViewModelから直接showScoreResultフラグを操作せず、Manager側で制御
+        // これにより、将来のManager側フロー変更時の整合性を保つ
+        scoreCalculationManager.displayScoreResult()
     }
     
 

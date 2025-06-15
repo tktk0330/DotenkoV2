@@ -74,21 +74,7 @@ class GameScoreCalculationManager: ObservableObject {
         let dotenkoWinnerId: String?
         let lastCardPlayerId: String?
         
-        /// 初期化用のコンビニエンスイニシャライザ
-        init(gamePhase: GamePhase, deckCards: [Card], fieldCards: [Card], baseRate: Int, maxScore: String?, players: [Player], isShotenkoRound: Bool, isBurst: Bool, shotenkoWinnerId: String?, burstPlayerId: String?, dotenkoWinnerId: String?, lastCardPlayerId: String?) {
-            self.gamePhase = gamePhase
-            self.deckCards = deckCards
-            self.fieldCards = fieldCards
-            self.baseRate = baseRate
-            self.maxScore = maxScore
-            self.players = players
-            self.isShotenkoRound = isShotenkoRound
-            self.isBurst = isBurst
-            self.shotenkoWinnerId = shotenkoWinnerId
-            self.burstPlayerId = burstPlayerId
-            self.dotenkoWinnerId = dotenkoWinnerId
-            self.lastCardPlayerId = lastCardPlayerId
-        }
+        // メンバワイズイニシャライザは自動生成されるため明示的定義は不要
     }
     
     /// ラウンド終了時のスコア計算を開始（統合版：演出→特殊カード処理→スコア計算→画面表示）
@@ -101,8 +87,8 @@ class GameScoreCalculationManager: ObservableObject {
         announcementEffectManager?.showAnnouncementMessage(
             title: "スコア計算",
             subtitle: "デッキの裏を確認します"
-        ) {
-            self.revealDeckBottomWithAutoDisplay(context)
+        ) { [weak self] in
+            self?.revealDeckBottomWithAutoDisplay(context)
         }
     }
     
@@ -139,7 +125,9 @@ class GameScoreCalculationManager: ObservableObject {
                 title: "特殊カード発生！",
                 subtitle: "\(card.card.rawValue) - 2倍",
                 effectType: .multiplier50
-            ) {
+            ) { [weak self] in
+                guard let self = self else { return }
+                
                 self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
                 print("🎯 UpRate更新完了: ×\(self.currentUpRate)")
                 
@@ -157,9 +145,9 @@ class GameScoreCalculationManager: ObservableObject {
                 title: "ダイヤ3発生！",
                 subtitle: "最終数字30",
                 effectType: .diamond3
-            ) {
+            ) { [weak self] in
                 // ダイヤ3は上昇レートを変更せず、直接スコア計算→画面表示
-                self.calculateFinalScoreWithAutoDisplay(bottomCard: card, context: context)
+                self?.calculateFinalScoreWithAutoDisplay(bottomCard: card, context: context)
             }
         } else if card.card.finalReverce() {
             // 黒3：勝敗逆転演出
@@ -168,9 +156,9 @@ class GameScoreCalculationManager: ObservableObject {
                 title: "黒3発生！",
                 subtitle: "勝敗逆転",
                 effectType: .black3Reverse
-            ) {
+            ) { [weak self] in
                 // 黒3は勝敗逆転処理後にスコア計算→画面表示
-                self.calculateFinalScoreWithAutoDisplay(bottomCard: card, context: context)
+                self?.calculateFinalScoreWithAutoDisplay(bottomCard: card, context: context)
             }
         } else {
             // 通常カード（ハート3も含む）
@@ -212,7 +200,9 @@ class GameScoreCalculationManager: ObservableObject {
             announcementEffectManager?.showAnnouncementMessage(
                 title: "連続特殊カード！",
                 subtitle: "\(nextCard.card.rawValue) - さらに2倍"
-            ) {
+            ) { [weak self] in
+                guard let self = self else { return }
+                
                 self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
                 print("🎯 連続特殊カード処理完了! 新倍率: ×\(self.currentUpRate)")
                 
@@ -258,7 +248,9 @@ class GameScoreCalculationManager: ObservableObject {
         announcementEffectManager?.showAnnouncementMessage(
             title: "最終スコア計算",
             subtitle: "基本レート × 上昇レート × \(finalNumber)"
-        ) {
+        ) { [weak self] in
+            guard let self = self else { return }
+            
             // スコア計算実行
             let scoreData = self.calculateFinalScoreWithData(
                 baseRate: context.baseRate,
@@ -588,6 +580,18 @@ class GameScoreCalculationManager: ObservableObject {
         print("🎯 スコア確定画面表示状態変更: \(showScoreResult) → \(show)")
         showScoreResult = show
         print("🎯 変更後の状態: showScoreResult = \(showScoreResult)")
+    }
+    
+    /// スコア確定画面の表示を開始（責務明確化）
+    /// ViewModelから直接showScoreResultフラグを操作せず、このメソッドを通して表示制御
+    /// これにより、Manager側のフロー変更時の整合性を保ち、責務境界を明確化
+    func displayScoreResult() {
+        print("🎯 スコア確定画面表示開始 - Manager制御")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self = self else { return }
+            self.showScoreResult = true
+            print("🎯 スコア確定画面表示完了: showScoreResult = \(self.showScoreResult)")
+        }
     }
     
     /// スコア確定画面データをクリア
