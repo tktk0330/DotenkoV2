@@ -298,14 +298,6 @@ struct BottomPlayerAreaView: View {
             revengeButtonOverlay,
             alignment: .bottomLeading
         )
-
-
-        .overlay(
-            // バースト表示
-            burstOverlay,
-            alignment: .center
-        )
-
     }
     
     // MARK: - Dotenko Button Overlay
@@ -349,40 +341,6 @@ struct BottomPlayerAreaView: View {
             .zIndex(2001)
         }
     }
-    
-
-    
-
-    
-    // MARK: - Burst Overlay
-    @ViewBuilder
-    private var burstOverlay: some View {
-        if viewModel.isBurst {
-            VStack(spacing: 10) {
-                Text("バースト！")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(Appearance.Color.commonWhite)
-                    .shadow(color: Appearance.Color.commonBlack, radius: 2, x: 0, y: 1)
-                
-                Text("プレイヤーがバーストしました")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
-                    .shadow(color: Appearance.Color.commonBlack, radius: 1, x: 0, y: 1)
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Appearance.Color.commonBlack.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.red, lineWidth: 2)
-                    )
-            )
-            .zIndex(1500)
-        }
-    }
-    
-
     
     // MARK: - Computed Properties
     
