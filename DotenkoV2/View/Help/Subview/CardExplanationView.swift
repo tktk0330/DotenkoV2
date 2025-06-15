@@ -47,8 +47,7 @@ struct CardExplanationView: View {
     private var cardTitleView: some View {
         HStack {
             Image(systemName: "rectangle.portrait.fill")
-                .font(.helpLargeTitle)
-                .foregroundColor(Appearance.Color.playerGold)
+                .helpBoldLargeTitleStyle(color: Appearance.Color.playerGold)
             
             Text("カードについて")
                 .helpSectionTitleStyle()
@@ -76,8 +75,7 @@ struct CardExplanationView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("万能カード！")
-                        .font(.helpHeadline)
-                        .foregroundColor(Appearance.Color.playerGold)
+                        .helpBoldHeadlineStyle(color: Appearance.Color.playerGold)
                     
                     Text("どんなカードとしても使えます")
                         .helpDescriptionStyle()
@@ -143,8 +141,7 @@ struct CardExplanationView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("レート倍増カード")
-                        .font(.helpHeadline)
-                        .foregroundColor(Appearance.Color.playerBlue)
+                        .helpBoldHeadlineStyle(color: Appearance.Color.playerBlue)
                     
                     Text("特別な効果があります")
                         .helpDescriptionStyle()
@@ -214,12 +211,10 @@ struct CardExplanationView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("♠3・♣3")
-                            .font(.helpHeadline)
-                            .foregroundColor(Appearance.Color.playerPurple)
+                            .helpBoldHeadlineStyle(color: Appearance.Color.playerPurple)
                         
                         Text("逆転カード")
-                            .font(.helpSubheadline)
-                            .foregroundColor(Appearance.Color.playerRed)
+                            .helpBoldSubheadlineStyle(color: Appearance.Color.playerRed)
                     }
                     
                     Spacer()
@@ -246,12 +241,10 @@ struct CardExplanationView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("♦3")
-                            .font(.helpHeadline)
-                            .foregroundColor(Appearance.Color.playerPurple)
+                            .helpBoldHeadlineStyle(color: Appearance.Color.playerPurple)
                         
                         Text("30倍カード")
-                            .font(.helpSubheadline)
-                            .foregroundColor(Appearance.Color.playerGold)
+                            .helpBoldSubheadlineStyle(color: Appearance.Color.playerGold)
                     }
                     
                     Spacer()
@@ -278,8 +271,7 @@ struct CardExplanationView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("♥3")
-                            .font(.helpHeadline)
-                            .foregroundColor(Appearance.Color.playerPurple)
+                            .helpBoldHeadlineStyle(color: Appearance.Color.playerPurple)
                         
                         Text("通常の3")
                             .helpDescriptionStyle(color: Appearance.Color.commonWhite.opacity(0.8))
@@ -320,8 +312,7 @@ struct CardExplanationView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("通常のカード")
-                        .font(.helpHeadline)
-                        .foregroundColor(Appearance.Color.playerGreen)
+                        .helpBoldHeadlineStyle(color: Appearance.Color.playerGreen)
                     
                     Text("そのままの数字で使用")
                         .helpDescriptionStyle()
@@ -346,8 +337,7 @@ struct CardExplanationView: View {
     private func jokerHandExampleView() -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("例：ジョーカーを含む手札の価値")
-                .font(.helpSubheadline)
-                .foregroundColor(Appearance.Color.commonWhite)
+                .helpBoldSubheadlineStyle()
             
             HStack(spacing: 16) {
                 // 手札表示
@@ -402,8 +392,7 @@ struct CardExplanationView: View {
     private func cardSectionTitle(title: String, icon: String, color: Color) -> some View {
         HStack {
             Image(systemName: icon)
-                .font(.helpHeadline)
-                .foregroundColor(color)
+                .helpBoldHeadlineStyle(color: color)
             
             Text(title)
                 .helpSectionTitleStyle()
@@ -418,12 +407,10 @@ struct CardExplanationView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.helpSubheadline)
-                    .foregroundColor(color)
+                    .helpBoldSubheadlineStyle(color: color)
                 
                 Text(title)
-                    .font(.helpSubheadline)
-                    .foregroundColor(color)
+                    .helpBoldSubheadlineStyle(color: color)
                 
                 Spacer()
             }
@@ -444,8 +431,7 @@ struct CardExplanationView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(phase)
-                    .font(.helpCaption)
-                    .foregroundColor(color)
+                    .helpCaptionStyle(color: color)
                 
                 Text(effect)
                     .helpCaptionStyle()

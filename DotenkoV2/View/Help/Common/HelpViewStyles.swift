@@ -60,43 +60,43 @@ extension Font {
     /// ヘルプシステム用の大見出し（動的タイプ対応）
     /// 基準サイズ: 20pt, 最大サイズ: 28pt
     static var helpLargeTitle: Font {
-        .system(.title2, design: .rounded, weight: .bold)
+        .system(.title2, design: .rounded)
     }
     
     /// ヘルプシステム用のタイトル（動的タイプ対応）
     /// 基準サイズ: 18pt, 最大サイズ: 24pt
     static var helpTitle: Font {
-        .system(.title3, design: .rounded, weight: .bold)
+        .system(.title3, design: .rounded)
     }
     
     /// ヘルプシステム用の見出し（動的タイプ対応）
     /// 基準サイズ: 16pt, 最大サイズ: 21pt
     static var helpHeadline: Font {
-        .system(.headline, design: .rounded, weight: .bold)
+        .system(.headline, design: .rounded)
     }
     
     /// ヘルプシステム用のサブ見出し（動的タイプ対応）
     /// 基準サイズ: 15pt, 最大サイズ: 19pt
     static var helpSubheadline: Font {
-        .system(.subheadline, design: .rounded, weight: .medium)
+        .system(.subheadline, design: .rounded)
     }
     
     /// ヘルプシステム用の本文（動的タイプ対応）
     /// 基準サイズ: 14pt, 最大サイズ: 17pt
     static var helpBody: Font {
-        .system(.body, design: .default, weight: .medium)
+        .system(.body, design: .default)
     }
     
     /// ヘルプシステム用のキャプション（動的タイプ対応）
     /// 基準サイズ: 12pt, 最大サイズ: 15pt
     static var helpCaption: Font {
-        .system(.caption, design: .default, weight: .medium)
+        .system(.caption, design: .default)
     }
     
     /// ヘルプシステム用の小さなキャプション（動的タイプ対応）
     /// 基準サイズ: 11pt, 最大サイズ: 13pt
     static var helpCaption2: Font {
-        .system(.caption2, design: .default, weight: .medium)
+        .system(.caption2, design: .default)
     }
     
     // MARK: - Scaled Font Helper
@@ -119,27 +119,27 @@ extension Font {
     
     /// セクションタイトル用フォント
     static var sectionTitle: Font {
-        .system(.title3, design: .rounded, weight: .bold)
+        .system(.title3, design: .rounded)
     }
     
     /// セクション説明用フォント
     static var sectionDescription: Font {
-        .system(.body, design: .default, weight: .medium)
+        .system(.body, design: .default)
     }
     
     /// カード説明用フォント
     static var cardDescription: Font {
-        .system(.subheadline, design: .default, weight: .medium)
+        .system(.subheadline, design: .default)
     }
     
     /// 例示用フォント
     static var exampleText: Font {
-        .system(.caption, design: .default, weight: .medium)
+        .system(.caption, design: .default)
     }
     
     /// 強調用フォント
     static var emphasisText: Font {
-        .system(.headline, design: .rounded, weight: .bold)
+        .system(.headline, design: .rounded)
     }
 }
 
@@ -159,6 +159,7 @@ extension View {
     func helpSectionTitleStyle(color: Color = Appearance.Color.commonWhite) -> some View {
         self
             .font(.sectionTitle)
+            .fontWeight(.bold)
             .foregroundColor(color)
     }
     
@@ -168,6 +169,7 @@ extension View {
     func helpDescriptionStyle(color: Color = Appearance.Color.commonWhite.opacity(0.9)) -> some View {
         self
             .font(.sectionDescription)
+            .fontWeight(.medium)
             .foregroundColor(color)
             .lineLimit(nil)
             .multilineTextAlignment(.leading)
@@ -179,6 +181,39 @@ extension View {
     func helpCaptionStyle(color: Color = Appearance.Color.commonWhite.opacity(0.8)) -> some View {
         self
             .font(.helpCaption)
+            .fontWeight(.medium)
+            .foregroundColor(color)
+    }
+    
+    // MARK: - Additional Font Weight Helpers
+    
+    /// ヘルプシステム用の太字見出しスタイルを適用
+    /// - Parameter color: テキスト色
+    /// - Returns: 太字見出しスタイルが適用されたビュー
+    func helpBoldHeadlineStyle(color: Color = Appearance.Color.commonWhite) -> some View {
+        self
+            .font(.helpHeadline)
+            .fontWeight(.bold)
+            .foregroundColor(color)
+    }
+    
+    /// ヘルプシステム用の太字サブ見出しスタイルを適用
+    /// - Parameter color: テキスト色
+    /// - Returns: 太字サブ見出しスタイルが適用されたビュー
+    func helpBoldSubheadlineStyle(color: Color = Appearance.Color.commonWhite) -> some View {
+        self
+            .font(.helpSubheadline)
+            .fontWeight(.bold)
+            .foregroundColor(color)
+    }
+    
+    /// ヘルプシステム用の太字大見出しスタイルを適用
+    /// - Parameter color: テキスト色
+    /// - Returns: 太字大見出しスタイルが適用されたビュー
+    func helpBoldLargeTitleStyle(color: Color = Appearance.Color.commonWhite) -> some View {
+        self
+            .font(.helpLargeTitle)
+            .fontWeight(.bold)
             .foregroundColor(color)
     }
 } 

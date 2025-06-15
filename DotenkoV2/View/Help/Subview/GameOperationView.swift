@@ -47,8 +47,7 @@ struct GameOperationView: View {
     private var operationTitleView: some View {
         HStack {
             Image(systemName: "hand.point.up.left.fill")
-                .font(.helpLargeTitle)
-                .foregroundColor(Appearance.Color.playerGold)
+                .helpBoldLargeTitleStyle(color: Appearance.Color.playerGold)
             
             Text("カードの出し方")
                 .helpSectionTitleStyle()
@@ -64,8 +63,7 @@ struct GameOperationView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .font(.helpHeadline)
-                    .foregroundColor(Appearance.Color.playerBlue)
+                    .helpBoldHeadlineStyle(color: Appearance.Color.playerBlue)
                 
                 Text("基本ルール")
                     .helpSectionTitleStyle()
@@ -87,8 +85,7 @@ struct GameOperationView: View {
             // セクションタイトル
             HStack {
                 Image(systemName: "1.circle.fill")
-                    .font(.helpHeadline)
-                    .foregroundColor(Appearance.Color.playerGreen)
+                    .helpBoldHeadlineStyle(color: Appearance.Color.playerGreen)
                 
                 Text("1枚で出す場合")
                     .helpSectionTitleStyle()
@@ -125,8 +122,7 @@ struct GameOperationView: View {
             // セクションタイトル
             HStack {
                 Image(systemName: "2.circle.fill")
-                    .font(.helpHeadline)
-                    .foregroundColor(Appearance.Color.playerPurple)
+                    .helpBoldHeadlineStyle(color: Appearance.Color.playerPurple)
                 
                 Text("複数枚で出す場合")
                     .helpSectionTitleStyle()
@@ -172,8 +168,7 @@ struct GameOperationView: View {
             // セクションタイトル
             HStack {
                 Image(systemName: "crown.fill")
-                    .font(.helpHeadline)
-                    .foregroundColor(Appearance.Color.playerGold)
+                    .helpBoldHeadlineStyle(color: Appearance.Color.playerGold)
                 
                 Text("ジョーカーの使い方")
                     .helpSectionTitleStyle()
@@ -207,8 +202,7 @@ struct GameOperationView: View {
             // タイトルと説明
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.helpSubheadline)
-                    .foregroundColor(Appearance.Color.commonWhite)
+                    .helpBoldSubheadlineStyle()
                 
                 Text(description)
                     .helpDescriptionStyle(color: Appearance.Color.commonWhite.opacity(0.8))
@@ -282,8 +276,7 @@ struct GameOperationView: View {
             // タイトルと説明
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.helpSubheadline)
-                    .foregroundColor(Appearance.Color.commonWhite)
+                    .helpBoldSubheadlineStyle()
                 
                 Text(description)
                     .helpDescriptionStyle(color: Appearance.Color.commonWhite.opacity(0.8))
