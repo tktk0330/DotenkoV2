@@ -72,7 +72,7 @@ struct HelpMainView: View {
                     isOn: $isVibrationOn
                 )
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 20)
         }
         .padding(.vertical, 20)
         .background(settingSectionBackground)
