@@ -342,6 +342,7 @@ class GameScoreCalculationManager: ObservableObject {
                     shotenkoWinnerId: shotenkoWinnerId,
                     burstPlayerId: burstPlayerId
                 )
+                self.scoreResultData = errorData   // ← 追加
                 return errorData
             }
             
@@ -367,6 +368,7 @@ class GameScoreCalculationManager: ObservableObject {
                     shotenkoWinnerId: shotenkoWinnerId,
                     burstPlayerId: burstPlayerId
                 )
+                self.scoreResultData = errorData   // ← 追加
                 return errorData
             }
             
