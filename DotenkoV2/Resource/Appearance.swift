@@ -26,6 +26,22 @@ enum Appearance {
         /// プレイヤーアイコンの中間背景色 (R: 0.2, G: 0.2, B: 0.2) - グラデーション効果に使用
         static let playerMediumBackground = SwiftUI.Color(red: 0.2, green: 0.2, blue: 0.2)
         
+        // プレイヤー色パレット（カジノ風）
+        /// プレイヤー青色 - 冷静・知的なイメージ
+        static let playerBlue = SwiftUI.Color(red: 0.2, green: 0.6, blue: 1.0)
+        /// プレイヤー緑色 - 安定・成長のイメージ
+        static let playerGreen = SwiftUI.Color(red: 0.2, green: 0.8, blue: 0.4)
+        /// プレイヤーオレンジ色 - 活発・エネルギッシュなイメージ
+        static let playerOrange = SwiftUI.Color(red: 1.0, green: 0.6, blue: 0.2)
+        /// プレイヤー紫色 - 神秘・高貴なイメージ
+        static let playerPurple = SwiftUI.Color(red: 0.8, green: 0.4, blue: 1.0)
+        /// プレイヤー赤色 - 情熱・力強いイメージ
+        static let playerRed = SwiftUI.Color(red: 1.0, green: 0.3, blue: 0.3)
+        /// プレイヤーシアン色 - 清涼・爽やかなイメージ
+        static let playerCyan = SwiftUI.Color(red: 0.2, green: 0.8, blue: 0.8)
+        /// プレイヤーグレー色 - 中立・落ち着いたイメージ
+        static let playerGray = SwiftUI.Color(red: 0.6, green: 0.6, blue: 0.6)
+        
         // 共通で使用される基本色
         /// 汎用白色 - テキストや境界線に使用
         static let commonWhite = SwiftUI.Color.white
@@ -101,6 +117,18 @@ enum Appearance {
         static let casinoBackgroundTop = SwiftUI.Color(red: 0.05, green: 0.15, blue: 0.05)
         /// カジノ風背景グラデーション下部
         static let casinoBackgroundBottom = SwiftUI.Color(red: 0.02, green: 0.08, blue: 0.02)
+        
+        // UI基本色（ヘルプシステム用）
+        /// プライマリテキスト色 - メインテキストに使用
+        static let primaryText = SwiftUI.Color.white
+        /// セカンダリテキスト色 - 補助テキストに使用
+        static let secondaryText = SwiftUI.Color.white.opacity(0.8)
+        /// カード背景色 - カード・パネル背景に使用
+        static let cardBackground = SwiftUI.Color.black.opacity(0.6)
+        /// 基本背景色 - 画面背景に使用
+        static let background = SwiftUI.Color(red: 0.02, green: 0.08, blue: 0.02)
+        /// アクセント色 - 強調・ハイライトに使用
+        static let accent = SwiftUI.Color(red: 1.0, green: 0.84, blue: 0.0)
         
         // 背景色グラデーション
         /// メイン背景グラデーション - カジノ風の深緑グラデーション

@@ -1,0 +1,495 @@
+/*
+ * CardExplanationView.swift
+ * 
+ * ファイル概要:
+ * ドテンコゲームでのカードの特殊効果を説明するヘルプビュー
+ * - ジョーカー、1・2、3の特殊効果説明
+ * - 実際のトランプ画像を使った視覚的な説明
+ * - 中学生にもわかりやすい図解
+ * - 手札での価値とゲーム効果の説明
+ * 
+ * 主要機能:
+ * - ジョーカーの万能性説明
+ * - 1・2のレート倍増効果説明
+ * - 3の特殊効果説明（逆転・30倍）
+ * - 各カードの具体的な使用例
+ * 
+ * 作成日: 2024年12月
+ */
+
+import SwiftUI
+
+// MARK: - Card Explanation View
+/// カード特殊効果説明ビュー
+struct CardExplanationView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // タイトル
+            cardTitleView
+            
+            // ジョーカーの説明
+            jokerExplanationView
+            
+            // 1・2の説明
+            oneAndTwoExplanationView
+            
+            // 3の説明
+            threeExplanationView
+            
+            // その他のカード
+            otherCardsExplanationView
+        }
+        .padding(.vertical, 8)
+    }
+    
+    // MARK: - Card Title View
+    /// カードタイトル表示
+    private var cardTitleView: some View {
+        HStack {
+            Image(systemName: "rectangle.portrait.fill")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(Appearance.Color.playerGold)
+            
+            Text("カードについて")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(Appearance.Color.commonWhite)
+            
+            Spacer()
+        }
+        .padding(.bottom, 8)
+    }
+    
+    // MARK: - Joker Explanation View
+    /// ジョーカー説明表示
+    private var jokerExplanationView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // セクションタイトル
+            cardSectionTitle(
+                title: "ジョーカー",
+                icon: "crown.fill",
+                color: Appearance.Color.playerGold
+            )
+            
+            // ジョーカーカード表示
+            HStack(spacing: 16) {
+                RuleCardView(cardName: PlayCard.blackJoker.rawValue)
+                RuleCardView(cardName: PlayCard.whiteJoker.rawValue)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("万能カード！")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(Appearance.Color.playerGold)
+                    
+                    Text("どんなカードとしても使えます")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.9))
+                }
+                
+                Spacer()
+            }
+            
+            // 手札での価値
+            cardEffectSection(
+                title: "手札での価値",
+                icon: "hand.raised.fill",
+                color: Appearance.Color.playerBlue,
+                description: "-1、0、1のいずれかとして扱うことができます"
+            )
+            
+            // ジョーカー例
+            jokerHandExampleView()
+            
+            // ゲーム効果
+            VStack(alignment: .leading, spacing: 8) {
+                cardEffectSection(
+                    title: "ゲーム効果",
+                    icon: "sparkles",
+                    color: Appearance.Color.playerOrange,
+                    description: "ゲーム開始時・点数計算時にレートを×2します"
+                )
+                
+                effectExampleView(
+                    phase: "ゲーム開始",
+                    effect: "最初のカードがジョーカー → レート×2",
+                    color: Appearance.Color.playerOrange
+                )
+                
+                effectExampleView(
+                    phase: "点数計算",
+                    effect: "山札の底がジョーカー → レート×2",
+                    color: Appearance.Color.playerOrange
+                )
+            }
+        }
+        .padding(16)
+        .background(cardBackground(color: Appearance.Color.playerGold))
+    }
+    
+    // MARK: - One And Two Explanation View
+    /// 1・2の説明表示
+    private var oneAndTwoExplanationView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // セクションタイトル
+            cardSectionTitle(
+                title: "1・2のカード",
+                icon: "1.circle.fill",
+                color: Appearance.Color.playerBlue
+            )
+            
+            // 1・2カード表示
+            HStack(spacing: 8) {
+                RuleCardView(cardName: PlayCard.spade1.rawValue)
+                RuleCardView(cardName: PlayCard.heart1.rawValue)
+                RuleCardView(cardName: PlayCard.diamond2.rawValue)
+                RuleCardView(cardName: PlayCard.club2.rawValue)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("レート倍増カード")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(Appearance.Color.playerBlue)
+                    
+                    Text("特別な効果があります")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.9))
+                }
+                
+                Spacer()
+            }
+            
+            // 手札での価値
+            cardEffectSection(
+                title: "手札での価値",
+                icon: "hand.raised.fill",
+                color: Appearance.Color.playerGreen,
+                description: "そのままの数字として扱います（1は1、2は2）"
+            )
+            
+            // ゲーム効果
+            VStack(alignment: .leading, spacing: 8) {
+                cardEffectSection(
+                    title: "ゲーム効果",
+                    icon: "arrow.up.circle.fill",
+                    color: Appearance.Color.playerBlue,
+                    description: "ゲーム開始時・点数計算時にレートを×2します"
+                )
+                
+                effectExampleView(
+                    phase: "ゲーム開始",
+                    effect: "最初のカードが1または2 → レート×2",
+                    color: Appearance.Color.playerBlue
+                )
+                
+                effectExampleView(
+                    phase: "点数計算",
+                    effect: "山札の底が1または2 → レート×2",
+                    color: Appearance.Color.playerBlue
+                )
+            }
+        }
+        .padding(16)
+        .background(cardBackground(color: Appearance.Color.playerBlue))
+    }
+    
+    // MARK: - Three Explanation View
+    /// 3の説明表示
+    private var threeExplanationView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // セクションタイトル
+            cardSectionTitle(
+                title: "3のカード",
+                icon: "3.circle.fill",
+                color: Appearance.Color.playerPurple
+            )
+            
+            // 手札での価値
+            cardEffectSection(
+                title: "手札での価値",
+                icon: "hand.raised.fill",
+                color: Appearance.Color.playerGreen,
+                description: "すべて3として扱います"
+            )
+            
+            // スペード・クラブの3
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 16) {
+                    RuleCardView(cardName: PlayCard.spade3.rawValue)
+                    RuleCardView(cardName: PlayCard.club3.rawValue)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("♠3・♣3")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(Appearance.Color.playerPurple)
+                        
+                        Text("逆転カード")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Appearance.Color.playerRed)
+                    }
+                    
+                    Spacer()
+                }
+                
+                cardEffectSection(
+                    title: "特殊効果",
+                    icon: "arrow.clockwise.circle.fill",
+                    color: Appearance.Color.playerRed,
+                    description: "点数計算時に勝敗を無条件で逆転させます"
+                )
+                
+                effectExampleView(
+                    phase: "点数計算",
+                    effect: "山札の底が♠3または♣3 → 勝者と敗者が入れ替わる",
+                    color: Appearance.Color.playerRed
+                )
+            }
+            
+            // ダイヤの3
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 16) {
+                    RuleCardView(cardName: PlayCard.diamond3.rawValue)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("♦3")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(Appearance.Color.playerPurple)
+                        
+                        Text("30倍カード")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Appearance.Color.playerGold)
+                    }
+                    
+                    Spacer()
+                }
+                
+                cardEffectSection(
+                    title: "特殊効果",
+                    icon: "star.circle.fill",
+                    color: Appearance.Color.playerGold,
+                    description: "点数計算時に数字を30として扱います"
+                )
+                
+                effectExampleView(
+                    phase: "点数計算",
+                    effect: "山札の底が♦3 → 3ではなく30として計算",
+                    color: Appearance.Color.playerGold
+                )
+            }
+            
+            // ハートの3
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 16) {
+                    RuleCardView(cardName: PlayCard.heart3.rawValue)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("♥3")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(Appearance.Color.playerPurple)
+                        
+                        Text("通常の3")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
+                    }
+                    
+                    Spacer()
+                }
+                
+                cardEffectSection(
+                    title: "効果",
+                    icon: "circle.fill",
+                    color: Appearance.Color.playerGreen,
+                    description: "特殊効果はありません。普通の3として扱います"
+                )
+            }
+        }
+        .padding(16)
+        .background(cardBackground(color: Appearance.Color.playerPurple))
+    }
+    
+    // MARK: - Other Cards Explanation View
+    /// その他のカード説明表示
+    private var otherCardsExplanationView: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // セクションタイトル
+            cardSectionTitle(
+                title: "その他のカード（4〜13）",
+                icon: "rectangle.grid.2x2.fill",
+                color: Appearance.Color.playerGreen
+            )
+            
+            // カード表示
+            HStack(spacing: 8) {
+                RuleCardView(cardName: PlayCard.heart4.rawValue)
+                RuleCardView(cardName: PlayCard.spade7.rawValue)
+                RuleCardView(cardName: PlayCard.diamond10.rawValue)
+                RuleCardView(cardName: PlayCard.club13.rawValue)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("通常のカード")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(Appearance.Color.playerGreen)
+                    
+                    Text("そのままの数字で使用")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.9))
+                }
+                
+                Spacer()
+            }
+            
+            cardEffectSection(
+                title: "効果",
+                icon: "equal.circle.fill",
+                color: Appearance.Color.playerGreen,
+                description: "特殊効果はありません。カードに書かれた数字のまま利用します"
+            )
+        }
+        .padding(16)
+        .background(cardBackground(color: Appearance.Color.playerGreen))
+    }
+    
+    // MARK: - Joker Hand Example View
+    /// ジョーカー手札例表示
+    private func jokerHandExampleView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("例：ジョーカーを含む手札の価値")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(Appearance.Color.commonWhite)
+            
+            HStack(spacing: 16) {
+                // 手札表示
+                VStack(spacing: 8) {
+                    Text("手札")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Appearance.Color.commonWhite.opacity(0.7))
+                    
+                    HStack(spacing: -10) {
+                        RuleCardView(cardName: PlayCard.blackJoker.rawValue)
+                        RuleCardView(cardName: PlayCard.club1.rawValue)
+                        RuleCardView(cardName: PlayCard.heart7.rawValue)
+                    }
+                    .padding(4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Appearance.Color.playerGold, lineWidth: 2)
+                    )
+                }
+                
+                // 矢印
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.6))
+                
+                // 可能な合計値
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("可能な合計値")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Appearance.Color.playerGold)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("7 (ジョーカー=-1)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
+                        
+                        Text("8 (ジョーカー=0)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
+                        
+                        Text("9 (ジョーカー=1)")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
+                    }
+                }
+                
+                Spacer()
+            }
+        }
+    }
+    
+    // MARK: - Card Section Title
+    /// カードセクションタイトル
+    private func cardSectionTitle(title: String, icon: String, color: Color) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(color)
+            
+            Text(title)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(Appearance.Color.commonWhite)
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Card Effect Section
+    /// カード効果セクション
+    private func cardEffectSection(title: String, icon: String, color: Color, description: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(color)
+                
+                Spacer()
+            }
+            
+            Text(description)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Appearance.Color.commonWhite.opacity(0.9))
+                .lineLimit(nil)
+                .multilineTextAlignment(.leading)
+        }
+    }
+    
+    // MARK: - Effect Example View
+    /// 効果例表示
+    private func effectExampleView(phase: String, effect: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+                .padding(.top, 6)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(phase)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(color)
+                
+                Text(effect)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Appearance.Color.commonWhite.opacity(0.8))
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
+            }
+            
+            Spacer()
+        }
+        .padding(.leading, 8)
+    }
+    
+    // MARK: - Card Background
+    /// カード背景
+    private func cardBackground(color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        color.opacity(0.1),
+                        color.opacity(0.05)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        color.opacity(0.3),
+                        lineWidth: 1
+                    )
+            )
+    }
+} 
