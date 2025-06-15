@@ -6,6 +6,7 @@ enum DotenkoAnimationType {
     case dotenko    // どてんこ（赤・オレンジ・黄色）
     case shotenko   // しょてんこ（青・シアン・緑）
     case revenge    // リベンジ（紫・ピンク・マゼンタ）
+    case burst      // バースト（赤・黒・ダークレッド）
 }
 
 // MARK: - Dotenko Logo Animation View
@@ -264,6 +265,10 @@ struct DotenkoAnimationConfig {
         static let revengePrimaryColors: [SwiftUI.Color] = [.purple, .pink, .pink, .purple]
         static let revengeAlternateColors: [SwiftUI.Color] = [.pink, .purple, .pink]
         
+        // バースト用（赤・黒・ダークレッド）
+        static let burstPrimaryColors: [SwiftUI.Color] = [.red, .black, .red.opacity(0.8), .black, .red]
+        static let burstAlternateColors: [SwiftUI.Color] = [.black, .red, .black, .red.opacity(0.6), .black]
+        
         /// アニメーションタイプに応じた色を取得
         static func getColors(for type: DotenkoAnimationType) -> (primary: [SwiftUI.Color], alternate: [SwiftUI.Color]) {
             switch type {
@@ -273,6 +278,8 @@ struct DotenkoAnimationConfig {
                 return (primary: shotenkoPrimaryColors, alternate: shotenkoAlternateColors)
             case .revenge:
                 return (primary: revengePrimaryColors, alternate: revengeAlternateColors)
+            case .burst:
+                return (primary: burstPrimaryColors, alternate: burstAlternateColors)
             }
         }
     }
@@ -283,20 +290,37 @@ struct DotenkoAnimationConfig {
 #if DEBUG
 struct DotenkoLogoAnimationView_Previews: PreviewProvider {
     static var previews: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        Group {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                DotenkoLogoAnimationView(
+                    title: "どてんこ！",
+                    subtitle: "プレイヤーの勝利宣言",
+                    isVisible: true,
+                    colorType: .dotenko,
+                    onComplete: {
+                        print("アニメーション完了")
+                    }
+                )
+            }
+            .previewDisplayName("どてんこアニメーション")
             
-            DotenkoLogoAnimationView(
-                title: "どてんこ！",
-                subtitle: "プレイヤーの勝利宣言",
-                isVisible: true,
-                colorType: .dotenko,
-                onComplete: {
-                    print("アニメーション完了")
-                }
-            )
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                DotenkoLogoAnimationView(
+                    title: "バースト！",
+                    subtitle: "プレイヤーの手札上限敗北",
+                    isVisible: true,
+                    colorType: .burst,
+                    onComplete: {
+                        print("バーストアニメーション完了")
+                    }
+                )
+            }
+            .previewDisplayName("バーストアニメーション")
         }
-        .previewDisplayName("どてんこアニメーション")
     }
 }
 #endif 

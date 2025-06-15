@@ -127,12 +127,14 @@ class GameAnnouncementEffectManager: ObservableObject {
         case dotenko    // どてんこ宣言
         case shotenko   // しょてんこ宣言
         case revenge    // リベンジ宣言
+        case burst      // バースト宣言
         
         var title: String {
             switch self {
             case .dotenko: return "どてんこ！"
             case .shotenko: return "しょてんこ！"
             case .revenge: return "リベンジ！"
+            case .burst: return "バースト！"
             }
         }
         
@@ -141,6 +143,7 @@ class GameAnnouncementEffectManager: ObservableObject {
             case .dotenko: return "勝利宣言"
             case .shotenko: return "初手勝利"
             case .revenge: return "逆転宣言"
+            case .burst: return "手札上限敗北"
             }
         }
         
@@ -149,6 +152,7 @@ class GameAnnouncementEffectManager: ObservableObject {
             case .dotenko: return .dotenko
             case .shotenko: return .shotenko
             case .revenge: return .revenge
+            case .burst: return .burst
             }
         }
     }
