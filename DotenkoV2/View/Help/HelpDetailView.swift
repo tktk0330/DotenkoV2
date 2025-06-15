@@ -77,9 +77,7 @@ struct HelpDetailView: View {
             
             // タイトル
             Text(detailType.title)
-                .font(.largeTitle)
-                .fontWeight(.heavy)
-                .fontDesign(.rounded)
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
                 .foregroundColor(Appearance.Color.commonWhite)
                 .multilineTextAlignment(.center)
                 .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 4, x: 0, y: 2)
