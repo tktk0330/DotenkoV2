@@ -165,8 +165,12 @@ struct CasinoUnifiedButton: View {
         .scaleEffect(glowAnimation && isEnabled ? 1.02 : 1.0)
         .shadow(color: colors.glow.opacity(isEnabled ? 0.6 : 0.2), radius: isEnabled ? 8 : 4, x: 0, y: 4)
         .opacity(isEnabled ? 1.0 : 0.6)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: glowAnimation)
+        .animation(
+            isPressed ? 
+                .easeInOut(duration: 0.15) : 
+                .easeInOut(duration: 1.5).repeatForever(autoreverses: true), 
+            value: isPressed ? isPressed : glowAnimation
+        )
     }
     
     // MARK: - Background

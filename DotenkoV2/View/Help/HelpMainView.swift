@@ -16,12 +16,14 @@ struct HelpMainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                // カジノ風背景
+                CasinoBackground()
                 
                 ScrollView {
                     VStack(spacing: 20) {
                         // 設定セクション
                         settingsSection
-                            .padding(.top, 20)
+                            .padding(.top, geometry.safeAreaInsets.top + 20)
                             .padding(.horizontal, 16)
                         
                         // ヘルプセクション一覧
@@ -443,8 +445,12 @@ struct CasinoHelpItemButton: View {
             .background(buttonBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .scaleEffect(isPressed ? 0.95 : glowScale)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowScale)
+            .animation(
+                isPressed ? 
+                    .easeInOut(duration: 0.15) : 
+                    .easeInOut(duration: 1.8).repeatForever(autoreverses: true), 
+                value: isPressed ? 1 : glowScale
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in

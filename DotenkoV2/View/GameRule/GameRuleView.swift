@@ -183,8 +183,12 @@ struct CasinoSettingCard: View {
         .padding(16)
         .background(casinoCardBackground)
         .scaleEffect(isPressed ? 0.95 : (isGlowing ? 1.02 : 1.0))
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isGlowing)
+        .animation(
+            isPressed ? 
+                .easeInOut(duration: 0.15) : 
+                .easeInOut(duration: 2.0).repeatForever(autoreverses: true), 
+            value: isPressed ? isPressed : isGlowing
+        )
         .onTapGesture {
             onTap()
         }

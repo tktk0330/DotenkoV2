@@ -53,7 +53,7 @@ struct HelpDetailView: View {
     private var headerView: some View {
         VStack(spacing: 16) {
             // アイコン
-            Image(systemName: detailType.icon)
+                    Image(systemName: detailType.icon)
                 .font(.system(size: 36, weight: .bold))
                 .foregroundStyle(
                     LinearGradient(
@@ -66,9 +66,9 @@ struct HelpDetailView: View {
                     )
                 )
                 .shadow(color: Appearance.Color.commonBlack.opacity(0.5), radius: 4, x: 0, y: 2)
-            
+                    
             // タイトル
-            Text(detailType.title)
+                    Text(detailType.title)
                 .font(.system(size: 24, weight: .heavy, design: .rounded))
                 .foregroundColor(Appearance.Color.commonWhite)
                 .multilineTextAlignment(.center)

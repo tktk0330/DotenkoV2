@@ -203,8 +203,12 @@ private struct CasinoGameModeButton: View {
             .padding(.vertical, 20)
             .background(casinoButtonBackground)
             .scaleEffect(isPressed ? 0.95 : (isGlowing ? 1.02 : 1.0))
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isGlowing)
+            .animation(
+                isPressed ? 
+                    .easeInOut(duration: 0.15) : 
+                    .easeInOut(duration: 1.5).repeatForever(autoreverses: true), 
+                value: isPressed ? isPressed : isGlowing
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
@@ -290,8 +294,12 @@ private struct CasinoPlayerCountButton: View {
             .frame(width: 60, height: 60)
             .background(playerCountButtonBackground)
             .scaleEffect(isSelected ? 1.1 : (isGlowing ? 1.02 : 1.0))
-            .animation(.easeInOut(duration: 0.2), value: isSelected)
-            .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isGlowing)
+            .animation(
+                isSelected ? 
+                    .easeInOut(duration: 0.2) : 
+                    .easeInOut(duration: 2.0).repeatForever(autoreverses: true), 
+                value: isSelected ? isSelected : isGlowing
+            )
         }
         .buttonStyle(PlainButtonStyle())
         .onAppear {

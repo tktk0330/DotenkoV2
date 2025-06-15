@@ -6,14 +6,16 @@ struct GameUIOverlayView: View {
     let onSettingsAction: () -> Void
     
     var body: some View {
-        VStack {
-            HStack {
-                SettingsButtonView(action: onSettingsAction)
-                    .padding(.leading, 15)
-                    .padding(.top, 20)
+        GeometryReader { geometry in
+            VStack {
+                HStack {
+                    SettingsButtonView(action: onSettingsAction)
+                        .padding(.leading, 16)
+                        .padding(.top, geometry.safeAreaInsets.top + 4)
+                    Spacer()
+                }
                 Spacer()
             }
-            Spacer()
         }
     }
 }
