@@ -62,7 +62,7 @@ class GameScoreCalculationManager: ObservableObject {
     /// 将来的な機能追加時にもシグネチャ変更を最小化
     struct ScoreCalculationContext {
         let gamePhase: GamePhase
-        let deckCards: [Card]
+        var deckCards: [Card]
         let fieldCards: [Card]
         let baseRate: Int
         let maxScore: String?
@@ -75,6 +75,13 @@ class GameScoreCalculationManager: ObservableObject {
         let lastCardPlayerId: String?
         
         // メンバワイズイニシャライザは自動生成されるため明示的定義は不要
+        
+        /// "with"イディオム: deckCardsのみを更新したコピーを返す
+        func replacing(deckCards: [Card]) -> ScoreCalculationContext {
+            var copy = self
+            copy.deckCards = deckCards
+            return copy
+        }
     }
     
     /// ラウンド終了時のスコア計算を開始（統合版：演出→特殊カード処理→スコア計算→画面表示）
@@ -128,15 +135,18 @@ class GameScoreCalculationManager: ObservableObject {
             ) { [weak self] in
                 guard let self = self else { return }
                 
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
-                print("🎯 UpRate更新完了: ×\(self.currentUpRate)")
-                
-                // 連続特殊カード確認→スコア計算→画面表示
-                self.checkConsecutiveSpecialCardsWithAutoDisplay(
-                    from: card,
-                    bottomCard: card,
-                    context: context
-                )
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
+                    print("🎯 UpRate更新完了: ×\(self.currentUpRate)")
+                    
+                    // 連続特殊カード確認→スコア計算→画面表示
+                    self.checkConsecutiveSpecialCardsWithAutoDisplay(
+                        from: card,
+                        bottomCard: card,
+                        context: context
+                    )
+                }
             }
         } else if card.card == .diamond3 {
             // ダイヤ3：最終数字30として扱う（上昇レート倍増なし）
@@ -203,29 +213,19 @@ class GameScoreCalculationManager: ObservableObject {
             ) { [weak self] in
                 guard let self = self else { return }
                 
-                self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
-                print("🎯 連続特殊カード処理完了! 新倍率: ×\(self.currentUpRate)")
-                
-                // 再帰的に次のカードもチェック
-                let updatedContext = ScoreCalculationContext(
-                    gamePhase: context.gamePhase,
-                    deckCards: cardsToCheck,
-                    fieldCards: context.fieldCards,
-                    baseRate: context.baseRate,
-                    maxScore: context.maxScore,
-                    players: context.players,
-                    isShotenkoRound: context.isShotenkoRound,
-                    isBurst: context.isBurst,
-                    shotenkoWinnerId: context.shotenkoWinnerId,
-                    burstPlayerId: context.burstPlayerId,
-                    dotenkoWinnerId: context.dotenkoWinnerId,
-                    lastCardPlayerId: context.lastCardPlayerId
-                )
-                self.checkConsecutiveSpecialCardsWithAutoDisplay(
-                    from: nextCard,
-                    bottomCard: bottomCard,
-                    context: updatedContext
-                )
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.currentUpRate = self.safeMultiply(self.currentUpRate, by: ScoreConstants.specialCardMultiplier2)
+                    print("🎯 連続特殊カード処理完了! 新倍率: ×\(self.currentUpRate)")
+                    
+                    // 再帰的に次のカードもチェック
+                    let updatedContext = context.replacing(deckCards: cardsToCheck)
+                    self.checkConsecutiveSpecialCardsWithAutoDisplay(
+                        from: nextCard,
+                        bottomCard: bottomCard,
+                        context: updatedContext
+                    )
+                }
             }
         } else {
             print("🔄 連続特殊カード終了 - 通常カード: \(nextCard.card.rawValue)→スコア計算開始")
@@ -253,16 +253,8 @@ class GameScoreCalculationManager: ObservableObject {
             
             // スコア計算実行
             let scoreData = self.calculateFinalScoreWithData(
-                baseRate: context.baseRate,
-                maxScore: context.maxScore,
-                players: context.players,
-                bottomCard: bottomCard,
-                isShotenkoRound: context.isShotenkoRound,
-                isBurst: context.isBurst,
-                shotenkoWinnerId: context.shotenkoWinnerId,
-                burstPlayerId: context.burstPlayerId,
-                dotenkoWinnerId: context.dotenkoWinnerId,
-                lastCardPlayerId: context.lastCardPlayerId
+                context: context,
+                bottomCard: bottomCard
             )
             
             print("💰 統合スコア計算完了→画面表示")
@@ -274,32 +266,24 @@ class GameScoreCalculationManager: ObservableObject {
     
     /// 最終スコア計算（外部から呼び出し用）
     func calculateFinalScoreWithData(
-        baseRate: Int,
-        maxScore: String?,
-        players: [Player],
-        bottomCard: Card,
-        isShotenkoRound: Bool,
-        isBurst: Bool,
-        shotenkoWinnerId: String?,
-        burstPlayerId: String?,
-        dotenkoWinnerId: String?, // 通常のどてんこ勝者ID
-        lastCardPlayerId: String? // 場のカードを出したプレイヤーID
+        context: ScoreCalculationContext,
+        bottomCard: Card
     ) -> ScoreResultData {
         // CardModelの新しいメソッドを使用して最終数字を決定
         let bottomCardValue = bottomCard.card.finalScoreNum()
         
         // 基本計算式：初期レート × 上昇レート × デッキの裏の数字
-        roundScore = baseRate * currentUpRate * bottomCardValue
+        roundScore = context.baseRate * currentUpRate * bottomCardValue
         
         // スコア上限チェック
-        if let maxScoreString = maxScore,
+        if let maxScoreString = context.maxScore,
            maxScoreString != "♾️",
            let maxScore = Int(maxScoreString) {
             roundScore = min(roundScore, maxScore)
         }
         
         print("💰 最終スコア計算完了")
-        print("   基本レート: \(baseRate)")
+        print("   基本レート: \(context.baseRate)")
         print("   上昇レート: \(currentUpRate)")
         print("   デッキの裏: \(bottomCard.card.rawValue)")
         print("   最終数字: \(bottomCardValue)")
@@ -309,23 +293,23 @@ class GameScoreCalculationManager: ObservableObject {
         var winners: [Player] = []
         var losers: [Player] = []
         
-        if isShotenkoRound, let shotenkoWinnerId = shotenkoWinnerId {
+        if context.isShotenkoRound, let shotenkoWinnerId = context.shotenkoWinnerId {
             // しょてんこの場合：勝者1人、敗者は複数人
-            if let winner = players.first(where: { $0.id == shotenkoWinnerId }) {
+            if let winner = context.players.first(where: { $0.id == shotenkoWinnerId }) {
                 winners = [winner]
             }
-            losers = players.filter { $0.id != shotenkoWinnerId }
+            losers = context.players.filter { $0.id != shotenkoWinnerId }
             print("🎊 しょてんこ勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
-        } else if isBurst, let burstPlayerId = burstPlayerId {
+        } else if context.isBurst, let burstPlayerId = context.burstPlayerId {
             // バーストの場合：敗者1人、勝者は複数人
-            winners = players.filter { $0.id != burstPlayerId }
-            if let loser = players.first(where: { $0.id == burstPlayerId }) {
+            winners = context.players.filter { $0.id != burstPlayerId }
+            if let loser = context.players.first(where: { $0.id == burstPlayerId }) {
                 losers = [loser]
             }
             print("💥 バースト勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
         } else {
             // 通常のどてんこの場合：IDベースで特定（rank使用禁止）
-            guard let winnerId = dotenkoWinnerId else {
+            guard let winnerId = context.dotenkoWinnerId else {
                 print("⚠️ 通常どてんこの勝者IDが見つかりません")
                 // エラー時もデータを返す
                 let errorData = ScoreResultData(
@@ -333,25 +317,25 @@ class GameScoreCalculationManager: ObservableObject {
                     losers: [],
                     deckBottomCard: bottomCard,
                     consecutiveCards: consecutiveSpecialCards,
-                    baseRate: baseRate,
+                    baseRate: context.baseRate,
                     upRate: currentUpRate,
                     finalMultiplier: bottomCardValue,
                     totalScore: roundScore,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurstRound: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId
+                    isShotenkoRound: context.isShotenkoRound,
+                    isBurstRound: context.isBurst,
+                    shotenkoWinnerId: context.shotenkoWinnerId,
+                    burstPlayerId: context.burstPlayerId
                 )
                 self.scoreResultData = errorData   // ← 追加
                 return errorData
             }
             
-            if let winner = players.first(where: { $0.id == winnerId }) {
+            if let winner = context.players.first(where: { $0.id == winnerId }) {
                 winners = [winner]
             }
             
             // 場のカードを出したプレイヤーを敗者とする（正しい実装）
-            guard let loserId = lastCardPlayerId else {
+            guard let loserId = context.lastCardPlayerId else {
                 print("⚠️ 場のカードを出したプレイヤーIDが見つかりません")
                 // エラー時もデータを返す
                 let errorData = ScoreResultData(
@@ -359,20 +343,20 @@ class GameScoreCalculationManager: ObservableObject {
                     losers: [],
                     deckBottomCard: bottomCard,
                     consecutiveCards: consecutiveSpecialCards,
-                    baseRate: baseRate,
+                    baseRate: context.baseRate,
                     upRate: currentUpRate,
                     finalMultiplier: bottomCardValue,
                     totalScore: roundScore,
-                    isShotenkoRound: isShotenkoRound,
-                    isBurstRound: isBurst,
-                    shotenkoWinnerId: shotenkoWinnerId,
-                    burstPlayerId: burstPlayerId
+                    isShotenkoRound: context.isShotenkoRound,
+                    isBurstRound: context.isBurst,
+                    shotenkoWinnerId: context.shotenkoWinnerId,
+                    burstPlayerId: context.burstPlayerId
                 )
                 self.scoreResultData = errorData   // ← 追加
                 return errorData
             }
             
-            if let loser = players.first(where: { $0.id == loserId }) {
+            if let loser = context.players.first(where: { $0.id == loserId }) {
                 losers = [loser]
             }
             print("🎯 通常どてんこ勝敗特定: 勝者=\(winners.count)人, 敗者=\(losers.count)人")
@@ -384,14 +368,14 @@ class GameScoreCalculationManager: ObservableObject {
             losers: losers,
             deckBottomCard: bottomCard,
             consecutiveCards: consecutiveSpecialCards,
-            baseRate: baseRate,
+            baseRate: context.baseRate,
             upRate: currentUpRate,
             finalMultiplier: bottomCardValue,
             totalScore: roundScore,
-            isShotenkoRound: isShotenkoRound,
-            isBurstRound: isBurst,
-            shotenkoWinnerId: shotenkoWinnerId,
-            burstPlayerId: burstPlayerId
+            isShotenkoRound: context.isShotenkoRound,
+            isBurstRound: context.isBurst,
+            shotenkoWinnerId: context.shotenkoWinnerId,
+            burstPlayerId: context.burstPlayerId
         )
         
         print("🎯 GameScoreCalculationManager - スコア確定画面データ設定")
