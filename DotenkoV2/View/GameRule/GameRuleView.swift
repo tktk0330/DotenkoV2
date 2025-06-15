@@ -47,7 +47,6 @@ struct GameRuleView: View {
                 .padding(.vertical, 20)
             }
         }
-        .background(CasinoBackground())
         .sheet(item: $selectedSetting) { setting in
             GameRuleSettingModal(
                 title: setting.title,
