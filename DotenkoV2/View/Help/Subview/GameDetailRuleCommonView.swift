@@ -84,7 +84,7 @@ struct GameDetailRuleCommonView: View {
                 .multilineTextAlignment(.leading)
         }
         .padding(16)
-        .background(ruleBackground(color: Appearance.Color.playerBlue))
+        .ruleBackground(color: Appearance.Color.playerBlue)
     }
     
     // MARK: - Setting Values View
@@ -111,7 +111,7 @@ struct GameDetailRuleCommonView: View {
             }
         }
         .padding(16)
-        .background(ruleBackground(color: Appearance.Color.playerGreen))
+        .ruleBackground(color: Appearance.Color.playerGreen)
     }
     
     // MARK: - Example View
@@ -140,7 +140,7 @@ struct GameDetailRuleCommonView: View {
             detailedExampleView
         }
         .padding(16)
-        .background(ruleBackground(color: Appearance.Color.playerOrange))
+        .ruleBackground(color: Appearance.Color.playerOrange)
     }
     
     // MARK: - Recommendation View
@@ -176,7 +176,7 @@ struct GameDetailRuleCommonView: View {
             }
         }
         .padding(16)
-        .background(ruleBackground(color: Appearance.Color.playerGold))
+        .ruleBackground(color: Appearance.Color.playerGold)
     }
     
     // MARK: - Setting Value Item
@@ -350,28 +350,7 @@ struct GameDetailRuleCommonView: View {
         }
     }
     
-    // MARK: - Rule Background
-    /// ルール背景
-    private func ruleBackground(color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        color.opacity(0.1),
-                        color.opacity(0.05)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        color.opacity(0.3),
-                        lineWidth: 1
-                    )
-            )
-    }
+
     
     // MARK: - Helper Methods
     
