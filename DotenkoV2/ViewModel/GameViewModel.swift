@@ -1576,7 +1576,7 @@ class GameViewModel: ObservableObject {
         
         // バーストアニメーションを表示
         let playerName = players[playerIndex].name
-        announcementEffectManager.showDeclarationAnimation(type: .dotenko, playerName: playerName) {
+        announcementEffectManager.showDeclarationAnimation(type: .burst, playerName: playerName) {
             // アニメーション完了後に直接スコア確定に進む（チャレンジゾーンスキップ）
             DispatchQueue.main.async {
                 self.finalizeDotenko()
@@ -1652,8 +1652,21 @@ class GameViewModel: ObservableObject {
     
     /// ラウンド終了時のスコア計算を開始
     func startScoreCalculation() {
-        print("💰 スコア計算開始 - 元の自動遷移システムを使用")
+        print("💰 スコア計算開始 - 演出付きスコア計算システムを使用")
         
+        // GameScoreCalculationManagerの演出付きメソッドを使用
+        scoreCalculationManager.startScoreCalculation(
+            gamePhase: gamePhase,
+            deckCards: deckCards,
+            fieldCards: fieldCards
+        ) { [weak self] in
+            // 演出完了後にスコア確定画面データを作成
+            self?.finalizeScoreCalculationWithData()
+        }
+    }
+    
+    /// スコア計算演出完了後の最終処理
+    private func finalizeScoreCalculationWithData() {
         // デッキの裏カードを取得
         let bottomCard: Card
         if !deckCards.isEmpty {
@@ -1666,7 +1679,7 @@ class GameViewModel: ObservableObject {
             return
         }
         
-        // 直接スコア確定画面データを作成して自動遷移
+        // スコア確定画面データを作成して自動遷移
         scoreCalculationManager.calculateFinalScoreWithData(
             bottomCard: bottomCard,
             baseRate: Int(gameRuleInfo.gameRate) ?? 1,
