@@ -11,7 +11,7 @@ struct GameUIOverlayView: View {
                 HStack {
                     SettingsButtonView(action: onSettingsAction)
                         .padding(.leading, 16)
-                        .padding(.top, geometry.safeAreaInsets.top + 4)
+                        .padding(.top, geometry.safeAreaInsets.top + 36)
                     Spacer()
                 }
                 Spacer()

@@ -16,8 +16,6 @@ struct HelpMainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // カジノ風背景
-                CasinoBackground()
                 
                 ScrollView {
                     VStack(spacing: 20) {
