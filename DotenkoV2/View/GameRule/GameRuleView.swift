@@ -17,34 +17,35 @@ struct GameRuleView: View {
     // MARK: - View Body
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                
-                // 設定項目グリッド
-                VStack(spacing: 24) {
-                    // 1段目: ゲーム数とジョーカー
-                    HStack(spacing: 16) {
-                        makeSettingCard(.roundCount)
-                        makeSettingCard(.jokerCount)
-                    }
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 32) {
                     
-                    // 2段目: レートと最大掛け金
-                    HStack(spacing: 16) {
-                        makeSettingCard(.gameRate)
-                        makeSettingCard(.maxScore)
+                    // 設定項目グリッド
+                    VStack(spacing: 24) {
+                        // 1段目: ゲーム数とジョーカー
+                        HStack(spacing: 16) {
+                            makeSettingCard(.roundCount)
+                            makeSettingCard(.jokerCount)
+                        }
+                        
+                        // 2段目: レートと最大掛け金
+                        HStack(spacing: 16) {
+                            makeSettingCard(.gameRate)
+                            makeSettingCard(.maxScore)
+                        }
+                        
+                        // 3段目: アップレートとデッキ
+                        HStack(spacing: 16) {
+                            makeSettingCard(.upRate)
+                            makeSettingCard(.deckCycle)
+                        }
                     }
-                    
-                    // 3段目: アップレートとデッキ
-                    HStack(spacing: 16) {
-                        makeSettingCard(.upRate)
-                        makeSettingCard(.deckCycle)
-                    }
+                    .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
-                
-                Spacer(minLength: 100) // 下部余白
+                .frame(minHeight: geometry.size.height)
+                .padding(.vertical, 20)
             }
-            .padding(.top, 20)
         }
         .background(CasinoBackground())
         .sheet(item: $selectedSetting) { setting in
