@@ -234,7 +234,9 @@ class GameScoreCalculationManager: ObservableObject {
             print("🎯 最終数字として使用するカード: \(nextCard.card.rawValue)")
             print("🎯 最終数字: \(nextCard.card.finalScoreNum())")
             // 最後の非特殊カードを最終数字として使用
-            calculateFinalScoreWithAutoDisplay(bottomCard: nextCard, context: context)
+            // データ整合性のため、更新されたcontextを生成して渡す
+            let finalContext = context.replacing(deckCards: cardsToCheck)
+            calculateFinalScoreWithAutoDisplay(bottomCard: nextCard, context: finalContext)
         }
     }
     

@@ -490,14 +490,6 @@ class ScoreResultViewModel: ObservableObject {
         }
     }
     
-    /// 最終スコアを取得（GameScoreCalculationManagerから渡された値を使用）
-    /// 独自計算は廃止し、正確な値を保証
-    private func getFinalScore() -> Int {
-        print("💰 GameScoreCalculationManagerから渡されたスコアを使用")
-        print("   最終スコア: \(totalScore)")
-        return totalScore
-    }
-    
     /// revealedCardsから逆転効果があるかチェック
     private func hasReversalEffectInRevealedCards() -> Bool {
         return revealedCards.contains { card in
