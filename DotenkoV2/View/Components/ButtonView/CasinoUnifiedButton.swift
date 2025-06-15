@@ -163,7 +163,6 @@ struct CasinoUnifiedButton: View {
         .clipShape(RoundedRectangle(cornerRadius: dimensions.height / 2))
         .scaleEffect(isPressed && isEnabled ? 0.95 : 1.0)
         .scaleEffect(glowAnimation && isEnabled ? 1.02 : 1.0)
-        .shadow(color: colors.glow.opacity(isEnabled ? 0.6 : 0.2), radius: isEnabled ? 8 : 4, x: 0, y: 4)
         .opacity(isEnabled ? 1.0 : 0.6)
         .animation(
             isPressed ? 
