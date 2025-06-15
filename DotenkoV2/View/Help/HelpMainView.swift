@@ -14,21 +14,21 @@ struct HelpMainView: View {
     @State private var isVibrationOn: Bool = true
     
     var body: some View {
-        ZStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 設定セクション
-                    settingsSection
-                        .padding(.top, 20)
-                        .padding(.horizontal, 16)
-                    
-                    // ヘルプセクション一覧
-                    helpSectionsView
-                        .padding(.horizontal, 16)
-                    
-                    // 下部余白（バナー広告考慮）
-                    Spacer()
-                        .frame(height: 100)
+        GeometryReader { geometry in
+            ZStack {
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // 設定セクション
+                        settingsSection
+                            .padding(.top, 20)
+                            .padding(.horizontal, 16)
+                        
+                        // ヘルプセクション一覧
+                        helpSectionsView
+                            .padding(.horizontal, 16)
+                    }
+                    .padding(.bottom, geometry.safeAreaInsets.bottom + CGFloat(Constant.BANNER_HEIGHT) + 20)
                 }
             }
         }
@@ -156,14 +156,10 @@ struct CasinoSettingToggleItem: View {
     let title: String
     @Binding var isOn: Bool
     
-    @State private var glowAnimation = false
+    @State private var glowScale: CGFloat = 1.0
     
     var body: some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isOn.toggle()
-            }
-        }) {
+        Toggle(isOn: $isOn) {
             HStack(spacing: 16) {
                 // アイコン
                 Image(systemName: icon)
@@ -178,72 +174,22 @@ struct CasinoSettingToggleItem: View {
                     .multilineTextAlignment(.leading)
                 
                 Spacer()
-                
-                // トグルスイッチ
-                toggleSwitch
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(toggleBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .scaleEffect(glowAnimation ? 1.01 : 1.0)
-            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowAnimation)
         }
-        .buttonStyle(PlainButtonStyle())
+        .toggleStyle(CasinoToggleStyle())
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(toggleBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .scaleEffect(glowScale)
+        .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowScale)
         .onAppear {
-            glowAnimation = true
+            glowScale = 1.01
         }
-    }
-    
-    // トグルスイッチ
-    private var toggleSwitch: some View {
-        ZStack {
-            // 背景トラック
-            RoundedRectangle(cornerRadius: 16)
-                .fill(isOn ? 
-                      LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.playerGold.opacity(0.8),
-                            Appearance.Color.playerGold
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                      ) :
-                      LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite.opacity(0.2),
-                            Appearance.Color.commonWhite.opacity(0.1)
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                      )
-                )
-                .frame(width: 50, height: 28)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            isOn ? Appearance.Color.playerGold.opacity(0.6) : Appearance.Color.commonWhite.opacity(0.3),
-                            lineWidth: 1
-                        )
-                )
-            
-            // スイッチノブ
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Appearance.Color.commonWhite,
-                            Appearance.Color.commonWhite.opacity(0.9)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 22, height: 22)
-                .shadow(color: Appearance.Color.commonBlack.opacity(0.3), radius: 2, x: 0, y: 1)
-                .offset(x: isOn ? 11 : -11)
-                .animation(.easeInOut(duration: 0.2), value: isOn)
-        }
+        // アクセシビリティ設定
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn ? "オン" : "オフ")
+        .accessibilityHint("ダブルタップで\(isOn ? "オフ" : "オン")にします")
     }
     
     // トグル背景
@@ -271,6 +217,72 @@ struct CasinoSettingToggleItem: View {
     }
 }
 
+// MARK: - Casino Toggle Style
+/// カジノ風トグルスタイル
+struct CasinoToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            configuration.label
+            
+            Spacer()
+            
+            // カスタムトグルスイッチ
+            ZStack {
+                // 背景トラック
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(configuration.isOn ? 
+                          LinearGradient(
+                            gradient: Gradient(colors: [
+                                Appearance.Color.playerGold.opacity(0.8),
+                                Appearance.Color.playerGold
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                          ) :
+                          LinearGradient(
+                            gradient: Gradient(colors: [
+                                Appearance.Color.commonWhite.opacity(0.2),
+                                Appearance.Color.commonWhite.opacity(0.1)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                          )
+                    )
+                    .frame(width: 50, height: 28)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                configuration.isOn ? Appearance.Color.playerGold.opacity(0.6) : Appearance.Color.commonWhite.opacity(0.3),
+                                lineWidth: 1
+                            )
+                    )
+                
+                // スイッチノブ
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Appearance.Color.commonWhite,
+                                Appearance.Color.commonWhite.opacity(0.9)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 22, height: 22)
+                    .shadow(color: Appearance.Color.commonBlack.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .offset(x: configuration.isOn ? 11 : -11)
+                    .animation(.easeInOut(duration: 0.2), value: configuration.isOn)
+            }
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    configuration.isOn.toggle()
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Casino Accordion View
 /// カジノ風アコーディオンビュー
 struct CasinoAccordionView<Content: View>: View {
@@ -278,7 +290,7 @@ struct CasinoAccordionView<Content: View>: View {
     let description: String
     let content: Content
     @State private var isExpanded: Bool = false
-    @State private var glowAnimation = false
+    @State private var glowScale: CGFloat = 1.0
     
     init(title: String, description: String, @ViewBuilder content: () -> Content) {
         self.title = title
@@ -315,10 +327,10 @@ struct CasinoAccordionView<Content: View>: View {
             x: 0,
             y: 4
         )
-        .scaleEffect(glowAnimation ? 1.01 : 1.0)
-        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: glowAnimation)
+        .scaleEffect(glowScale)
+        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: glowScale)
         .onAppear {
-            glowAnimation = true
+            glowScale = 1.01
         }
     }
     
@@ -335,7 +347,7 @@ struct CasinoAccordionView<Content: View>: View {
             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(Appearance.Color.playerGold)
-                .rotationEffect(.degrees(isExpanded ? 0 : 0))
+                .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 .animation(.easeInOut(duration: 0.3), value: isExpanded)
         }
         .padding(.horizontal, 20)
@@ -402,7 +414,7 @@ struct CasinoHelpItemButton: View {
     let action: () -> Void
     
     @State private var isPressed = false
-    @State private var glowAnimation = false
+    @State private var glowScale: CGFloat = 1.0
     
     var body: some View {
         Button(action: action) {
@@ -430,16 +442,16 @@ struct CasinoHelpItemButton: View {
             .padding(.vertical, 12)
             .background(buttonBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .scaleEffect(isPressed ? 0.95 : (glowAnimation ? 1.01 : 1.0))
+            .scaleEffect(isPressed ? 0.95 : glowScale)
             .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowAnimation)
+            .animation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: glowScale)
         }
         .buttonStyle(PlainButtonStyle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
             isPressed = pressing
         }, perform: {})
         .onAppear {
-            glowAnimation = true
+            glowScale = 1.01
         }
     }
     

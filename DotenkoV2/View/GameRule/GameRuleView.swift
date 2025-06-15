@@ -17,35 +17,36 @@ struct GameRuleView: View {
     // MARK: - View Body
     
     var body: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 32) {
-                    
-                    // 設定項目グリッド
-                    VStack(spacing: 24) {
-                        // 1段目: ゲーム数とジョーカー
-                        HStack(spacing: 16) {
-                            makeSettingCard(.roundCount)
-                            makeSettingCard(.jokerCount)
-                        }
-                        
-                        // 2段目: レートと最大掛け金
-                        HStack(spacing: 16) {
-                            makeSettingCard(.gameRate)
-                            makeSettingCard(.maxScore)
-                        }
-                        
-                        // 3段目: アップレートとデッキ
-                        HStack(spacing: 16) {
-                            makeSettingCard(.upRate)
-                            makeSettingCard(.deckCycle)
-                        }
+        ScrollView {
+            VStack(spacing: 32) {
+                
+                // 設定項目グリッド
+                VStack(spacing: 24) {
+                    // 1段目: ゲーム数とジョーカー
+                    HStack(spacing: 16) {
+                        makeSettingCard(.roundCount)
+                        makeSettingCard(.jokerCount)
                     }
-                    .padding(.horizontal, 20)
+                    
+                    // 2段目: レートと最大掛け金
+                    HStack(spacing: 16) {
+                        makeSettingCard(.gameRate)
+                        makeSettingCard(.maxScore)
+                    }
+                    
+                    // 3段目: アップレートとデッキ
+                    HStack(spacing: 16) {
+                        makeSettingCard(.upRate)
+                        makeSettingCard(.deckCycle)
+                    }
                 }
-                .frame(minHeight: geometry.size.height)
-                .padding(.vertical, 20)
+                .padding(.horizontal, 20)
+                
+                // 下部余白（バナー広告考慮）
+                Spacer()
+                    .frame(height: 100)
             }
+            .padding(.vertical, 20)
         }
         .sheet(item: $selectedSetting) { setting in
             GameRuleSettingModal(

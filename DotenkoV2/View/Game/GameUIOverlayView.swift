@@ -6,19 +6,14 @@ struct GameUIOverlayView: View {
     let onSettingsAction: () -> Void
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // 設定ボタン（左上のヘッダー下に配置）
-                VStack {
-                    HStack {
-                        SettingsButtonView(action: onSettingsAction)
-                            .padding(.leading, 15)
-                            .padding(.top, geometry.size.height * GameLayoutConfig.headerAreaHeightRatio + 20)
-                        Spacer()
-                    }
-                    Spacer()
-                }
+        VStack {
+            HStack {
+                SettingsButtonView(action: onSettingsAction)
+                    .padding(.leading, 15)
+                    .padding(.top, 20)
+                Spacer()
             }
+            Spacer()
         }
     }
 }
