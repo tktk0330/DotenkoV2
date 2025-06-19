@@ -2,6 +2,104 @@ import SwiftUI
 import Foundation
 import Combine
 
+/// 早い者勝ちカード出しエラータイプ
+enum FirstCardPlayErrorType {
+    case noCardsSelected        // カードが選択されていない
+    case invalidCardSelection   // 無効なカード選択
+    case cardsNotInHand        // 選択されたカードが手札にない
+    case gameStateInvalid      // ゲーム状態が無効
+    case playerNotFound        // プレイヤーが見つからない
+    case unexpectedState       // 予期しない状態
+    
+    var userMessage: String {
+        switch self {
+        case .noCardsSelected:
+            return "カードを選択してください"
+        case .invalidCardSelection:
+            return "無効なカードが選択されています"
+        case .cardsNotInHand:
+            return "選択されたカードが手札にありません"
+        case .gameStateInvalid:
+            return "現在カードを出すことができません"
+        case .playerNotFound:
+            return "プレイヤー情報の取得に失敗しました"
+        case .unexpectedState:
+            return "予期しないエラーが発生しました"
+        }
+    }
+    
+    var logMessage: String {
+        switch self {
+        case .noCardsSelected:
+            return "⚠️ カード未選択: カードが選択されていません"
+        case .invalidCardSelection:
+            return "⚠️ 無効選択: 選択されたカードが無効です"
+        case .cardsNotInHand:
+            return "⚠️ カード不整合: 選択されたカードが手札に存在しません"
+        case .gameStateInvalid:
+            return "⚠️ 状態エラー: 早い者勝ちモードが無効な状態です"
+        case .playerNotFound:
+            return "🚨 システムエラー: プレイヤー情報が見つかりません"
+        case .unexpectedState:
+            return "🚨 予期しないエラー: システム状態が不正です"
+        }
+    }
+}
+
+/// 早い者勝ちカード出し検証結果
+struct FirstCardPlayValidationResult {
+    let isValid: Bool
+    let errorType: FirstCardPlayErrorType
+    
+    static func valid() -> FirstCardPlayValidationResult {
+        return FirstCardPlayValidationResult(isValid: true, errorType: .unexpectedState)
+    }
+    
+    static func invalid(_ errorType: FirstCardPlayErrorType) -> FirstCardPlayValidationResult {
+        return FirstCardPlayValidationResult(isValid: false, errorType: errorType)
+    }
+}
+
+/// 早い者勝ちモード関連の状態管理構造体
+struct FirstCardGameState {
+    /// 早い者勝ちモードの待機状態
+    var isWaitingForFirstCard: Bool = false
+    /// プレイヤーのパス状態追跡
+    var playerPassStatus: [String: Bool] = [:]
+    /// ルーレットモード状態フラグ
+    var isRouletteMode: Bool = false
+    /// ルーレット表示状態フラグ
+    var showRoulette: Bool = false
+    
+    /// 早い者勝ちモードを開始する
+    mutating func startWaitingMode() {
+        isWaitingForFirstCard = true
+        isRouletteMode = false
+        showRoulette = false
+    }
+    
+    /// ルーレットモードを開始する
+    mutating func startRouletteMode() {
+        isWaitingForFirstCard = false
+        isRouletteMode = true
+        showRoulette = true
+    }
+    
+    /// ルーレットを終了する
+    mutating func finishRoulette() {
+        isRouletteMode = false
+        showRoulette = false
+    }
+    
+    /// 全プレイヤーのパス状態を初期化
+    mutating func initializePlayerPassStatus(playerIds: [String]) {
+        playerPassStatus.removeAll()
+        for playerId in playerIds {
+            playerPassStatus[playerId] = false
+        }
+    }
+}
+
 // MARK: - Game View Model
 /// ゲーム全体の状態管理を行うViewModel
 class GameViewModel: ObservableObject {
@@ -38,7 +136,30 @@ class GameViewModel: ObservableObject {
     
     // ターン管理情報
     @Published var currentTurnPlayerIndex: Int = -1 // -1は「誰のターンでもない」状態
-    @Published var isWaitingForFirstCard: Bool = false
+    
+    // 早い者勝ちモード状態管理
+    @Published var firstCardGameState = FirstCardGameState()
+    
+    // 早い者勝ちモード状態への便利なアクセサ
+    var isWaitingForFirstCard: Bool {
+        get { firstCardGameState.isWaitingForFirstCard }
+        set { firstCardGameState.isWaitingForFirstCard = newValue }
+    }
+    
+    var playerFirstCardPassStatus: [String: Bool] {
+        get { firstCardGameState.playerPassStatus }
+        set { firstCardGameState.playerPassStatus = newValue }
+    }
+    
+    var isFirstCardRoulette: Bool {
+        get { firstCardGameState.isRouletteMode }
+        set { firstCardGameState.isRouletteMode = newValue }
+    }
+    
+    var showFirstCardRoulette: Bool {
+        get { firstCardGameState.showRoulette }
+        set { firstCardGameState.showRoulette = newValue }
+    }
     
     // デッキ情報
     @Published var deckCards: [Card] = []
@@ -57,12 +178,7 @@ class GameViewModel: ObservableObject {
     // プレイヤーがカードを出したかどうかの追跡（しょてんこボタン制御用）
     @Published var hasAnyPlayerPlayedCard: Bool = false
     
-    // 早い者勝ちモードでのパス状態を追跡
-    @Published var playerFirstCardPassStatus: [String: Bool] = [:]
-    
-    // ルーレットモード状態フラグ
-    @Published var isFirstCardRoulette: Bool = false
-    @Published var showFirstCardRoulette: Bool = false
+
     
     // リベンジ・チャレンジゾーンシステム（マネージャーに委譲）
     var dotenkoWinnerId: String? { revengeManager.dotenkoWinnerId }
@@ -793,7 +909,11 @@ class GameViewModel: ObservableObject {
     
     /// 最初のカード出し処理（早い者勝ち）
     private func handleFirstCardPlay(player: Player) {
-        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
+        guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else {
+            print("🚨 致命的エラー: プレイヤー \(player.name) のインデックスが見つかりません")
+            handleFirstCardPlayError(player: player, errorType: .playerNotFound)
+            return
+        }
         
         let selectedCards = player.selectedCards
         let selectedCount = selectedCards.count
@@ -801,9 +921,10 @@ class GameViewModel: ObservableObject {
         print("最初のカード出し - プレイヤー \(player.name) の選択されたカード数: \(selectedCount)")
         print("選択されたカード: \(selectedCards.map { $0.card.rawValue })")
         
-        // 選択されたカードがない場合は処理しない
-        guard selectedCount > 0 else {
-            print("⚠️ 選択されたカードがありません - カード出し処理をスキップします")
+        // 堅牢なカード選択検証
+        let validationResult = validateFirstCardPlay(player: player, selectedCards: selectedCards)
+        guard validationResult.isValid else {
+            handleFirstCardPlayError(player: player, errorType: validationResult.errorType)
             return
         }
         
@@ -1104,24 +1225,7 @@ class GameViewModel: ObservableObject {
                 
                 // BOTのカードを選択状態にして出す
                 if let botIndex = self.players.firstIndex(where: { $0.id == bot.id }) {
-                    // 手札内に存在するカードのみを選択
-                    let validCards = playableCards.filter { card in
-                        return self.players[botIndex].hand.contains(card)
-                    }
-                    
-                    if validCards.isEmpty {
-                        print("⚠️ BOT \(bot.name) の選択カードが手札に存在しません - 処理をスキップします")
-                        return
-                    }
-                    
-                    print("✅ BOT \(bot.name) の有効なカード: \(validCards.map { $0.card.rawValue })")
-                    self.players[botIndex].selectedCards = validCards
-                    
-                    // 選択状態を確認
-                    print("✅ BOT \(bot.name) の選択状態確認: \(self.players[botIndex].selectedCards.map { $0.card.rawValue })")
-                    
-                    // カード出し処理を実行
-                    self.handleFirstCardPlay(player: self.players[botIndex])
+                    self.executeBotFirstCardPlay(botIndex: botIndex, playableCards: playableCards)
                 } else {
                     print("⚠️ BOT \(bot.name) のプレイヤーインデックスが見つかりません")
                 }
@@ -1269,6 +1373,118 @@ class GameViewModel: ObservableObject {
         
         // カード出し判定マネージャーに委譲
         return cardValidationManager.getCardPlayValidationMessage(selectedCards: player.selectedCards, fieldCard: fieldCard)
+    }
+    
+    // MARK: - First Card Play Validation System
+    
+    /// 早い者勝ちカード出しの堅牢な検証
+    private func validateFirstCardPlay(player: Player, selectedCards: [Card]) -> FirstCardPlayValidationResult {
+        // 1. 基本的なカード選択チェック
+        guard !selectedCards.isEmpty else {
+            print("⚠️ カード未選択: プレイヤー \(player.name) がカードを選択していません")
+            return .invalid(.noCardsSelected)
+        }
+        
+        // 2. ゲーム状態の検証
+        guard isWaitingForFirstCard else {
+            print("⚠️ 状態エラー: 早い者勝ちモードではありません (現在の状態: \(gamePhase))")
+            return .invalid(.gameStateInvalid)
+        }
+        
+        // 3. 選択されたカードが手札に存在するかチェック
+        let playerHand = player.hand
+        for selectedCard in selectedCards {
+            guard playerHand.contains(selectedCard) else {
+                print("⚠️ カード不整合: 選択されたカード \(selectedCard.card.rawValue) が手札に存在しません")
+                print("   手札: \(playerHand.map { $0.card.rawValue })")
+                print("   選択: \(selectedCards.map { $0.card.rawValue })")
+                return .invalid(.cardsNotInHand)
+            }
+        }
+        
+        // 4. カードの重複チェック
+        let uniqueCards = Set(selectedCards.map { $0.id })
+        guard uniqueCards.count == selectedCards.count else {
+            print("⚠️ 無効選択: 重複したカードが選択されています")
+            return .invalid(.invalidCardSelection)
+        }
+        
+        // 5. 手札枚数の整合性チェック
+        guard selectedCards.count <= playerHand.count else {
+            print("⚠️ 数量エラー: 選択されたカード数(\(selectedCards.count))が手札枚数(\(playerHand.count))を超えています")
+            return .invalid(.invalidCardSelection)
+        }
+        
+        // 6. カードオブジェクトの有効性チェック
+        for selectedCard in selectedCards {
+            guard selectedCard.card != .back else {
+                print("⚠️ 無効カード: 裏面カードが選択されています")
+                return .invalid(.invalidCardSelection)
+            }
+        }
+        
+        print("✅ 早い者勝ちカード出し検証成功: プレイヤー \(player.name)")
+        return .valid()
+    }
+    
+    /// 早い者勝ちカード出しエラーハンドリング
+    private func handleFirstCardPlayError(player: Player, errorType: FirstCardPlayErrorType) {
+        // 詳細ログ出力
+        print(errorType.logMessage)
+        print("   プレイヤー: \(player.name) (ID: \(player.id))")
+        print("   ゲーム状態: \(gamePhase)")
+        print("   早い者勝ちモード: \(isWaitingForFirstCard)")
+        print("   選択されたカード数: \(player.selectedCards.count)")
+        print("   手札枚数: \(player.hand.count)")
+        
+        // ユーザーフィードバック（人間プレイヤーの場合のみ）
+        if player.id == "player" {
+            showFirstCardPlayErrorToUser(errorType: errorType)
+        }
+        
+        // エラー統計の記録（将来的な分析用）
+        recordFirstCardPlayError(player: player, errorType: errorType)
+        
+        // 回復可能なエラーの場合は状態をクリーンアップ
+        if shouldCleanupAfterError(errorType: errorType) {
+            cleanupAfterFirstCardPlayError(player: player)
+        }
+    }
+    
+    /// ユーザーへのエラーフィードバック表示
+    private func showFirstCardPlayErrorToUser(errorType: FirstCardPlayErrorType) {
+        // TODO: 実際のUI通知システムと統合
+        // 現在は仮でコンソール出力
+        print("📱 ユーザー通知: \(errorType.userMessage)")
+        
+        // 将来的な実装例:
+        // announcementEffectManager.showErrorMessage(
+        //     title: "カード出しエラー",
+        //     message: errorType.userMessage
+        // )
+    }
+    
+    /// エラー統計の記録
+    private func recordFirstCardPlayError(player: Player, errorType: FirstCardPlayErrorType) {
+        // TODO: エラー統計システムと統合
+        print("📊 エラー統計記録: \(errorType) - プレイヤー: \(player.name)")
+    }
+    
+    /// エラー後のクリーンアップが必要かチェック
+    private func shouldCleanupAfterError(errorType: FirstCardPlayErrorType) -> Bool {
+        switch errorType {
+        case .cardsNotInHand, .invalidCardSelection:
+            return true // カード選択状態をクリア
+        case .noCardsSelected, .gameStateInvalid, .playerNotFound, .unexpectedState:
+            return false // 状態はそのまま
+        }
+    }
+    
+    /// エラー後のクリーンアップ処理
+    private func cleanupAfterFirstCardPlayError(player: Player) {
+        // カード選択状態をクリア
+        clearPlayerSelectedCards(playerId: player.id)
+        print("🧹 エラー後クリーンアップ: プレイヤー \(player.name) の選択状態をクリア")
     }
     
     // MARK: - Dotenko Declaration System
@@ -2116,6 +2332,31 @@ class GameViewModel: ObservableObject {
         )
     }
     
+    /// BOTの早い者勝ちカード出し処理ヘルパーメソッド
+    private func executeBotFirstCardPlay(botIndex: Int, playableCards: [Card]) {
+        let bot = players[botIndex]
+        
+        // 手札内に存在するカードのみを選択
+        let validCards = playableCards.filter { card in
+            return players[botIndex].hand.contains(card)
+        }
+        
+        // 有効カードが空の場合は警告を出力して早期リターン
+        guard !validCards.isEmpty else {
+            print("⚠️ BOT \(bot.name) の選択カードが手札に存在しません - 処理をスキップします")
+            return
+        }
+        
+        print("✅ BOT \(bot.name) の有効なカード: \(validCards.map { $0.card.rawValue })")
+        players[botIndex].selectedCards = validCards
+        
+        // 選択状態を確認
+        print("✅ BOT \(bot.name) の選択状態確認: \(players[botIndex].selectedCards.map { $0.card.rawValue })")
+        
+        // カード出し処理を実行
+        handleFirstCardPlay(player: players[botIndex])
+    }
+    
     /// スコア計算マネージャーの状態変更監視を設定
     private func setupScoreCalculationBinding() {
         // showScoreResultの変更を監視
@@ -2149,14 +2390,12 @@ class GameViewModel: ObservableObject {
     // MARK: - First Card Pass System
     /// 早い者勝ちモードのパス状態をリセット
     private func resetFirstCardPassStatus() {
-        playerFirstCardPassStatus.removeAll()
-        isFirstCardRoulette = false
-        showFirstCardRoulette = false
+        // 状態管理構造体を使用してリセット
+        firstCardGameState = FirstCardGameState()
         
         // 全プレイヤーのパス状態を初期化
-        for player in players {
-            playerFirstCardPassStatus[player.id] = false
-        }
+        let playerIds = players.map { $0.id }
+        firstCardGameState.initializePlayerPassStatus(playerIds: playerIds)
         
         print("🔄 早い者勝ちモードのパス状態をリセット")
     }
@@ -2191,19 +2430,14 @@ class GameViewModel: ObservableObject {
     
     /// ルーレット開始処理
     private func startFirstCardRoulette() {
-        isWaitingForFirstCard = false
-        isFirstCardRoulette = true
-        
-        // ルーレット表示
-        showFirstCardRoulette = true
+        firstCardGameState.startRouletteMode()
         
         print("🎰 ルーレットモード開始")
     }
     
     /// ルーレット結果処理
     func finishFirstCardRoulette(selectedPlayerId: String) {
-        isFirstCardRoulette = false
-        showFirstCardRoulette = false
+        firstCardGameState.finishRoulette()
         
         guard let selectedPlayer = players.first(where: { $0.id == selectedPlayerId }) else {
             print("⚠️ ルーレット結果エラー: 選択されたプレイヤーが見つかりません")
