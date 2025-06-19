@@ -115,6 +115,16 @@ struct GameMainView: View {
                     onOKAction: viewModel.handleFinalResultOK
                 )
             }
+            
+            // ルーレット画面
+            if viewModel.showFirstCardRoulette {
+                RouletteView(
+                    players: viewModel.players,
+                    onFinish: { selectedPlayerId in
+                        viewModel.finishFirstCardRoulette(selectedPlayerId: selectedPlayerId)
+                    }
+                )
+            }
         }
         // ⭐ 設定モーダルの表示を追加
         .sheet(isPresented: $viewModel.showGameSettingsModal) {

@@ -152,4 +152,30 @@ class GameBotManager: ObservableObject {
             self?.handleBotAction(action)
         }
     }
+    
+    /// BOTの早い者勝ちモードでのパス判断
+    func checkBotFirstCardPass(player: Player) {
+        guard let gameViewModel = gameViewModel else { return }
+        
+        // 🔥 BOT処理停止フラグをチェック
+        if isBotActionsStopped {
+            print("🛑 BOTパス判断停止: BOT処理が停止中のため処理をキャンセル - \(player.name)")
+            return
+        }
+        
+        // BotGameStateを作成
+        let gameState = createBotGameState()
+        
+        // BotManagerに処理を委譲
+        botManager.checkFirstCardPass(player: player, gameState: gameState) { [weak self] shouldPass in
+            guard let self = self, let gameViewModel = self.gameViewModel, !self.isBotActionsStopped else { return }
+            
+            if shouldPass {
+                print("🤖 BOT \(player.name) が早い者勝ちモードでパスします")
+                gameViewModel.handleFirstCardPass(playerId: player.id)
+            } else {
+                print("🤖 BOT \(player.name) は早い者勝ちモードでパスしません（出せるカードあり）")
+            }
+        }
+    }
 } 

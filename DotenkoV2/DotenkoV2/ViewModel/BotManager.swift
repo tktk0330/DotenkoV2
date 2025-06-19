@@ -12,6 +12,7 @@ protocol BotManagerProtocol {
     func checkRealtimeDotenkoDeclarations(players: [Player], gameState: BotGameState, completion: @escaping ([String]) -> Void)
     func performChallengeAction(player: Player, gameState: BotGameState, completion: @escaping (BotChallengeAction) -> Void)
     func checkRealtimeCardPlay(player: Player, gameState: BotGameState, completion: @escaping ([Card]) -> Void)
+    func checkFirstCardPass(player: Player, gameState: BotGameState, completion: @escaping (Bool) -> Void)
 }
 
 // MARK: - BOT Game State
@@ -340,11 +341,55 @@ class BotManager: BotManagerProtocol {
     /// BOTの早い者勝ちカード出しチェック
     func checkRealtimeCardPlay(player: Player, gameState: BotGameState, completion: @escaping ([Card]) -> Void) {
         guard gameState.isWaitingForFirstCard else {
+            print("🏁 BOT \(player.name) の早い者勝ちカード出し判定: 早い者勝ちモードではありません")
+            completion([])
+            return
+        }
+        
+        guard let fieldCard = gameState.fieldCards.last else {
+            print("🏁 BOT \(player.name) の早い者勝ちカード出し判定: 場にカードがありません")
             completion([])
             return
         }
         
         print("🏁 BOT \(player.name) の早い者勝ちカード出し判定:")
+        print("   手札: \(player.hand.map { $0.card.rawValue })")
+        print("   場のカード: \(fieldCard.card.rawValue)")
+        
+        // BOTが出せるカードの組み合わせを取得
+        let playableCardSets = getBotPlayableCards(player: player, gameState: gameState)
+        
+        if !playableCardSets.isEmpty {
+            // 最適なカードを選択
+            let bestCards = selectBestCards(from: playableCardSets, gameState: gameState)
+            
+            // 手札に存在するカードのみを選択
+            let validCards = bestCards.filter { card in
+                return player.hand.contains(card)
+            }
+            
+            if validCards.isEmpty {
+                print("⚠️ BOT \(player.name) の選択カードが手札に存在しません")
+                completion([])
+                return
+            }
+            
+            print("🏁 BOT \(player.name) が早い者勝ちでカードを出します: \(validCards.map { $0.card.rawValue })")
+            completion(validCards)
+        } else {
+            print("🏁 BOT \(player.name) は早い者勝ちで出せるカードがありません")
+            completion([])
+        }
+    }
+    
+    /// BOTの早い者勝ちモードでのパス判断
+    func checkFirstCardPass(player: Player, gameState: BotGameState, completion: @escaping (Bool) -> Void) {
+        guard gameState.isWaitingForFirstCard else {
+            completion(false)
+            return
+        }
+        
+        print("🏁 BOT \(player.name) の早い者勝ちモードでのパス判断:")
         print("   手札: \(player.hand.map { $0.card.rawValue })")
         
         // BOTが出せるカードの組み合わせを取得
@@ -354,10 +399,10 @@ class BotManager: BotManagerProtocol {
             // 最適なカードを選択
             let bestCards = selectBestCards(from: playableCardSets, gameState: gameState)
             print("🏁 BOT \(player.name) が早い者勝ちでカードを出します: \(bestCards.map { $0.card.rawValue })")
-            completion(bestCards)
+            completion(false)
         } else {
             print("🏁 BOT \(player.name) は早い者勝ちで出せるカードがありません")
-            completion([])
+            completion(true)
         }
     }
 } 

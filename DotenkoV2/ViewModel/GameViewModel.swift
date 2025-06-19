@@ -57,6 +57,13 @@ class GameViewModel: ObservableObject {
     // プレイヤーがカードを出したかどうかの追跡（しょてんこボタン制御用）
     @Published var hasAnyPlayerPlayedCard: Bool = false
     
+    // 早い者勝ちモードでのパス状態を追跡
+    @Published var playerFirstCardPassStatus: [String: Bool] = [:]
+    
+    // ルーレットモード状態フラグ
+    @Published var isFirstCardRoulette: Bool = false
+    @Published var showFirstCardRoulette: Bool = false
+    
     // リベンジ・チャレンジゾーンシステム（マネージャーに委譲）
     var dotenkoWinnerId: String? { revengeManager.dotenkoWinnerId }
     var revengeEligiblePlayers: [String] { revengeManager.revengeEligiblePlayers }
@@ -202,6 +209,9 @@ class GameViewModel: ObservableObject {
         
         // ターンを誰のターンでもない状態に初期化
         resetTurn()
+        
+        // 早い者勝ちモードのパス状態をリセット
+        resetFirstCardPassStatus()
         
         // 初期カード配布はアニメーション付きで実行
         gamePhase = .playing
@@ -660,6 +670,13 @@ class GameViewModel: ObservableObject {
             return
         }
         
+        // 早い者勝ちモード時は専用のパス処理を呼び出す
+        if isWaitingForFirstCard {
+            print("🏁 早い者勝ちモードでパスボタンが押されました - プレイヤー \(currentPlayer.name)")
+            handleFirstCardPass(playerId: currentPlayer.id)
+            return
+        }
+        
         // カードを引いていない場合は引く
         if !currentPlayer.hasDrawnCardThisTurn {
             print("カード引きアクションが実行されました - プレイヤー \(currentPlayer.name)")
@@ -778,8 +795,17 @@ class GameViewModel: ObservableObject {
     private func handleFirstCardPlay(player: Player) {
         guard let playerIndex = players.firstIndex(where: { $0.id == player.id }) else { return }
         
-        let selectedCount = getPlayerSelectedCardCount(playerId: player.id)
+        let selectedCards = player.selectedCards
+        let selectedCount = selectedCards.count
+        
         print("最初のカード出し - プレイヤー \(player.name) の選択されたカード数: \(selectedCount)")
+        print("選択されたカード: \(selectedCards.map { $0.card.rawValue })")
+        
+        // 選択されたカードがない場合は処理しない
+        guard selectedCount > 0 else {
+            print("⚠️ 選択されたカードがありません - カード出し処理をスキップします")
+            return
+        }
         
         // カウントダウンをキャンセル
         cancelCountdown()
@@ -1039,7 +1065,16 @@ class GameViewModel: ObservableObject {
                     return
                 }
                 
+                // BOTが出せるカードを持っているか確認
                 self.checkBotFirstCardPlay(bot: bot)
+                
+                // 出せるカードがない場合は自動パス処理を追加
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    // 早い者勝ちがまだ続いている場合のみパスを判断
+                    if self.isWaitingForFirstCard && !self.playerFirstCardPassStatus[bot.id, default: false] {
+                        self.gameBotManager.checkBotFirstCardPass(player: bot)
+                    }
+                }
             }
         }
     }
@@ -1049,12 +1084,19 @@ class GameViewModel: ObservableObject {
         guard isWaitingForFirstCard else { return }
         guard let fieldCard = fieldCards.last else { return }
         
+        print("🏁 BOT \(bot.name) の早い者勝ちカード出し判定開始")
+        print("   手札: \(bot.hand.map { $0.card.rawValue })")
+        print("   場のカード: \(fieldCard.card.rawValue)")
+        
         // BotGameStateを作成
         let gameState = createBotGameState()
         
         // BOTが出せるカードがあるかチェック
         botManager.checkRealtimeCardPlay(player: bot, gameState: gameState) { [weak self] playableCards in
-            guard let self = self, self.isWaitingForFirstCard else { return }
+            guard let self = self, self.isWaitingForFirstCard else { 
+                print("🛑 BOT \(bot.name) のカード出し処理キャンセル: 早い者勝ちモードが終了しています")
+                return 
+            }
             
             if !playableCards.isEmpty {
                 // BOTが最初にカードを出す
@@ -1062,9 +1104,29 @@ class GameViewModel: ObservableObject {
                 
                 // BOTのカードを選択状態にして出す
                 if let botIndex = self.players.firstIndex(where: { $0.id == bot.id }) {
-                    self.players[botIndex].selectedCards = playableCards
-                    self.handleFirstCardPlay(player: bot)
+                    // 手札内に存在するカードのみを選択
+                    let validCards = playableCards.filter { card in
+                        return self.players[botIndex].hand.contains(card)
+                    }
+                    
+                    if validCards.isEmpty {
+                        print("⚠️ BOT \(bot.name) の選択カードが手札に存在しません - 処理をスキップします")
+                        return
+                    }
+                    
+                    print("✅ BOT \(bot.name) の有効なカード: \(validCards.map { $0.card.rawValue })")
+                    self.players[botIndex].selectedCards = validCards
+                    
+                    // 選択状態を確認
+                    print("✅ BOT \(bot.name) の選択状態確認: \(self.players[botIndex].selectedCards.map { $0.card.rawValue })")
+                    
+                    // カード出し処理を実行
+                    self.handleFirstCardPlay(player: self.players[botIndex])
+                } else {
+                    print("⚠️ BOT \(bot.name) のプレイヤーインデックスが見つかりません")
                 }
+            } else {
+                print("🏁 BOT \(bot.name) は早い者勝ちで出せるカードがありません")
             }
         }
     }
@@ -2082,5 +2144,87 @@ class GameViewModel: ObservableObject {
             .store(in: &cancellables)
         
         print("🎯 GameViewModel - スコア計算マネージャーの状態監視設定完了")
+    }
+    
+    // MARK: - First Card Pass System
+    /// 早い者勝ちモードのパス状態をリセット
+    private func resetFirstCardPassStatus() {
+        playerFirstCardPassStatus.removeAll()
+        isFirstCardRoulette = false
+        showFirstCardRoulette = false
+        
+        // 全プレイヤーのパス状態を初期化
+        for player in players {
+            playerFirstCardPassStatus[player.id] = false
+        }
+        
+        print("🔄 早い者勝ちモードのパス状態をリセット")
+    }
+    
+    /// 早い者勝ちモードでのパス処理
+    func handleFirstCardPass(playerId: String) {
+        guard isWaitingForFirstCard else { return }
+        guard let player = players.first(where: { $0.id == playerId }) else { return }
+        
+        // プレイヤーのパス状態を記録
+        playerFirstCardPassStatus[playerId] = true
+        
+        print("🏁 早い者勝ちモード: プレイヤー \(player.name) がパスしました")
+        
+        // 全プレイヤーがパスしたかチェック
+        if checkAllPlayersPassedFirstCard() {
+            print("🏁 全プレイヤーがパスしました - ルーレットモードを開始します")
+            startFirstCardRoulette()
+        }
+    }
+    
+    /// 全プレイヤーのパス状態確認
+    private func checkAllPlayersPassedFirstCard() -> Bool {
+        for player in players {
+            // パス状態が記録されていないか、パスしていない場合はfalse
+            if playerFirstCardPassStatus[player.id] != true {
+                return false
+            }
+        }
+        return true
+    }
+    
+    /// ルーレット開始処理
+    private func startFirstCardRoulette() {
+        isWaitingForFirstCard = false
+        isFirstCardRoulette = true
+        
+        // ルーレット表示
+        showFirstCardRoulette = true
+        
+        print("🎰 ルーレットモード開始")
+    }
+    
+    /// ルーレット結果処理
+    func finishFirstCardRoulette(selectedPlayerId: String) {
+        isFirstCardRoulette = false
+        showFirstCardRoulette = false
+        
+        guard let selectedPlayer = players.first(where: { $0.id == selectedPlayerId }) else {
+            print("⚠️ ルーレット結果エラー: 選択されたプレイヤーが見つかりません")
+            // エラー時はプレイヤー0から開始
+            startTurnFromPlayer(playerId: players.first?.id ?? "player")
+            nextTurn()
+            return
+        }
+        
+        print("🎰 ルーレット結果: プレイヤー \(selectedPlayer.name) からターン開始")
+        
+        // 選択されたプレイヤーからターン開始
+        startTurnFromPlayer(playerId: selectedPlayerId)
+        
+        // アナウンス表示
+        announcementEffectManager.showAnnouncementMessage(
+            title: "\(selectedPlayer.name) Start",
+            subtitle: "ルーレットの結果"
+        ) {
+            // アナウンス完了後にターン開始
+            self.nextTurn()
+        }
     }
 } 
