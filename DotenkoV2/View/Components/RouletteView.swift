@@ -290,7 +290,7 @@ struct RouletteView: View {
         let wheelRadius: CGFloat
         
         var body: some View {
-            GeometryReader { geometry in
+            GeometryReader { _ in
                 Text(text)
                     .font(.system(size: segmentTextSize, weight: .bold))
                     .foregroundColor(Appearance.Color.primaryText)
