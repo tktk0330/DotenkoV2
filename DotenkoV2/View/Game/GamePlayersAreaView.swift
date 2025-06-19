@@ -261,7 +261,7 @@ struct BottomPlayerAreaView: View {
                                 onPassAction()
                             }
                         },
-                        backgroundColor: isFirstCardPassMode ? Color("FF9500") : (hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground),
+                        backgroundColor: isFirstCardPassMode ? Appearance.Color.firstCardPassButtonBackground : (hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground),
                         size: 75,
                         isEnabled: canPlayerPerformActions
                     )
