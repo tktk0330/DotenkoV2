@@ -2162,21 +2162,28 @@ class GameViewModel: ObservableObject {
     }
     
     /// 早い者勝ちモードでのパス処理
-    func handleFirstCardPass(playerId: String) {
-        guard isWaitingForFirstCard else { return }
-        guard let player = players.first(where: { $0.id == playerId }) else { return }
-        
-        // プレイヤーのパス状態を記録
-        playerFirstCardPassStatus[playerId] = true
-        
-        print("🏁 早い者勝ちモード: プレイヤー \(player.name) がパスしました")
-        
-        // 全プレイヤーがパスしたかチェック
-        if checkAllPlayersPassedFirstCard() {
-            print("🏁 全プレイヤーがパスしました - ルーレットモードを開始します")
-            startFirstCardRoulette()
-        }
+func handleFirstCardPass(playerId: String) {
+    guard isWaitingForFirstCard else { return }
+    guard let player = players.first(where: { $0.id == playerId }) else { return }
+    
+    // 重複パス試行の防止
+    guard playerFirstCardPassStatus[playerId] != true else {
+        print("⚠️ [FirstCardPass] 重複パス試行 - プレイヤー: \(player.name)")
+        return
     }
+    
+    // プレイヤーのパス状態を記録
+    playerFirstCardPassStatus[playerId] = true
+    
+    print("🏁 [FirstCardPass] パス記録 - プレイヤー: \(player.name)")
+    print("🏁 [FirstCardPass] 現在のパス状況: \(playerFirstCardPassStatus)")
+    
+    // 全プレイヤーがパスしたかチェック
+    if checkAllPlayersPassedFirstCard() {
+        print("🏁 [FirstCardPass] 全員パス完了 - ルーレット移行")
+        startFirstCardRoulette()
+    }
+}
     
     /// 全プレイヤーのパス状態確認
     private func checkAllPlayersPassedFirstCard() -> Bool {
