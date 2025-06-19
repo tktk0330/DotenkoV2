@@ -2401,21 +2401,28 @@ class GameViewModel: ObservableObject {
     }
     
     /// 早い者勝ちモードでのパス処理
-    func handleFirstCardPass(playerId: String) {
-        guard isWaitingForFirstCard else { return }
-        guard let player = players.first(where: { $0.id == playerId }) else { return }
-        
-        // プレイヤーのパス状態を記録
-        playerFirstCardPassStatus[playerId] = true
-        
-        print("🏁 早い者勝ちモード: プレイヤー \(player.name) がパスしました")
-        
-        // 全プレイヤーがパスしたかチェック
-        if checkAllPlayersPassedFirstCard() {
-            print("🏁 全プレイヤーがパスしました - ルーレットモードを開始します")
-            startFirstCardRoulette()
-        }
+func handleFirstCardPass(playerId: String) {
+    guard isWaitingForFirstCard else { return }
+    guard let player = players.first(where: { $0.id == playerId }) else { return }
+    
+    // 重複パス試行の防止
+    guard playerFirstCardPassStatus[playerId] != true else {
+        print("⚠️ [FirstCardPass] 重複パス試行 - プレイヤー: \(player.name)")
+        return
     }
+    
+    // プレイヤーのパス状態を記録
+    playerFirstCardPassStatus[playerId] = true
+    
+    print("🏁 [FirstCardPass] パス記録 - プレイヤー: \(player.name)")
+    print("🏁 [FirstCardPass] 現在のパス状況: \(playerFirstCardPassStatus)")
+    
+    // 全プレイヤーがパスしたかチェック
+    if checkAllPlayersPassedFirstCard() {
+        print("🏁 [FirstCardPass] 全員パス完了 - ルーレット移行")
+        startFirstCardRoulette()
+    }
+}
     
     /// 全プレイヤーのパス状態確認
     private func checkAllPlayersPassedFirstCard() -> Bool {
@@ -2440,14 +2447,25 @@ class GameViewModel: ObservableObject {
         firstCardGameState.finishRoulette()
         
         guard let selectedPlayer = players.first(where: { $0.id == selectedPlayerId }) else {
-            print("⚠️ ルーレット結果エラー: 選択されたプレイヤーが見つかりません")
-            // エラー時はプレイヤー0から開始
-            startTurnFromPlayer(playerId: players.first?.id ?? "player")
-            nextTurn()
+            print("🚨 [RouletteFinish] エラー: 無効プレイヤーID - \(selectedPlayerId)")
+            print("🚨 [RouletteFinish] フォールバック: 最初のプレイヤーから開始")
+            
+            // より堅牢なフォールバック処理
+            let fallbackPlayerId = players.first?.id ?? "player"
+            startTurnFromPlayer(playerId: fallbackPlayerId)
+            
+            // エラー状況をユーザーに通知
+            announcementEffectManager.showAnnouncementMessage(
+                title: "システムエラー",
+                subtitle: "最初のプレイヤーから開始します"
+            ) {
+                self.nextTurn()
+            }
             return
         }
         
-        print("🎰 ルーレット結果: プレイヤー \(selectedPlayer.name) からターン開始")
+        print("🎰 [RouletteFinish] 結果確定 - プレイヤー: \(selectedPlayer.name)")
+        print("🎰 [RouletteFinish] ターン開始準備")
         
         // 選択されたプレイヤーからターン開始
         startTurnFromPlayer(playerId: selectedPlayerId)
