@@ -494,7 +494,10 @@ struct RouletteView: View {
     private func getWinningPlayer() -> Player {
         let segmentAngle = 360.0 / Double(segmentCount)
         // インジケーターは上にあるので、回転方向と逆の角度計算が必要
-        let normalizedAngle = ((-finalAngle).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
+        // 角度を正規化（0-360度の範囲に収める）
+        let negativeAngle = -finalAngle
+        let remainderAngle = negativeAngle.truncatingRemainder(dividingBy: 360)
+        let normalizedAngle = (remainderAngle + 360).truncatingRemainder(dividingBy: 360)
         let winningSegmentIndex = Int((normalizedAngle / segmentAngle).rounded(.down))
         let winningPlayerIndex = winningSegmentIndex % players.count
         return players[winningPlayerIndex]
