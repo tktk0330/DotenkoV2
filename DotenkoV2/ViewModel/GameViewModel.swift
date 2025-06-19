@@ -2213,14 +2213,25 @@ func handleFirstCardPass(playerId: String) {
         showFirstCardRoulette = false
         
         guard let selectedPlayer = players.first(where: { $0.id == selectedPlayerId }) else {
-            print("⚠️ ルーレット結果エラー: 選択されたプレイヤーが見つかりません")
-            // エラー時はプレイヤー0から開始
-            startTurnFromPlayer(playerId: players.first?.id ?? "player")
-            nextTurn()
+            print("🚨 [RouletteFinish] エラー: 無効プレイヤーID - \(selectedPlayerId)")
+            print("🚨 [RouletteFinish] フォールバック: 最初のプレイヤーから開始")
+            
+            // より堅牢なフォールバック処理
+            let fallbackPlayerId = players.first?.id ?? "player"
+            startTurnFromPlayer(playerId: fallbackPlayerId)
+            
+            // エラー状況をユーザーに通知
+            announcementEffectManager.showAnnouncementMessage(
+                title: "システムエラー",
+                subtitle: "最初のプレイヤーから開始します"
+            ) {
+                self.nextTurn()
+            }
             return
         }
         
-        print("🎰 ルーレット結果: プレイヤー \(selectedPlayer.name) からターン開始")
+        print("🎰 [RouletteFinish] 結果確定 - プレイヤー: \(selectedPlayer.name)")
+        print("🎰 [RouletteFinish] ターン開始準備")
         
         // 選択されたプレイヤーからターン開始
         startTurnFromPlayer(playerId: selectedPlayerId)
