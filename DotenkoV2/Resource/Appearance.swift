@@ -73,6 +73,8 @@ enum Appearance {
         static let drawButtonBackground = SwiftUI.Color(red: 0.2, green: 0.4, blue: 0.8)
         /// プレイボタンの背景色 - 緑色
         static let playButtonBackground = SwiftUI.Color(red: 0.2, green: 0.6, blue: 0.2)
+        /// 早い者勝ちパスボタンの背景色 - 鮮やかなオレンジ色
+        static let firstCardPassButtonBackground = SwiftUI.Color(red: 1.0, green: 0.584, blue: 0.0)
         
         // どてんこ宣言ボタン色
         /// どてんこボタンの背景色 - 鮮やかな紫色

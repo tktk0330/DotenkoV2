@@ -252,10 +252,16 @@ struct BottomPlayerAreaView: View {
                 HStack(spacing: -20) {
                     // 左側：引く/パスボタン
                     GameActionButton(
-                        icon: hasDrawnCard ? Appearance.Icon.arrowDownCircleFill : "plus.rectangle.on.rectangle",
-                        label: hasDrawnCard ? "パス" : "引く",
-                        action: onPassAction,
-                        backgroundColor: hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground,
+                        icon: isFirstCardPassMode ? "hand.raised.fill" : (hasDrawnCard ? Appearance.Icon.arrowDownCircleFill : "plus.rectangle.on.rectangle"),
+                        label: isFirstCardPassMode ? "パス" : (hasDrawnCard ? "パス" : "引く"),
+                        action: {
+                            if isFirstCardPassMode {
+                                handleFirstCardPass(for: player)
+                            } else {
+                                onPassAction()
+                            }
+                        },
+                        backgroundColor: isFirstCardPassMode ? Appearance.Color.firstCardPassButtonBackground : (hasDrawnCard ? Appearance.Color.passButtonBackground : Appearance.Color.drawButtonBackground),
                         size: 75,
                         isEnabled: canPlayerPerformActions
                     )
@@ -344,6 +350,11 @@ struct BottomPlayerAreaView: View {
     
     // MARK: - Computed Properties
     
+    /// 早い者勝ちモードかどうか
+    private var isFirstCardPassMode: Bool {
+        return viewModel.isWaitingForFirstCard
+    }
+    
     /// プレイヤーがアクションを実行できるかチェック
     private var canPlayerPerformActions: Bool {
         guard let player = player else { return false }
@@ -391,5 +402,11 @@ struct BottomPlayerAreaView: View {
     private func handleRevengeDeclaration(for player: Player) {
         print("リベンジ宣言ボタンが押されました - プレイヤー: \(player.name)")
         viewModel.handleRevengeDeclaration(playerId: player.id)
+    }
+    
+    /// 早い者勝ちモードのパス処理
+    private func handleFirstCardPass(for player: Player) {
+        print("早い者勝ちモードでパスボタンが押されました - プレイヤー: \(player.name)")
+        viewModel.handleFirstCardPass(playerId: player.id)
     }
 } 
