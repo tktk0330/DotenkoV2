@@ -2223,8 +2223,13 @@ class GameViewModel: ObservableObject {
             title: "\(selectedPlayer.name) Start",
             subtitle: "ルーレットの結果"
         ) {
-            // アナウンス完了後にターン開始
-            self.nextTurn()
+            // アナウンス完了後、BOTの場合は自動処理を開始
+            if selectedPlayer.id != "player" {
+                print("🤖 ルーレット結果のBOTターン検出 - 自動処理を開始します")
+                self.startBotTurn(player: selectedPlayer)
+            } else {
+                print("👤 ルーレット結果の人間プレイヤーのターン - 手動操作待ち")
+            }
         }
     }
 } 
